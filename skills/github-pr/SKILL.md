@@ -3,7 +3,7 @@ name: github-pr
 description: Prepare and shepherd pull requests from local changes with clear summary, behavior changes, risk analysis, test evidence, and disciplined review handling. Use when a user asks to prepare/open a PR, write a PR description, address review comments (including AI reviewers like Copilot, CodeRabbit, Sourcery), run multi-round review loops, or confirm merge readiness.
 ---
 
-# Github Pr Prep
+# GitHub PR
 
 ## Overview
 

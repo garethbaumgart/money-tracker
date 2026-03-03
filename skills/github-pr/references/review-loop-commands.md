@@ -5,7 +5,7 @@ Use these command patterns when running PR review rounds.
 ## Variables
 
 ```bash
-OWNER_REPO="garethbaumgart/money-tracker"
+OWNER_REPO="<owner>/<repo>" # e.g. garethbaumgart/money-tracker
 PR_NUMBER="<pr-number>"
 AI_REVIEWERS_REGEX="copilot|coderabbit|sourcery"
 ```
