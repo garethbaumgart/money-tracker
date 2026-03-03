@@ -31,14 +31,14 @@ Only end the run when all are true:
 
 1. No in-progress review/check statuses remain.
 2. No unresolved actionable comments remain.
-3. No new actionable comments have appeared during the last poll interval.
+3. No new actionable comments have appeared during at least 2 poll intervals.
 
 ## Review Loop Protocol
 
 1. Poll PR state for new reviews/comments and check results every 5 minutes.
 2. Detect end of current round with this heuristic:
 - All checks are complete (no pending required checks).
-- No new AI-reviewer comments for a quiet window of at least one poll interval (5 minutes).
+- No new AI-reviewer comments for a quiet window of at least 2 poll intervals (10 minutes).
 - At least one signal from expected AI reviewers on current head commit when possible.
 3. Build unresolved comment queue from review comments and issue comments.
 4. Classify comments before acting:

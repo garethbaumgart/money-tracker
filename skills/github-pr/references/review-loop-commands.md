@@ -82,7 +82,7 @@ If a reaction already exists, ignore duplicate-reaction errors and continue.
 Treat a review round as complete when all are true:
 
 1. No pending required checks.
-2. No new actionable AI reviewer comments for at least one poll interval.
+2. No new actionable AI reviewer comments for at least 2 poll intervals.
 3. No unresolved actionable comments remain in queue.
 
 Then push next iteration summary or mark PR merge-ready.
