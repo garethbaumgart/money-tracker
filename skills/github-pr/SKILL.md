@@ -20,21 +20,39 @@ Focus on behavior, risk, verification evidence, and deterministic comment resolu
 6. Open or update PR.
 7. Run review loop until merge readiness criteria are met.
 
+## Run Completion Gate
+
+Do not end the skill run while either condition is true:
+
+1. Any review/check is still in progress (for example CodeRabbit pending, Sourcery in progress, required checks pending).
+2. Any actionable comment remains unresolved.
+
+Only end the run when all are true:
+
+1. No in-progress review/check statuses remain.
+2. No unresolved actionable comments remain.
+3. No new actionable comments have appeared during the last poll interval.
+
 ## Review Loop Protocol
 
-1. Poll PR state for new reviews/comments and check results.
+1. Poll PR state for new reviews/comments and check results every 5 minutes.
 2. Detect end of current round with this heuristic:
 - All checks are complete (no pending required checks).
-- No new AI-reviewer comments for a quiet window (default: 10 minutes).
+- No new AI-reviewer comments for a quiet window of at least one poll interval (5 minutes).
 - At least one signal from expected AI reviewers on current head commit when possible.
 3. Build unresolved comment queue from review comments and issue comments.
-4. For each unresolved comment:
+4. Classify comments before acting:
+- Actionable: inline review comments and concrete issue comments that request code/documentation changes.
+- Non-actionable: "review in progress", rate-limit notices, summaries/walkthroughs, ads/tips, and informational status updates.
+- Do not treat non-actionable comments as blockers.
+5. For each unresolved actionable comment:
 - Add a thumbs-up reaction first.
 - Then either fix in code or reply with a technical rebuttal.
-5. Never use "push to later feature" as the reason to skip a valid fix.
-6. If rejecting a comment, provide specific evidence: incorrect assumption, constraint conflict, duplicate, or already addressed.
-7. Push updates, post round summary, and request re-review.
-8. Repeat until no unresolved actionable comments remain.
+6. Never use "push to later feature" as the reason to skip a valid fix.
+7. If rejecting a comment, provide specific evidence: incorrect assumption, constraint conflict, duplicate, or already addressed.
+8. Push updates, post round summary, and request re-review.
+9. Sleep 5 minutes and re-poll.
+10. Repeat until run completion gate is satisfied.
 
 Multiple rounds per PR are normal and expected.
 

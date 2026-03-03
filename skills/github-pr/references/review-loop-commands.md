@@ -8,6 +8,7 @@ Use these command patterns when running PR review rounds.
 OWNER_REPO="<owner>/<repo>" # e.g. garethbaumgart/money-tracker
 PR_NUMBER="<pr-number>"
 AI_REVIEWERS_REGEX="copilot|coderabbit|sourcery"
+POLL_SECONDS=300
 ```
 
 ## Poll PR State
@@ -81,7 +82,35 @@ If a reaction already exists, ignore duplicate-reaction errors and continue.
 Treat a review round as complete when all are true:
 
 1. No pending required checks.
-2. No new AI reviewer comments for 10 minutes.
+2. No new actionable AI reviewer comments for at least one poll interval.
 3. No unresolved actionable comments remain in queue.
 
 Then push next iteration summary or mark PR merge-ready.
+
+## Non-Actionable Comment Patterns
+
+Do not block on comments matching these patterns unless they include a concrete requested change:
+
+1. Review-in-progress status messages.
+2. Rate-limit notices.
+3. Auto-generated summaries/walkthroughs.
+4. Marketing/tips/help footers.
+
+## Polling Loop Skeleton
+
+```bash
+while true; do
+  # 1) Poll PR/check status
+  gh pr view "$PR_NUMBER" --repo "$OWNER_REPO" \
+    --json mergeStateStatus,statusCheckRollup,headRefOid
+
+  # 2) Fetch and classify comments
+  gh api --paginate "repos/$OWNER_REPO/pulls/$PR_NUMBER/comments?per_page=100"
+  gh api --paginate "repos/$OWNER_REPO/issues/$PR_NUMBER/comments?per_page=100"
+
+  # 3) If actionable comments exist: react + fix/rebut + push + reply
+  # 4) If no pending checks and no actionable comments for this interval: break
+
+  sleep "$POLL_SECONDS"
+done
+```
