@@ -1,0 +1,6 @@
+# OS/editor
+.DS_Store
+
+# .NET build artifacts
+**/bin/
+**/obj/
