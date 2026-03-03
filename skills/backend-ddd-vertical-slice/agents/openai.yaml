@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend DDD Vertical Slice"
+  short_description: "Build backend features with pragmatic DDD and vertical slices"
+  default_prompt: "Implement this backend feature using vertical slice + pragmatic DDD conventions."

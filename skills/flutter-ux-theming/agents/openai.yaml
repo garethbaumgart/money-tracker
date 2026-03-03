@@ -1,0 +1,4 @@
+interface:
+  display_name: "Flutter UX Theming"
+  short_description: "Apply Material 3 tokens and component themes consistently"
+  default_prompt: "Apply the project Flutter UX/theming standards to this UI task."

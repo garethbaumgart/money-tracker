@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub Issue Refiner"
+  short_description: "Turn rough issues into implementation-ready specs"
+  default_prompt: "Refine this GitHub issue into a decision-complete engineering spec."

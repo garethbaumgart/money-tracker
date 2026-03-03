@@ -1,0 +1,4 @@
+interface:
+  display_name: "UX Mockup Explorer"
+  short_description: "Generate and compare HTML UX options for decision-making"
+  default_prompt: "Generate UX mockup options for this issue and produce a decision pack."
