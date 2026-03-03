@@ -5,8 +5,13 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val appNamespace = providers.gradleProperty("app.namespace").getOrElse("com.moneytracker.app")
+val appApplicationId = providers.gradleProperty("app.applicationId").getOrElse(appNamespace)
+val mainActivityClass = providers.gradleProperty("app.mainActivityClass")
+    .getOrElse("com.moneytracker.app.MainActivity")
+
 android {
-    namespace = "com.moneytracker.app"
+    namespace = appNamespace
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,11 +25,12 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.moneytracker.app"
+        applicationId = appApplicationId
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["mainActivityClass"] = mainActivityClass
     }
 
     buildTypes {

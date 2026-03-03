@@ -1,0 +1,2 @@
+// Mobile app identifiers. Update these when moving to an org namespace.
+APP_BUNDLE_ID=com.moneytracker.app
