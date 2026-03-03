@@ -36,6 +36,16 @@
 - Critical code paths:
 - Questions for reviewers:
 
+## Review Round Log
+- Round 1:
+- Round 2:
+- Comment resolution summary:
+
+## Merge Readiness
+- Required checks:
+- Unresolved comments:
+- Final risk call:
+
 ## Post-Merge Checks
 - Monitoring to watch:
 - Follow-up tasks:

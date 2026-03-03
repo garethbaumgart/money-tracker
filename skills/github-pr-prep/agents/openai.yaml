@@ -1,4 +1,0 @@
-interface:
-  display_name: "GitHub PR Prep"
-  short_description: "Generate a high-signal PR package from local changes"
-  default_prompt: "Prepare this branch for PR: summarize changes, risks, and test evidence."

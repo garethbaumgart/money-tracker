@@ -31,7 +31,7 @@ skills/<skill-name>/
 
 ## How to Trigger Skills
 1. Explicit trigger:
-- Mention the skill name directly, for example `$github-pr-prep`.
+- Mention the skill name directly, for example `$github-pr`.
 2. Implicit trigger:
 - Ask for work that clearly matches the skill description.
 3. Multi-skill trigger:
@@ -40,7 +40,7 @@ skills/<skill-name>/
 ## Current Project Skills
 1. `github-issue-refiner`
 - Turns rough issues into implementation-ready specs.
-2. `github-pr-prep`
+2. `github-pr`
 - Produces PR title/body, risk analysis, and test evidence package.
 3. `ux-mockup-explorer`
 - Produces raw HTML UX option packs and decision artifacts for UX-heavy issues.
@@ -53,7 +53,7 @@ skills/<skill-name>/
 1. Refine issue:
 - `Use $github-issue-refiner on this issue text and output final issue markdown.`
 2. Prepare PR:
-- `Use $github-pr-prep for my current branch and draft a PR body with risk and test evidence.`
+- `Use $github-pr for my current branch and draft a PR body with risk and test evidence.`
 3. Explore UX options before implementation:
 - `Use $ux-mockup-explorer for this issue and create option-a to option-e HTML mockups with a decision.md.`
 4. Apply Flutter theming standards:
