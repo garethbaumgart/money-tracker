@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub PR"
+  short_description: "GitHub PR workflow and multi-round review comment resolution"
+  default_prompt: "Prepare this branch for PR, then handle all review comments with fix-or-rebuttal loops until merge-ready."
