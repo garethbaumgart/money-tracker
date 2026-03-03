@@ -21,13 +21,13 @@ gh pr view "$PR_NUMBER" \
 ## Fetch Review Comments
 
 ```bash
-gh api "repos/$OWNER_REPO/pulls/$PR_NUMBER/comments?per_page=100"
+gh api --paginate "repos/$OWNER_REPO/pulls/$PR_NUMBER/comments?per_page=100"
 ```
 
 ## Fetch Issue-Level Comments
 
 ```bash
-gh api "repos/$OWNER_REPO/issues/$PR_NUMBER/comments?per_page=100"
+gh api --paginate "repos/$OWNER_REPO/issues/$PR_NUMBER/comments?per_page=100"
 ```
 
 ## Identify AI Reviewer Comments
@@ -35,14 +35,14 @@ gh api "repos/$OWNER_REPO/issues/$PR_NUMBER/comments?per_page=100"
 Review comments:
 
 ```bash
-gh api "repos/$OWNER_REPO/pulls/$PR_NUMBER/comments?per_page=100" \
+gh api --paginate "repos/$OWNER_REPO/pulls/$PR_NUMBER/comments?per_page=100" \
   --jq ".[] | select(.user.login | test(\"$AI_REVIEWERS_REGEX\"; \"i\")) | {id, user: .user.login, url: .html_url, body}"
 ```
 
 Issue comments:
 
 ```bash
-gh api "repos/$OWNER_REPO/issues/$PR_NUMBER/comments?per_page=100" \
+gh api --paginate "repos/$OWNER_REPO/issues/$PR_NUMBER/comments?per_page=100" \
   --jq ".[] | select(.user.login | test(\"$AI_REVIEWERS_REGEX\"; \"i\")) | {id, user: .user.login, url: .html_url, body}"
 ```
 
