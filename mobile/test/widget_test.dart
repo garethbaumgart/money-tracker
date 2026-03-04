@@ -1,15 +1,29 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:money_tracker/main.dart';
+import 'package:money_tracker/app/app.dart';
 
 void main() {
-  testWidgets('Shows Money Tracker shell title', (WidgetTester tester) async {
-    await tester.pumpWidget(const MoneyTrackerApp());
+  testWidgets('renders app shell with compact navigation', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
-    expect(find.text('Money Tracker'), findsOneWidget);
+    await tester.pumpWidget(const MoneyTrackerApp(themeMode: ThemeMode.light));
+    await tester.pumpAndSettle();
+
     expect(
-      find.text('Mobile shell is ready for Phase 1 feature slices.'),
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.text('Wednesday plan'),
+      ),
       findsOneWidget,
     );
+    expect(find.text('Forecast confidence'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(NavigationRail), findsNothing);
   });
 }
