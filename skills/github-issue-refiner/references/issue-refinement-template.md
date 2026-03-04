@@ -40,15 +40,25 @@
 - Implementation blocked until selected: Yes/No
 
 ## 9. Acceptance Criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
+- [ ] AC-1:
+- [ ] AC-2:
+- [ ] AC-3:
 
 ## 10. Test Plan
-- Unit:
-- Integration:
-- E2E:
-- Non-functional:
+- Required Test Matrix (group by type; list scenario-exact tests, not just broad categories):
+  - Fields required per test:
+    - Test ID
+    - Mapped AC (`AC-<n>`)
+    - Scenario
+    - Expected assertion
+    - Suggested path/module
+    - New or existing test
+  - Unit:
+  - Component:
+  - Integration:
+  - E2E:
+  - Non-functional:
+- Manual-only ACs (if any): justify why automation is not feasible yet.
 
 ## 11. Rollout and Monitoring
 - Feature flags:
@@ -63,3 +73,6 @@
 - Upstream:
 - External:
 - Sequencing notes:
+
+## 14. Open Questions (Optional)
+- Include only unresolved, high-impact decisions that block or materially change implementation.

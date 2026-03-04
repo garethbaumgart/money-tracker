@@ -18,8 +18,9 @@ Produce a result that lets an engineer execute with minimal follow-up decisions.
 4. Apply UX exploration gate criteria from `references/ux-exploration-gate.md`.
 5. If UX gate is triggered, require `ux-mockup-explorer` output before implementation.
 6. Rewrite the issue as a decision-complete spec.
-7. Add explicit assumptions where facts are missing.
-8. Flag risks, dependencies, and rollout concerns.
+7. Write acceptance criteria as `AC-<n>` and map each AC to required tests.
+8. Add explicit assumptions where facts are missing.
+9. Flag risks, dependencies, and rollout concerns.
 
 ## Output Contract
 
@@ -27,16 +28,18 @@ Produce these sections in order:
 
 1. Problem statement
 2. Goals and non-goals
-3. In scope and out of scope
+3. Scope (in scope and out of scope)
 4. Current behavior
 5. Proposed behavior
-6. Technical approach
-7. API or schema changes (if any)
+6. Technical plan
+7. API or schema contract changes (if any)
 8. UX exploration requirement (required/not required + reason)
-9. Test plan
-10. Rollout and monitoring
-11. Risks and mitigations
-12. Open questions (only if unresolved and high impact)
+9. Acceptance criteria
+10. Test plan (required test matrix grouped by type)
+11. Rollout and monitoring
+12. Risks and mitigations
+13. Dependencies
+14. Open questions (only if unresolved and high impact)
 
 ## Quality Rules
 
@@ -46,6 +49,11 @@ Produce these sections in order:
 4. Avoid shipping unresolved product decisions to implementation.
 5. Keep output concise and executable.
 6. If UX exploration is required, block implementation until selected option is recorded.
+7. Acceptance criteria must be uniquely labeled (`AC-1`, `AC-2`, ...).
+8. Test plan must include a required test matrix grouped by `Unit`, `Component`, `Integration`, `E2E`, and `Non-functional`.
+9. Each test matrix row must include: test ID, mapped AC, scenario, expected assertion, suggested path/module, and whether the test is new or existing.
+10. Every AC must map to at least one automated test, or explicitly state why it is manual-only.
+11. Include at least one negative-path test for each behavior-changing AC unless not applicable, with reason.
 
 ## Scope Splitting Rules
 
