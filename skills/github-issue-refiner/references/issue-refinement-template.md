@@ -59,6 +59,8 @@
   - E2E:
   - Non-functional:
 - Manual-only ACs (if any): justify why automation is not feasible yet.
+- Non-functional/exploratory AC handling:
+  - If strict 1:1 automation or a negative-path test is not meaningful, mark N/A with rationale and define a measurable verification probe/check.
 
 ## 11. Rollout and Monitoring
 - Feature flags:

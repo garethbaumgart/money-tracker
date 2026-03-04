@@ -26,20 +26,20 @@ Produce a result that lets an engineer execute with minimal follow-up decisions.
 
 Produce these sections in order:
 
-1. Problem statement
-2. Goals and non-goals
-3. Scope (in scope and out of scope)
-4. Current behavior
-5. Proposed behavior
-6. Technical plan
-7. API or schema contract changes (if any)
-8. UX exploration requirement (required/not required + reason)
-9. Acceptance criteria
-10. Test plan (required test matrix grouped by type)
-11. Rollout and monitoring
-12. Risks and mitigations
+1. Problem Statement
+2. Goals and Non-Goals
+3. Scope
+4. Current Behavior
+5. Proposed Behavior
+6. Technical Plan
+7. API/Schema Contract Changes (if any)
+8. UX Exploration Requirement (required/not required + reason)
+9. Acceptance Criteria
+10. Test Plan (required test matrix grouped by type)
+11. Rollout and Monitoring
+12. Risks and Mitigations
 13. Dependencies
-14. Open questions (only if unresolved and high impact)
+14. Open Questions (optional; only if unresolved and high impact)
 
 ## Quality Rules
 
@@ -54,6 +54,8 @@ Produce these sections in order:
 9. Each test matrix row must include: test ID, mapped AC, scenario, expected assertion, suggested path/module, and whether the test is new or existing.
 10. Every AC must map to at least one automated test, or explicitly state why it is manual-only.
 11. Include at least one negative-path test for each behavior-changing AC unless not applicable, with reason.
+12. Use exact section headings and numbering from `references/issue-refinement-template.md` so output can be validated mechanically.
+13. For non-functional or exploratory ACs where direct 1:1 automation or negative-path tests are not meaningful, include a measurable verification probe/check and explicit rationale.
 
 ## Scope Splitting Rules
 
