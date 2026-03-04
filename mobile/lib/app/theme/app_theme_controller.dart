@@ -24,7 +24,11 @@ class AppThemeController extends ChangeNotifier {
 
     _mode = mode;
     notifyListeners();
-    await _preferencesGateway.save(mode);
+    try {
+      await _preferencesGateway.save(mode);
+    } catch (_) {
+      // Keep the in-memory mode applied even if persistence is temporarily unavailable.
+    }
   }
 }
 
