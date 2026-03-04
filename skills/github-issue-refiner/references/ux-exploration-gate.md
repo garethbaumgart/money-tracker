@@ -22,5 +22,14 @@ UX exploration is usually `not required` when:
 1. Run `ux-mockup-explorer`.
 2. Create a decision pack under:
 - `docs/ux-mockups/<issue-id>-<slug>/`
-3. Ensure `decision.md` exists with recommendation.
-4. Block implementation until `selected.txt` contains the chosen option.
+3. Ensure the pack contains:
+- `tokens.css`
+- `option-a/index.html`
+- `option-b/index.html`
+- `option-c/index.html`
+- `option-d/index.html`
+- `option-e/index.html`
+- `decision.md` with recommendation.
+4. Include `selected.txt` (created after decision; may be absent before decision).
+5. After decision, block implementation until `selected.txt` contains the chosen option.
+6. Ensure the selected option ID is referenced in the refined issue.
