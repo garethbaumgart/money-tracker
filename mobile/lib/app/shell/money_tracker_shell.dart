@@ -170,57 +170,72 @@ class _HomeDashboard extends StatelessWidget {
             children: [
               _TopSummaryCard(tokens: tokens),
               SizedBox(height: tokens.space4),
-              if (showSplitOverview)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(flex: 3, child: _ForecastCard(tokens: tokens)),
-                    SizedBox(width: tokens.space3),
-                    Expanded(
-                      flex: 2,
-                      child: _PriorityChecklistCard(tokens: tokens),
-                    ),
-                  ],
-                )
-              else ...[
-                _ForecastCard(tokens: tokens),
-                SizedBox(height: tokens.space3),
-                _PriorityChecklistCard(tokens: tokens),
-              ],
+              _ResponsivePair(
+                showSplitOverview: showSplitOverview,
+                tokens: tokens,
+                leftFlex: 3,
+                rightFlex: 2,
+                left: _ForecastCard(tokens: tokens),
+                right: _PriorityChecklistCard(tokens: tokens),
+              ),
               SizedBox(height: tokens.space3),
-              if (showSplitOverview)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: _RecentActivityCard(tokens: tokens)),
-                    SizedBox(width: tokens.space3),
-                    Expanded(child: _UiStatesCard(tokens: tokens)),
-                  ],
-                )
-              else ...[
-                _RecentActivityCard(tokens: tokens),
-                SizedBox(height: tokens.space3),
-                _UiStatesCard(tokens: tokens),
-              ],
+              _ResponsivePair(
+                showSplitOverview: showSplitOverview,
+                tokens: tokens,
+                left: _RecentActivityCard(tokens: tokens),
+                right: _UiStatesCard(tokens: tokens),
+              ),
               SizedBox(height: tokens.space3),
-              if (showSplitOverview)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: _ResponsiveRuleCard(tokens: tokens)),
-                    SizedBox(width: tokens.space3),
-                    Expanded(child: _AccessibilityCard(tokens: tokens)),
-                  ],
-                )
-              else ...[
-                _ResponsiveRuleCard(tokens: tokens),
-                SizedBox(height: tokens.space3),
-                _AccessibilityCard(tokens: tokens),
-              ],
+              _ResponsivePair(
+                showSplitOverview: showSplitOverview,
+                tokens: tokens,
+                left: _ResponsiveRuleCard(tokens: tokens),
+                right: _AccessibilityCard(tokens: tokens),
+              ),
             ],
           ),
         );
       },
+    );
+  }
+}
+
+class _ResponsivePair extends StatelessWidget {
+  const _ResponsivePair({
+    required this.showSplitOverview,
+    required this.tokens,
+    required this.left,
+    required this.right,
+    this.leftFlex = 1,
+    this.rightFlex = 1,
+  });
+
+  final bool showSplitOverview;
+  final AppThemeTokens tokens;
+  final Widget left;
+  final Widget right;
+  final int leftFlex;
+  final int rightFlex;
+
+  @override
+  Widget build(BuildContext context) {
+    if (showSplitOverview) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(flex: leftFlex, child: left),
+          SizedBox(width: tokens.space3),
+          Expanded(flex: rightFlex, child: right),
+        ],
+      );
+    }
+
+    return Column(
+      children: [
+        left,
+        SizedBox(height: tokens.space3),
+        right,
+      ],
     );
   }
 }

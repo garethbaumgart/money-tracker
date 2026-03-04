@@ -5,6 +5,27 @@ import 'app_theme_tokens.dart';
 final class AppComponentThemes {
   AppComponentThemes._();
 
+  static TextStyle _navigationLabelStyle(
+    bool isSelected,
+    ColorScheme scheme,
+    AppThemeTokens tokens,
+  ) {
+    return TextStyle(
+      color: isSelected ? scheme.primary : tokens.contentSecondary,
+      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+    );
+  }
+
+  static IconThemeData _navigationIconTheme(
+    bool isSelected,
+    ColorScheme scheme,
+    AppThemeTokens tokens,
+  ) {
+    return IconThemeData(
+      color: isSelected ? scheme.primary : tokens.contentSecondary,
+    );
+  }
+
   static FilledButtonThemeData filledButtons(
     ColorScheme scheme,
     AppThemeTokens tokens,
@@ -117,18 +138,11 @@ final class AppComponentThemes {
       indicatorColor: Color.lerp(tokens.surfaceElevated, scheme.primary, 0.20),
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         final isSelected = states.contains(WidgetState.selected);
-
-        return TextStyle(
-          color: isSelected ? scheme.primary : tokens.contentSecondary,
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-        );
+        return _navigationLabelStyle(isSelected, scheme, tokens);
       }),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         final isSelected = states.contains(WidgetState.selected);
-
-        return IconThemeData(
-          color: isSelected ? scheme.primary : tokens.contentSecondary,
-        );
+        return _navigationIconTheme(isSelected, scheme, tokens);
       }),
     );
   }
@@ -140,16 +154,10 @@ final class AppComponentThemes {
     return NavigationRailThemeData(
       backgroundColor: tokens.surfaceElevated,
       indicatorColor: Color.lerp(tokens.surfaceElevated, scheme.primary, 0.20),
-      selectedLabelTextStyle: TextStyle(
-        color: scheme.primary,
-        fontWeight: FontWeight.w600,
-      ),
-      unselectedLabelTextStyle: TextStyle(
-        color: tokens.contentSecondary,
-        fontWeight: FontWeight.w500,
-      ),
-      selectedIconTheme: IconThemeData(color: scheme.primary),
-      unselectedIconTheme: IconThemeData(color: tokens.contentSecondary),
+      selectedLabelTextStyle: _navigationLabelStyle(true, scheme, tokens),
+      unselectedLabelTextStyle: _navigationLabelStyle(false, scheme, tokens),
+      selectedIconTheme: _navigationIconTheme(true, scheme, tokens),
+      unselectedIconTheme: _navigationIconTheme(false, scheme, tokens),
     );
   }
 }
