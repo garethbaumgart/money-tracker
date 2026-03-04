@@ -9,6 +9,7 @@ val appNamespace = providers.gradleProperty("app.namespace").getOrElse("com.mone
 val appApplicationId = providers.gradleProperty("app.applicationId").getOrElse(appNamespace)
 val mainActivityClass = providers.gradleProperty("app.mainActivityClass")
     .getOrElse("com.moneytracker.app.MainActivity")
+val isCi = providers.environmentVariable("CI").orNull?.equals("true", ignoreCase = true) == true
 
 android {
     namespace = appNamespace
@@ -37,6 +38,11 @@ android {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
+            if (isCi) {
+                throw org.gradle.api.GradleException(
+                    "Release signing is not configured. Refusing CI release build with debug signing."
+                )
+            }
             signingConfig = signingConfigs.getByName("debug")
         }
     }

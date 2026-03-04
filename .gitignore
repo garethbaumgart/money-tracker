@@ -1,5 +1,34 @@
 # OS/editor
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.vs/
+*.suo
+*.user
+*.swp
+
+# Environment
+.env
+.env.*
+
+# Node
+node_modules/
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Logs/temp
+*.log
+*.tmp
+
+# Build artifacts
+coverage/
+dist/
+/build/
 
 # .NET build artifacts
 **/bin/
