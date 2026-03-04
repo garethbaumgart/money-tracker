@@ -35,13 +35,13 @@ If merge-ready is not reached in the current turn, report exact blocking state a
 
 ### Pre-Final Verification (Fail Closed)
 
-Before sending a final completion message, run a verification check against the live PR state. If any required metric is missing, stale, or cannot be computed from the current head commit, the task is **not complete**.
+Before concluding the PR task as complete, run a verification check against the live PR state. If any required metric is missing, stale, or cannot be computed from the current head commit, the task is **not complete**.
 
 Required metrics:
 - PR URL
 - Unresolved actionable comment count
 - Pending required checks count
-- Last AI-reviewer comment timestamp
+- Last AI-reviewer comment timestamp (used to verify the AI-reviewer quiet window has elapsed)
 - Merge-ready boolean (`true` only when all gate conditions are satisfied)
 
 Rules:
@@ -65,7 +65,8 @@ Emit the verification block as a fenced `json` object with these exact keys:
 
 Rules:
 - If a value cannot be computed, use `null` and treat the PR as not merge-ready.
-- Do not rename keys or change scalar types.
+- Nullable key contract: `last_ai_reviewer_comment_timestamp` may be `null` or an ISO-8601 string.
+- Do not rename keys. For non-null values, preserve the documented scalar types exactly.
 
 ### Last AI Reviewer Timestamp (Canonical)
 
@@ -118,16 +119,16 @@ Use the `Round Completion Heuristic` (from `references/review-loop-commands.md`)
 - All checks are complete (no pending required checks).
 - No new actionable comments (from any reviewer, human or AI) for at least `QUIET_POLL_INTERVALS` poll intervals.
 - At least one signal from expected reviewers (required human reviewers and/or configured AI reviewers) on current head commit when possible.
-3. Build unresolved comment queue from review comments, issue comments, and PR review summaries.
-4. Classify comments using `Comment Classification (Canonical)` before acting.
-5. For each unresolved actionable comment:
+1. Build unresolved comment queue from review comments, issue comments, and PR review summaries.
+2. Classify comments using `Comment Classification (Canonical)` before acting.
+3. For each unresolved actionable comment:
 - Add a thumbs-up reaction first.
 - Then either fix in code or reply with a technical rebuttal.
-6. Never use "push to later feature" as the reason to skip a valid fix.
-7. If rejecting a comment, provide specific evidence: incorrect assumption, constraint conflict, duplicate, or already addressed.
-8. Push updates, post round summary, and request re-review.
-9. Sleep `POLL_SECONDS` seconds and re-poll.
-10. Repeat until run completion gate is satisfied.
+4. Never use "push to later feature" as the reason to skip a valid fix.
+5. If rejecting a comment, provide specific evidence: incorrect assumption, constraint conflict, duplicate, or already addressed.
+6. Push updates, post round summary, and request re-review.
+7. Sleep `POLL_SECONDS` seconds and re-poll.
+8. Repeat until run completion gate is satisfied.
 
 Multiple rounds per PR are normal and expected.
 
@@ -147,7 +148,21 @@ Output these sections:
 10. Merge readiness status
 11. Verification block (required metrics listed in Pre-Final Verification)
 
-The verification block must use the required fenced `json` schema from `Verification Block Format (Required)`.
+The verification block must be a fenced `json` block and must follow `Verification Block Format (Required)`.
+
+Example output section:
+
+Section header: `## Verification`
+
+```json
+{
+  "pr_url": "https://github.com/<owner>/<repo>/pull/<n>",
+  "unresolved_actionable_comments": 0,
+  "pending_required_checks": 0,
+  "last_ai_reviewer_comment_timestamp": "2026-03-04T09:32:57Z",
+  "merge_ready": true
+}
+```
 
 `Merge readiness status` and the `Verification block` must agree. If they disagree, treat as not merge-ready and continue the loop.
 
