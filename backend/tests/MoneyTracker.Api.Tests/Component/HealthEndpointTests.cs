@@ -17,6 +17,7 @@ public sealed class HealthEndpointTests : IClassFixture<MoneyTrackerApiFactory>
         using var response = await client.GetAsync("/health");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
         var payload = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
         Assert.NotNull(payload);
         Assert.Single(payload!);
