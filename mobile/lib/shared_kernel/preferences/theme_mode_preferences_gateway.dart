@@ -2,6 +2,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/theme/app_theme_mode.dart';
 
+typedef SharedPreferencesProvider = Future<SharedPreferences> Function();
+
 abstract interface class ThemeModePreferencesGateway {
   Future<AppThemeMode> load();
 
@@ -12,22 +14,34 @@ final class SharedPreferencesThemeModePreferencesGateway
     implements ThemeModePreferencesGateway {
   SharedPreferencesThemeModePreferencesGateway({
     AppThemeModeResolver resolver = const AppThemeModeResolver(),
-  }) : _resolver = resolver;
+    SharedPreferencesProvider preferencesProvider =
+        SharedPreferences.getInstance,
+  }) : _resolver = resolver,
+       _preferencesProvider = preferencesProvider;
 
   static const _themeModeKey = 'settings.theme_mode';
 
   final AppThemeModeResolver _resolver;
+  final SharedPreferencesProvider _preferencesProvider;
 
   @override
   Future<AppThemeMode> load() async {
-    final preferences = await SharedPreferences.getInstance();
-    return _resolver.resolve(preferences.getString(_themeModeKey));
+    try {
+      final preferences = await _preferencesProvider();
+      return _resolver.resolve(preferences.getString(_themeModeKey));
+    } catch (_) {
+      return AppThemeMode.system;
+    }
   }
 
   @override
   Future<void> save(AppThemeMode mode) async {
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setString(_themeModeKey, mode.storageValue);
+    try {
+      final preferences = await _preferencesProvider();
+      await preferences.setString(_themeModeKey, mode.storageValue);
+    } catch (_) {
+      // Persist failure is tolerated because mode remains applied in memory.
+    }
   }
 }
 
