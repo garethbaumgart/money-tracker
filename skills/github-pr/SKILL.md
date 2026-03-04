@@ -20,21 +20,52 @@ Focus on behavior, risk, verification evidence, and deterministic comment resolu
 6. Open or update PR.
 7. Run review loop until merge readiness criteria are met.
 
+## Review Parameters
+
+1. Poll interval: `POLL_SECONDS` (default `300`).
+2. Quiet window interval count: `QUIET_POLL_INTERVALS` (default `2`).
+3. Quiet window duration is `POLL_SECONDS * QUIET_POLL_INTERVALS`.
+
+## Comment Classification (Canonical)
+
+1. Actionable comments:
+- Inline review comments and concrete issue comments requesting code or documentation changes.
+2. Non-actionable comments:
+- "review in progress", rate-limit notices, summaries/walkthroughs, ads/tips, and informational status updates.
+3. If a status-style comment includes a concrete requested change, treat it as actionable.
+
+## Run Completion Gate
+
+Do not end the skill run while either condition is true:
+
+1. Any review/check is still in progress (for example, CodeRabbit pending, Sourcery in progress, required checks pending).
+2. Any actionable comment remains unresolved.
+
+Only end the run when all are true:
+
+1. All review and check statuses have completed.
+2. All actionable comments have been resolved.
+3. No new actionable comments have appeared for at least `QUIET_POLL_INTERVALS` poll intervals.
+
+Use the `Round Completion Heuristic` (from `references/review-loop-commands.md`) to determine when one review round has ended. Then apply this `Run Completion Gate` to decide whether to start another round or end the full skill run.
+
 ## Review Loop Protocol
 
-1. Poll PR state for new reviews/comments and check results.
+1. Poll PR state for new reviews/comments and check results every `POLL_SECONDS` seconds.
 2. Detect end of current round with this heuristic:
 - All checks are complete (no pending required checks).
-- No new AI-reviewer comments for a quiet window (default: 10 minutes).
-- At least one signal from expected AI reviewers on current head commit when possible.
+- No new actionable comments (from any reviewer, human or AI) for at least `QUIET_POLL_INTERVALS` poll intervals.
+- At least one signal from expected reviewers (required human reviewers and/or configured AI reviewers) on current head commit when possible.
 3. Build unresolved comment queue from review comments and issue comments.
-4. For each unresolved comment:
+4. Classify comments using `Comment Classification (Canonical)` before acting.
+5. For each unresolved actionable comment:
 - Add a thumbs-up reaction first.
 - Then either fix in code or reply with a technical rebuttal.
-5. Never use "push to later feature" as the reason to skip a valid fix.
-6. If rejecting a comment, provide specific evidence: incorrect assumption, constraint conflict, duplicate, or already addressed.
-7. Push updates, post round summary, and request re-review.
-8. Repeat until no unresolved actionable comments remain.
+6. Never use "push to later feature" as the reason to skip a valid fix.
+7. If rejecting a comment, provide specific evidence: incorrect assumption, constraint conflict, duplicate, or already addressed.
+8. Push updates, post round summary, and request re-review.
+9. Sleep `POLL_SECONDS` seconds and re-poll.
+10. Repeat until run completion gate is satisfied.
 
 Multiple rounds per PR are normal and expected.
 
