@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme_controller.dart';
+import '../theme/app_theme_mode.dart';
 import '../theme/app_theme_tokens.dart';
 
 const double _shellExpandedBreakpoint = 980.0;
@@ -22,6 +26,7 @@ class _MoneyTrackerShellState extends State<MoneyTrackerShell> {
     _ShellDestination.budgets,
     _ShellDestination.activity,
     _ShellDestination.household,
+    _ShellDestination.settings,
   ];
 
   var _selectedIndex = 0;
@@ -115,6 +120,9 @@ class _ShellBody extends StatelessWidget {
     if (destination == _ShellDestination.home) {
       return const _HomeDashboard();
     }
+    if (destination == _ShellDestination.settings) {
+      return const _SettingsView();
+    }
 
     final tokens = AppThemeTokens.of(context);
 
@@ -142,6 +150,73 @@ class _ShellBody extends StatelessWidget {
                 onPressed: () {},
                 icon: const Icon(Icons.open_in_new),
                 label: const Text('Explore roadmap'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsView extends StatelessWidget {
+  const _SettingsView();
+
+  @override
+  Widget build(BuildContext context) {
+    final themeController = AppThemeControllerScope.of(context);
+    final tokens = AppThemeTokens.of(context);
+    final currentMode = themeController.mode;
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(tokens.space4),
+      child: Card(
+        child: Padding(
+          padding: EdgeInsets.all(tokens.space4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Settings',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              SizedBox(height: tokens.space2),
+              Text('Theme', style: Theme.of(context).textTheme.titleMedium),
+              SizedBox(height: tokens.space1),
+              Text(
+                'Choose how the app appearance is resolved.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: tokens.contentSecondary,
+                ),
+              ),
+              SizedBox(height: tokens.space3),
+              SegmentedButton<AppThemeMode>(
+                showSelectedIcon: false,
+                segments: AppThemeMode.values
+                    .map(
+                      (mode) => ButtonSegment<AppThemeMode>(
+                        value: mode,
+                        label: Text(mode.label),
+                      ),
+                    )
+                    .toList(growable: false),
+                selected: <AppThemeMode>{currentMode},
+                onSelectionChanged: (selection) {
+                  final selectedMode = selection.first;
+                  unawaited(themeController.setMode(selectedMode));
+                },
+              ),
+              SizedBox(height: tokens.space2),
+              Text(
+                switch (currentMode) {
+                  AppThemeMode.system =>
+                    'Following your device light/dark preference.',
+                  AppThemeMode.light => 'Light mode is forced for this app.',
+                  AppThemeMode.dark => 'Dark mode is forced for this app.',
+                },
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: tokens.contentMuted),
               ),
             ],
           ),
@@ -819,6 +894,11 @@ enum _ShellDestination {
     label: 'Household',
     icon: Icons.people_outline,
     selectedIcon: Icons.people,
+  ),
+  settings(
+    label: 'Settings',
+    icon: Icons.settings_outlined,
+    selectedIcon: Icons.settings,
   );
 
   const _ShellDestination({
