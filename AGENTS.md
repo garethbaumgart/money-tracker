@@ -16,6 +16,7 @@ A skill is a set of local instructions stored in a `SKILL.md` file.
 - For any Flutter UI or theming task, default to `flutter-ux-theming` unless the user explicitly asks for a different approach.
 - For any backend/API implementation or refactor task, default to `backend-ddd-vertical-slice` unless the user explicitly asks for a different approach.
 - If multiple skills apply, use the minimal set and apply them in sequence.
+- For implementation + PR tasks, prefer explicit completion prompts such as: `Implement issue #<n>, open PR, then continue review rounds until required checks pass and actionable comments are resolved (or I say stop).`
 - Read only the needed sections/files from each skill to keep context lean.
 - Prefer bundled `scripts/` and `references/` inside skills over rewriting the same workflow repeatedly.
 - If a skill path is missing or unreadable, continue with a direct fallback workflow and note the gap.
