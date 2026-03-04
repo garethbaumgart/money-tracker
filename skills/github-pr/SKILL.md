@@ -33,6 +33,22 @@ A PR task is not complete until one of these is true:
 
 If merge-ready is not reached in the current turn, report exact blocking state and continue the loop on next request.
 
+### Pre-Final Verification (Fail Closed)
+
+Before sending a final completion message, run a verification check against the live PR state. If any required metric is missing, stale, or cannot be computed from the current head commit, the task is **not complete**.
+
+Required metrics:
+- PR URL
+- Unresolved actionable comment count
+- Pending required checks count
+- Last AI-reviewer comment timestamp
+- Merge-ready boolean (`true` only when all gate conditions are satisfied)
+
+Rules:
+- Do not claim completion if any required metric is omitted.
+- Do not claim completion using cached values after a new push/review event; repoll first.
+- Treat missing or ambiguous review/check data as blocking and continue the loop.
+
 ## Review Loop Protocol
 
 1. Poll PR state for new reviews/comments and check results.
@@ -65,6 +81,9 @@ Output these sections:
 8. Reviewer focus points
 9. Review round log (comment URL -> action taken)
 10. Merge readiness status
+11. Verification block (required metrics listed in Pre-Final Verification)
+
+`Merge readiness status` and the `Verification block` must agree. If they disagree, treat as not merge-ready and continue the loop.
 
 ## Quality Rules
 
