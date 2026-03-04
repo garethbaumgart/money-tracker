@@ -78,7 +78,7 @@ final class AppComponentThemes {
     );
   }
 
-  static CardThemeData cards(ColorScheme scheme, AppThemeTokens tokens) {
+  static CardThemeData cards(ColorScheme _, AppThemeTokens tokens) {
     return CardThemeData(
       color: tokens.surfaceElevated,
       elevation: 0,
@@ -130,6 +130,26 @@ final class AppComponentThemes {
           color: isSelected ? scheme.primary : tokens.contentSecondary,
         );
       }),
+    );
+  }
+
+  static NavigationRailThemeData navigationRail(
+    ColorScheme scheme,
+    AppThemeTokens tokens,
+  ) {
+    return NavigationRailThemeData(
+      backgroundColor: tokens.surfaceElevated,
+      indicatorColor: Color.lerp(tokens.surfaceElevated, scheme.primary, 0.20),
+      selectedLabelTextStyle: TextStyle(
+        color: scheme.primary,
+        fontWeight: FontWeight.w600,
+      ),
+      unselectedLabelTextStyle: TextStyle(
+        color: tokens.contentSecondary,
+        fontWeight: FontWeight.w500,
+      ),
+      selectedIconTheme: IconThemeData(color: scheme.primary),
+      unselectedIconTheme: IconThemeData(color: tokens.contentSecondary),
     );
   }
 }

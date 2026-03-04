@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme_tokens.dart';
 
+const double _shellExpandedBreakpoint = 980.0;
+const double _dashboardSplitBreakpoint = 900.0;
+const double _summaryCompactBreakpoint = 560.0;
+const double _metricsStackedBreakpoint = 420.0;
+
 class MoneyTrackerShell extends StatefulWidget {
   const MoneyTrackerShell({super.key});
 
@@ -35,7 +40,8 @@ class _MoneyTrackerShellState extends State<MoneyTrackerShell> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isExpandedShell = constraints.maxWidth >= 980;
+        final isExpandedShell =
+            constraints.maxWidth >= _shellExpandedBreakpoint;
 
         return Scaffold(
           appBar: AppBar(
@@ -70,10 +76,14 @@ class _MoneyTrackerShellState extends State<MoneyTrackerShell> {
                           .toList(growable: false),
                     ),
                     const VerticalDivider(width: 1),
-                    Expanded(child: _ShellBody(selectedIndex: _selectedIndex)),
+                    Expanded(
+                      child: _ShellBody(
+                        destination: _destinations[_selectedIndex],
+                      ),
+                    ),
                   ],
                 )
-              : _ShellBody(selectedIndex: _selectedIndex),
+              : _ShellBody(destination: _destinations[_selectedIndex]),
           bottomNavigationBar: isExpandedShell
               ? null
               : NavigationBar(
@@ -96,17 +106,16 @@ class _MoneyTrackerShellState extends State<MoneyTrackerShell> {
 }
 
 class _ShellBody extends StatelessWidget {
-  const _ShellBody({required this.selectedIndex});
+  const _ShellBody({required this.destination});
 
-  final int selectedIndex;
+  final _ShellDestination destination;
 
   @override
   Widget build(BuildContext context) {
-    if (selectedIndex == 0) {
+    if (destination == _ShellDestination.home) {
       return const _HomeDashboard();
     }
 
-    final destination = _ShellDestination.values[selectedIndex];
     final tokens = AppThemeTokens.of(context);
 
     return Padding(
@@ -151,7 +160,8 @@ class _HomeDashboard extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final showSplitOverview = constraints.maxWidth >= 900;
+        final showSplitOverview =
+            constraints.maxWidth >= _dashboardSplitBreakpoint;
 
         return SingleChildScrollView(
           padding: EdgeInsets.all(tokens.space4),
@@ -228,7 +238,7 @@ class _TopSummaryCard extends StatelessWidget {
         color: tokens.surfaceMuted,
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final compact = constraints.maxWidth < 560;
+            final compact = constraints.maxWidth < _summaryCompactBreakpoint;
 
             final header = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -356,7 +366,7 @@ class _MetricRow extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final stacked = constraints.maxWidth < 420;
+        final stacked = constraints.maxWidth < _metricsStackedBreakpoint;
 
         if (stacked) {
           return Column(

@@ -6,7 +6,7 @@ import 'package:money_tracker/app/theme/app_theme_tokens.dart';
 void main() {
   group('AppThemeTokens', () {
     test('copyWith overrides selected values only', () {
-      final base = AppThemeTokens.fromColorScheme(const ColorScheme.light());
+      final base = AppThemeTokens.fromBrightness(Brightness.light);
 
       final updated = base.copyWith(contentPrimary: Colors.pink, space4: 42);
 
@@ -17,14 +17,20 @@ void main() {
     });
 
     test('lerp interpolates token values', () {
-      final light = AppThemeTokens.fromColorScheme(const ColorScheme.light());
-      final dark = AppThemeTokens.fromColorScheme(const ColorScheme.dark());
+      final light = AppThemeTokens.fromBrightness(Brightness.light);
+      final dark = AppThemeTokens.fromBrightness(Brightness.dark);
 
       final midpoint = light.lerp(dark, 0.5);
+      final atStart = light.lerp(dark, 0.0);
+      final atEnd = light.lerp(dark, 1.0);
 
       expect(midpoint.space4, closeTo((light.space4 + dark.space4) / 2, 0.001));
       expect(midpoint.contentPrimary, isNot(light.contentPrimary));
       expect(midpoint.contentPrimary, isNot(dark.contentPrimary));
+      expect(atStart.space4, closeTo(light.space4, 0.001));
+      expect(atStart.contentPrimary, equals(light.contentPrimary));
+      expect(atEnd.space4, closeTo(dark.space4, 0.001));
+      expect(atEnd.contentPrimary, equals(dark.contentPrimary));
     });
   });
 }

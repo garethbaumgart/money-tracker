@@ -26,8 +26,8 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     required this.radiusLarge,
   });
 
-  factory AppThemeTokens.fromColorScheme(ColorScheme scheme) {
-    final isDark = scheme.brightness == Brightness.dark;
+  factory AppThemeTokens.fromBrightness(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
 
     return AppThemeTokens(
       background: isDark ? const Color(0xFF0B111B) : const Color(0xFFEEF3FB),

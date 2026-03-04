@@ -11,7 +11,7 @@ final class MoneyTrackerTheme {
   static ThemeData dark() => _buildTheme(_darkScheme);
 
   static ThemeData _buildTheme(ColorScheme scheme) {
-    final tokens = AppThemeTokens.fromColorScheme(scheme);
+    final tokens = AppThemeTokens.fromBrightness(scheme.brightness);
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
@@ -31,6 +31,7 @@ final class MoneyTrackerTheme {
       cardTheme: AppComponentThemes.cards(scheme, tokens),
       appBarTheme: AppComponentThemes.appBar(scheme, tokens),
       navigationBarTheme: AppComponentThemes.navigationBar(scheme, tokens),
+      navigationRailTheme: AppComponentThemes.navigationRail(scheme, tokens),
       extensions: <ThemeExtension<dynamic>>[tokens],
     );
   }
