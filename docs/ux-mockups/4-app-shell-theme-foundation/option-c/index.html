@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Option C - Timeline Journal</title>
+    <link rel="stylesheet" href="../tokens.css">
+    <style>
+      .option-c-layout {
+        display: grid;
+        gap: var(--space-4);
+      }
+
+      .header-strip {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: linear-gradient(
+          120deg,
+          color-mix(in srgb, var(--color-primary) 18%, var(--color-surface)) 0%,
+          var(--color-surface) 55%
+        );
+        padding: var(--space-4);
+      }
+
+      .timeline {
+        display: grid;
+        gap: var(--space-3);
+      }
+
+      .day-block {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface-elevated);
+        padding: var(--space-3);
+      }
+
+      .day-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+
+      .summary-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-2);
+      }
+
+      .inline-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+      }
+
+      @media (max-width: 900px) {
+        .summary-row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="canvas">
+      <section class="mock-shell">
+        <header class="mock-header">
+          <h1>Option C: Timeline Journal</h1>
+          <p>Activity-first shell where actions and context come from a financial timeline view.</p>
+        </header>
+
+        <div class="view option-c-layout">
+          <section class="header-strip">
+            <p class="kicker">Northside Household</p>
+            <h2 style="margin: 0.25rem 0 0;">March spending journal</h2>
+            <p style="margin-top: var(--space-2); color: var(--color-content-secondary);">Use the timeline to categorize, split, and review unusual movement quickly.</p>
+            <div class="summary-row" style="margin-top: var(--space-3);">
+              <div class="metric"><div class="label">Inflow this week</div><div class="value">$2,520</div></div>
+              <div class="metric"><div class="label">Outflow this week</div><div class="value">$486</div></div>
+              <div class="metric"><div class="label">Uncategorized</div><div class="value">4</div></div>
+            </div>
+          </section>
+
+          <section class="timeline">
+            <article class="day-block">
+              <div class="day-head">
+                <h3 style="margin: 0;">Today</h3>
+                <span class="badge warning">2 follow-ups</span>
+              </div>
+              <ul class="feed">
+                <li><span>Coffee and Grocer Co.</span><strong>-$18.40</strong></li>
+                <li><span>Uber Trip</span><strong>-$26.30</strong></li>
+              </ul>
+              <div class="inline-actions" style="margin-top: var(--space-3);">
+                <button class="button primary">Categorize 2 items</button>
+                <button class="button">Split purchase</button>
+              </div>
+            </article>
+
+            <article class="day-block">
+              <div class="day-head">
+                <h3 style="margin: 0;">Yesterday</h3>
+                <span class="badge success">All clear</span>
+              </div>
+              <ul class="feed">
+                <li><span>Salary</span><strong class="badge success">+$2,100</strong></li>
+                <li><span>Rent</span><strong>-$1,200</strong></li>
+              </ul>
+            </article>
+          </section>
+
+          <section class="card">
+            <h3>State previews</h3>
+            <div class="state-grid" style="margin-top: var(--space-3);">
+              <div class="state"><strong>Loading</strong>Loading timeline entries from local cache.</div>
+              <div class="state"><strong>Empty</strong>No transactions for this date range.</div>
+              <div class="state"><strong>Error</strong>Timeline unavailable, retry in 30s.</div>
+            </div>
+            <div class="nav-line" style="margin-top: var(--space-4);">
+              <span class="nav-pill">Overview</span>
+              <span class="nav-pill">Budgets</span>
+              <span class="nav-pill active">Journal</span>
+              <span class="nav-pill">Settings</span>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

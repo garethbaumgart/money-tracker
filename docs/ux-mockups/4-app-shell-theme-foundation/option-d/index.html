@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Option D - Hybrid Shell Candidate</title>
+    <link rel="stylesheet" href="../tokens.css">
+    <style>
+      .option-d-layout {
+        display: grid;
+        gap: var(--space-4);
+      }
+
+      .hero {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        padding: var(--space-4);
+        background:
+          linear-gradient(
+            140deg,
+            color-mix(in srgb, var(--color-primary) 24%, var(--color-surface)) 0%,
+            var(--color-surface) 55%
+          );
+      }
+
+      .hero-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--space-3);
+      }
+
+      .focus-grid {
+        display: grid;
+        gap: var(--space-3);
+        grid-template-columns: 1fr;
+      }
+
+      .focus-stack {
+        display: grid;
+        gap: var(--space-3);
+      }
+
+      @media (min-width: 980px) {
+        .focus-grid {
+          grid-template-columns: 1.2fr 1fr;
+          align-items: start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="canvas">
+      <section class="mock-shell">
+        <header class="mock-header">
+          <h1>Option D: Hybrid Shell Candidate</h1>
+          <p>Balances high-level budget confidence with quick transactional activity.</p>
+        </header>
+
+        <div class="view option-d-layout">
+          <section class="hero">
+            <p class="kicker">Shared budget confidence</p>
+            <div class="hero-row">
+              <div>
+                <h2 style="margin: 0;">You are projected to finish $290 under target.</h2>
+                <p style="margin-top: var(--space-2); color: var(--color-content-secondary);">Household pace is stable across essentials and transport.</p>
+              </div>
+              <span class="badge success">Confidence: 84%</span>
+            </div>
+            <div class="metric-grid" style="margin-top: var(--space-3);">
+              <div class="metric"><div class="label">Projected spend</div><div class="value">$3,210</div></div>
+              <div class="metric"><div class="label">Target</div><div class="value">$3,500</div></div>
+              <div class="metric"><div class="label">Buffer</div><div class="value">$290</div></div>
+            </div>
+          </section>
+
+          <section class="focus-grid">
+            <div class="focus-stack">
+              <article class="card">
+                <h3>Do next</h3>
+                <div class="action-row" style="margin-top: var(--space-3);">
+                  <button class="button primary">Categorize 4 transactions</button>
+                  <button class="button">Review dining budget</button>
+                  <button class="button">Confirm shared transfer</button>
+                </div>
+              </article>
+
+              <article class="card">
+                <h3>System states</h3>
+                <div class="state-grid" style="margin-top: var(--space-3);">
+                  <div class="state"><strong>Loading</strong>Crunching forecast from latest activity.</div>
+                  <div class="state"><strong>Empty</strong>No pending tasks. You are all set.</div>
+                  <div class="state"><strong>Error</strong>Forecast unavailable. Using previous snapshot.</div>
+                </div>
+              </article>
+            </div>
+
+            <article class="card">
+              <h3>Latest activity</h3>
+              <ul class="feed">
+                <li><span>Groceries - Green Market</span><strong>-$97.50</strong></li>
+                <li><span>Fuel - City Servo</span><strong>-$66.10</strong></li>
+                <li><span>Streaming subscription</span><strong class="badge warning">Review</strong></li>
+                <li><span>Interest earned</span><strong class="badge success">+$9.80</strong></li>
+              </ul>
+            </article>
+          </section>
+
+          <div class="nav-line">
+            <span class="nav-pill active">Home</span>
+            <span class="nav-pill">Budgets</span>
+            <span class="nav-pill">Activity</span>
+            <span class="nav-pill">Household</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
