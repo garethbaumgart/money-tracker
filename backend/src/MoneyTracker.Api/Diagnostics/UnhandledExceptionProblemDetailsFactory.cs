@@ -17,7 +17,7 @@ internal static class UnhandledExceptionProblemDetailsFactory
         };
 
         problemDetails.Extensions["code"] = ApiErrorCodes.InternalServerError;
-        problemDetails.Extensions["traceId"] = Activity.Current?.Id ?? httpContext.TraceIdentifier;
+        problemDetails.Extensions["traceId"] = Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier;
 
         return problemDetails;
     }

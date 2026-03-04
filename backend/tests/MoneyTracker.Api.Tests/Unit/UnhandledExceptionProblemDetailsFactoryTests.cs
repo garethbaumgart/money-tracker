@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using MoneyTracker.Api.Diagnostics;
 
@@ -12,6 +13,7 @@ public sealed class UnhandledExceptionProblemDetailsFactoryTests
         var httpContext = new DefaultHttpContext();
         httpContext.TraceIdentifier = "trace-unit-123";
         httpContext.Request.Path = "/transactions";
+        var expectedTraceId = Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier;
 
         var problemDetails = UnhandledExceptionProblemDetailsFactory.Create(httpContext);
 
@@ -26,6 +28,22 @@ public sealed class UnhandledExceptionProblemDetailsFactoryTests
         Assert.True(problemDetails.Extensions.TryGetValue("code", out var code));
         Assert.True(problemDetails.Extensions.TryGetValue("traceId", out var traceId));
         Assert.Equal("internal_server_error", code);
-        Assert.Equal("trace-unit-123", traceId);
+        Assert.Equal(expectedTraceId, traceId);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void Create_UsesCurrentActivityTraceId_WhenPresent()
+    {
+        var httpContext = new DefaultHttpContext();
+        httpContext.TraceIdentifier = "trace-unit-456";
+        httpContext.Request.Path = "/accounts";
+        using var activity = new Activity("unit-test");
+        activity.Start();
+
+        var problemDetails = UnhandledExceptionProblemDetailsFactory.Create(httpContext);
+
+        Assert.True(problemDetails.Extensions.TryGetValue("traceId", out var traceId));
+        Assert.Equal(activity.TraceId.ToString(), traceId);
     }
 }

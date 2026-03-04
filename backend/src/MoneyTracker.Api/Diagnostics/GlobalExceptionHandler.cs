@@ -27,6 +27,15 @@ internal sealed class GlobalExceptionHandler(
             httpContext.Request.Method,
             httpContext.Request.Path);
 
+        if (httpContext.Response.HasStarted)
+        {
+            logger.LogWarning(
+                "Unable to write ProblemDetails because the response has already started for {Method} {Path}",
+                httpContext.Request.Method,
+                httpContext.Request.Path);
+            return false;
+        }
+
         var problemDetails = UnhandledExceptionProblemDetailsFactory.Create(httpContext);
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
