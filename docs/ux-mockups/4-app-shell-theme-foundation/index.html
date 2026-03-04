@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Issue #4 UX Option Review</title>
+    <link rel="stylesheet" href="tokens.css">
+    <style>
+      .review-shell {
+        width: min(1360px, 100%);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        background: var(--color-surface);
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+      }
+
+      .review-head {
+        padding: var(--space-5);
+        border-bottom: 1px solid var(--color-border);
+        background:
+          linear-gradient(
+            120deg,
+            color-mix(in srgb, var(--color-primary) 24%, transparent),
+            transparent 48%
+          ),
+          var(--color-surface-elevated);
+      }
+
+      .review-head h1 {
+        margin: 0;
+        font-size: clamp(1.2rem, 1.2rem + 0.8vw, 1.8rem);
+      }
+
+      .review-head p {
+        margin: var(--space-2) 0 0;
+        max-width: 78ch;
+        color: var(--color-content-secondary);
+      }
+
+      .review-meta {
+        margin-top: var(--space-3);
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+      }
+
+      .meta-pill {
+        border: 1px solid var(--color-border);
+        border-radius: 999px;
+        padding: 0.35rem 0.7rem;
+        background: var(--color-surface);
+        font-size: 0.82rem;
+        color: var(--color-content-secondary);
+      }
+
+      .option-grid {
+        padding: var(--space-5);
+        display: grid;
+        gap: var(--space-4);
+      }
+
+      .option-card {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: var(--color-surface-muted);
+        overflow: hidden;
+      }
+
+      .option-card.recommended {
+        border-color: color-mix(in srgb, var(--color-primary) 44%, var(--color-border));
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 22%, transparent) inset;
+      }
+
+      .option-head {
+        padding: var(--space-3) var(--space-4);
+        border-bottom: 1px solid var(--color-border);
+        background: var(--color-surface-elevated);
+        display: flex;
+        justify-content: space-between;
+        gap: var(--space-3);
+        align-items: flex-start;
+      }
+
+      .option-head h2 {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .option-head p {
+        margin: var(--space-1) 0 0;
+        color: var(--color-content-secondary);
+        font-size: 0.88rem;
+      }
+
+      .option-actions {
+        display: flex;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+      }
+
+      .option-actions a,
+      .chooser button {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        padding: 0.42rem 0.64rem;
+        background: var(--color-surface);
+        color: var(--color-content-primary);
+        text-decoration: none;
+        font-size: 0.82rem;
+        cursor: pointer;
+      }
+
+      .option-actions a:hover,
+      .chooser button:hover {
+        background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+      }
+
+      iframe {
+        width: 100%;
+        height: 560px;
+        border: 0;
+        background: var(--color-surface);
+      }
+
+      .chooser {
+        padding: var(--space-5);
+        border-top: 1px solid var(--color-border);
+        background: var(--color-surface-elevated);
+      }
+
+      .chooser h3 {
+        margin: 0;
+      }
+
+      .chooser p {
+        margin: var(--space-2) 0 0;
+        color: var(--color-content-secondary);
+      }
+
+      .chooser-controls {
+        margin-top: var(--space-3);
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+      }
+
+      .choice-output {
+        margin-top: var(--space-3);
+        border: 1px dashed var(--color-border);
+        border-radius: var(--radius-sm);
+        padding: var(--space-3);
+        background: var(--color-surface);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 0.9rem;
+      }
+
+      @media (max-width: 900px) {
+        .option-grid,
+        .chooser,
+        .review-head {
+          padding: var(--space-3);
+        }
+
+        iframe {
+          height: 480px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="canvas">
+      <section class="review-shell">
+        <header class="review-head">
+          <h1>Issue #4 UX Option Review</h1>
+          <p>Single-page reviewer for all navigation shell options. Compare A-E side by side, then reply with your chosen option id (for example, <code>option-c</code>).</p>
+          <div class="review-meta">
+            <span class="meta-pill">Issue: #4</span>
+            <span class="meta-pill">Recommended candidate: option-e</span>
+            <span class="meta-pill">Decision status: pending owner approval</span>
+          </div>
+        </header>
+
+        <section class="option-grid">
+          <article class="option-card" id="option-a">
+            <header class="option-head">
+              <div>
+                <h2>Option A: Bottom Tab Command Center</h2>
+                <p>Mobile-familiar, summary-first with persistent bottom tabs.</p>
+              </div>
+              <div class="option-actions">
+                <a href="option-a/index.html" target="_blank" rel="noopener noreferrer">Open full page</a>
+              </div>
+            </header>
+            <iframe title="Option A preview" src="option-a/index.html"></iframe>
+          </article>
+
+          <article class="option-card" id="option-b">
+            <header class="option-head">
+              <div>
+                <h2>Option B: Rail Workspace</h2>
+                <p>Navigation-rail heavy workspace, strongest for wider layouts.</p>
+              </div>
+              <div class="option-actions">
+                <a href="option-b/index.html" target="_blank" rel="noopener noreferrer">Open full page</a>
+              </div>
+            </header>
+            <iframe title="Option B preview" src="option-b/index.html"></iframe>
+          </article>
+
+          <article class="option-card" id="option-c">
+            <header class="option-head">
+              <div>
+                <h2>Option C: Timeline Journal</h2>
+                <p>Activity-first shell that prioritizes transaction triage.</p>
+              </div>
+              <div class="option-actions">
+                <a href="option-c/index.html" target="_blank" rel="noopener noreferrer">Open full page</a>
+              </div>
+            </header>
+            <iframe title="Option C preview" src="option-c/index.html"></iframe>
+          </article>
+
+          <article class="option-card" id="option-d">
+            <header class="option-head">
+              <div>
+                <h2>Option D: Hybrid Candidate</h2>
+                <p>Balanced overview + action + activity baseline concept.</p>
+              </div>
+              <div class="option-actions">
+                <a href="option-d/index.html" target="_blank" rel="noopener noreferrer">Open full page</a>
+              </div>
+            </header>
+            <iframe title="Option D preview" src="option-d/index.html"></iframe>
+          </article>
+
+          <article class="option-card recommended" id="option-e">
+            <header class="option-head">
+              <div>
+                <h2>Option E: Refined Hybrid</h2>
+                <p>Recommended candidate with explicit priority ladder and responsive behavior.</p>
+              </div>
+              <div class="option-actions">
+                <a href="option-e/index.html" target="_blank" rel="noopener noreferrer">Open full page</a>
+              </div>
+            </header>
+            <iframe title="Option E preview" src="option-e/index.html"></iframe>
+          </article>
+        </section>
+
+        <section class="chooser">
+          <h3>Decision Helper</h3>
+          <p>Pick one option and send that option id in chat. I will then lock the decision artifacts (`selected.txt`, issue update) and proceed to Flutter implementation.</p>
+          <div class="chooser-controls">
+            <button type="button" data-choice="option-a">Choose option-a</button>
+            <button type="button" data-choice="option-b">Choose option-b</button>
+            <button type="button" data-choice="option-c">Choose option-c</button>
+            <button type="button" data-choice="option-d">Choose option-d</button>
+            <button type="button" data-choice="option-e">Choose option-e</button>
+          </div>
+          <div class="choice-output" id="choice-output">No selection captured in this file yet. Tell me your choice in chat after review.</div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const output = document.getElementById('choice-output');
+      document.querySelectorAll('[data-choice]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const choice = button.getAttribute('data-choice');
+          output.textContent = `Selection preview: ${choice}. Send this in chat to approve.`;
+          const card = document.getElementById(choice);
+          if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

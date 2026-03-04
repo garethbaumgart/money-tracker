@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Option A - Bottom Tab Command Center</title>
+    <link rel="stylesheet" href="../tokens.css">
+    <style>
+      .option-a-layout {
+        display: grid;
+        gap: var(--space-4);
+      }
+
+      .option-a-main {
+        display: grid;
+        gap: var(--space-4);
+      }
+
+      .title-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--space-3);
+      }
+
+      .title-row h2 {
+        margin: 0;
+        font-size: 1.35rem;
+      }
+
+      .sublabel {
+        margin-top: var(--space-1);
+        font-size: 0.9rem;
+        color: var(--color-content-secondary);
+      }
+
+      @media (min-width: 980px) {
+        .option-a-layout {
+          grid-template-columns: 1.45fr 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="canvas">
+      <section class="mock-shell">
+        <header class="mock-header">
+          <h1>Option A: Bottom Tab Command Center</h1>
+          <p>Primary navigation stays anchored at the bottom while the main pane stays summary-first.</p>
+        </header>
+
+        <div class="view option-a-layout">
+          <section class="option-a-main">
+            <article class="card">
+              <p class="kicker">Household Overview</p>
+              <div class="title-row">
+                <div>
+                  <h2>Northside Household</h2>
+                  <p class="sublabel">March cycle, 16 days remaining</p>
+                </div>
+                <span class="badge success">On track</span>
+              </div>
+              <div class="metric-grid" style="margin-top: var(--space-3);">
+                <div class="metric">
+                  <div class="label">Left to budget</div>
+                  <div class="value">$1,820</div>
+                </div>
+                <div class="metric">
+                  <div class="label">Spent this week</div>
+                  <div class="value">$486</div>
+                </div>
+                <div class="metric">
+                  <div class="label">Pending bills</div>
+                  <div class="value">3</div>
+                </div>
+              </div>
+            </article>
+
+            <article class="card">
+              <h3>Quick actions</h3>
+              <p>Optimized for one-thumb actions from the shell.</p>
+              <div class="action-row" style="margin-top: var(--space-3);">
+                <button class="button primary">Add transaction</button>
+                <button class="button">Create budget</button>
+                <button class="button">Split purchase</button>
+                <button class="button">Invite partner</button>
+              </div>
+            </article>
+
+            <article class="card">
+              <h3>Today feed</h3>
+              <ul class="feed">
+                <li><span>Coffee and Grocer Co.</span><strong>-$18.40</strong></li>
+                <li><span>Power bill due tomorrow</span><strong class="badge warning">Reminder</strong></li>
+                <li><span>Salary landed in Spending</span><strong class="badge success">+$2,100</strong></li>
+              </ul>
+            </article>
+          </section>
+
+          <aside class="card">
+            <h3>State previews</h3>
+            <p>Visual treatment for loading, empty, and error in shell surfaces.</p>
+            <div class="state-grid" style="margin-top: var(--space-3);">
+              <div class="state">
+                <strong>Loading</strong>
+                Syncing latest account snapshots.
+              </div>
+              <div class="state">
+                <strong>Empty</strong>
+                No budget categories yet. Start with essentials.
+              </div>
+              <div class="state">
+                <strong>Error</strong>
+                Bank feed delayed. Last refresh 2h ago.
+              </div>
+            </div>
+
+            <div class="nav-line">
+              <span class="nav-pill active">Home</span>
+              <span class="nav-pill">Budgets</span>
+              <span class="nav-pill">Activity</span>
+              <span class="nav-pill">Settings</span>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
