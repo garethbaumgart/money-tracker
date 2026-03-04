@@ -27,7 +27,7 @@ A PR task is not complete until one of these is true:
 
 1. Merge-ready state reached:
 - No pending required checks.
-- No unresolved actionable review comments (PR review comments or issue comments).
+- No unresolved actionable review comments (PR review comments, PR review summaries, or issue comments).
 - AI-reviewer quiet window reached (default 10 minutes with no new actionable comments).
 2. User explicitly asks to stop before merge-ready.
 
@@ -66,8 +66,10 @@ Rules:
 - If branch-protection required-check metadata is unavailable, fall back to `statusCheckRollup`/mergeability signals and treat ambiguous required-check state as pending (blocking).
 
 3. `last_ai_reviewer_comment_timestamp`
-- Use the latest timestamp from configured AI reviewers on the current head commit.
-- If no such comments exist on current head, set value to `null` (this counts as present, not omitted) and treat the AI quiet-window condition as satisfied for this metric.
+- Use the latest timestamp from configured AI reviewers for signals attributable to current head:
+  - PR review comments and PR review summaries tied to `headRefOid`.
+  - PR issue comments with `created_at` greater than or equal to the push timestamp that produced current `headRefOid` (issue comments are not commit-scoped by GitHub).
+- If no such comments exist for current head, set value to `null` (this counts as present, not omitted) and treat the AI quiet-window condition as satisfied for this metric.
 
 ### Freshness Rules (Repoll Required)
 
@@ -99,12 +101,11 @@ Rules:
 
 ### Last AI Reviewer Timestamp (Canonical)
 
-`last_ai_reviewer_comment_timestamp` is the latest timestamp from any AI-authored review signal on the current head commit:
-- PR review comments (`created_at` / `createdAt`)
-- PR issue comments (`created_at` / `createdAt`)
-- PR review summaries (`submitted_at` / `submittedAt`)
+`last_ai_reviewer_comment_timestamp` is the latest timestamp from configured AI-authored review signals attributable to the current head:
+- PR review comments / summaries associated with `headRefOid`
+- PR issue comments whose `created_at` is greater than or equal to the push timestamp for `headRefOid`
 
-Author match uses case-insensitive login regex `copilot|coderabbit|sourcery` by default, or a stricter configured override if the repo defines one.
+Author match uses case-insensitive exact-login regex `^(copilot-pull-request-reviewer|coderabbitai(\\[bot\\])?|sourcery-ai(\\[bot\\])?)$` by default, or a stricter configured override if the repo defines one.
 
 ### API Failure Handling (Fail Closed)
 
@@ -121,9 +122,9 @@ When polling GitHub state for verification metrics:
 ## Comment Classification (Canonical)
 
 1. Actionable comments:
-- Inline review comments, concrete issue comments, and PR review summaries that request code or documentation changes.
+  - Inline review comments, concrete issue comments, and PR review summaries that request code or documentation changes.
 2. Non-actionable comments:
-- "review in progress", rate-limit notices, summaries/walkthroughs, ads/tips, and informational status updates.
+  - "review in progress", rate-limit notices, summaries/walkthroughs, ads/tips, and informational status updates.
 3. If a status-style comment includes a concrete requested change, treat it as actionable.
 
 ## Run Completion Gate
@@ -145,19 +146,19 @@ Use the `Round Completion Heuristic` (from `references/review-loop-commands.md`)
 
 1. Poll PR state for new reviews/comments and check results every `POLL_SECONDS` seconds.
 2. Detect end of current round with this heuristic:
-- All checks are complete (no pending required checks).
-- No new actionable comments (from any reviewer, human or AI) for at least `QUIET_POLL_INTERVALS` poll intervals.
-- At least one signal from expected reviewers (required human reviewers and/or configured AI reviewers) on current head commit when possible.
-1. Build unresolved comment queue from review comments, issue comments, and PR review summaries.
-2. Classify comments using `Comment Classification (Canonical)` before acting.
-3. For each unresolved actionable comment:
+  - All checks are complete (no pending required checks).
+  - No new actionable comments (from any reviewer, human or AI) for at least `QUIET_POLL_INTERVALS` poll intervals.
+  - At least one signal from expected reviewers (required human reviewers and/or configured AI reviewers) on current head commit when possible.
+3. Build unresolved comment queue from review comments, issue comments, and PR review summaries.
+4. Classify comments using `Comment Classification (Canonical)` before acting.
+5. For each unresolved actionable comment:
 - Add a thumbs-up reaction first.
 - Then either fix in code or reply with a technical rebuttal.
-4. Never use "push to later feature" as the reason to skip a valid fix.
-5. If rejecting a comment, provide specific evidence: incorrect assumption, constraint conflict, duplicate, or already addressed.
-6. Push updates, post round summary, and request re-review.
-7. Sleep `POLL_SECONDS` seconds and re-poll.
-8. Repeat until run completion gate is satisfied.
+6. Never use "push to later feature" as the reason to skip a valid fix.
+7. If rejecting a comment, provide specific evidence: incorrect assumption, constraint conflict, duplicate, or already addressed.
+8. Push updates, post round summary, and request re-review.
+9. Sleep `POLL_SECONDS` seconds and re-poll.
+10. Repeat until run completion gate is satisfied.
 
 Multiple rounds per PR are normal and expected.
 
