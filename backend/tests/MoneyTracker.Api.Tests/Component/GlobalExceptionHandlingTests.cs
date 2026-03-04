@@ -5,18 +5,16 @@ namespace MoneyTracker.Api.Tests.Component;
 
 public sealed class GlobalExceptionHandlingTests : IClassFixture<MoneyTrackerApiFactory>
 {
-    private readonly HttpClient _client;
+    private readonly MoneyTrackerApiFactory _factory;
 
-    public GlobalExceptionHandlingTests(MoneyTrackerApiFactory factory)
-    {
-        _client = factory.CreateClient();
-    }
+    public GlobalExceptionHandlingTests(MoneyTrackerApiFactory factory) => _factory = factory;
 
     [Fact]
     [Trait("Category", "Component")]
     public async Task UnhandledException_ReturnsProblemDetailsContract()
     {
-        using var response = await _client.GetAsync("/__test/throw");
+        using var client = _factory.CreateClient();
+        using var response = await client.GetAsync("/__test/throw");
 
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);

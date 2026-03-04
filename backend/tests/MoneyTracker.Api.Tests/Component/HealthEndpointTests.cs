@@ -5,23 +5,21 @@ namespace MoneyTracker.Api.Tests.Component;
 
 public sealed class HealthEndpointTests : IClassFixture<MoneyTrackerApiFactory>
 {
-    private readonly HttpClient _client;
+    private readonly MoneyTrackerApiFactory _factory;
 
-    public HealthEndpointTests(MoneyTrackerApiFactory factory)
-    {
-        _client = factory.CreateClient();
-    }
+    public HealthEndpointTests(MoneyTrackerApiFactory factory) => _factory = factory;
 
     [Fact]
     [Trait("Category", "Component")]
     public async Task GetHealth_ReturnsOkWithStablePayload()
     {
-        using var response = await _client.GetAsync("/health");
+        using var client = _factory.CreateClient();
+        using var response = await client.GetAsync("/health");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var payload = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
         Assert.NotNull(payload);
-        Assert.True(payload.TryGetValue("status", out var status));
-        Assert.Equal("ok", status);
+        Assert.Single(payload!);
+        Assert.Equal("ok", payload["status"]);
     }
 }

@@ -1,3 +1,4 @@
+using MoneyTracker.Api.Contracts;
 using MoneyTracker.Api.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,7 +19,5 @@ if (app.Environment.IsEnvironment("Testing"))
 }
 
 app.Run();
-
-public sealed record HealthResponse(string Status);
 
 public partial class Program;
