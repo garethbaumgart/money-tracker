@@ -56,6 +56,7 @@ Produce these sections in order:
 11. Include at least one negative-path test for each behavior-changing AC unless not applicable, with reason.
 12. Use exact section headings and numbering from `references/issue-refinement-template.md` so output can be validated mechanically.
 13. For non-functional or exploratory ACs where direct 1:1 automation or negative-path tests are not meaningful, include a measurable verification probe/check and explicit rationale.
+14. Required test matrix rows are automated tests only; manual checks belong in the `Manual-only ACs` subsection with justification.
 
 ## Scope Splitting Rules
 

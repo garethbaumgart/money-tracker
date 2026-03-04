@@ -30,5 +30,6 @@ UX exploration is usually `not required` when:
 - `option-d/index.html`
 - `option-e/index.html`
 - `decision.md` with recommendation.
-4. Block implementation until `selected.txt` contains the chosen option.
-5. Ensure the selected option ID is referenced in the refined issue.
+4. Include `selected.txt` (created after decision; may be absent before decision).
+5. After decision, block implementation until `selected.txt` contains the chosen option.
+6. Ensure the selected option ID is referenced in the refined issue.

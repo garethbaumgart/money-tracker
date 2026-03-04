@@ -40,12 +40,13 @@
 - Implementation blocked until selected: Yes/No
 
 ## 9. Acceptance Criteria
-- [ ] AC-1:
-- [ ] AC-2:
-- [ ] AC-3:
+- [ ] AC-1: <criterion>
+- [ ] AC-2: <criterion>
+- [ ] AC-3: <criterion>
 
 ## 10. Test Plan
 - Required Test Matrix (group by type; list scenario-exact tests, not just broad categories):
+  - Matrix rows are for automated tests only.
   - Fields required per test:
     - Test ID
     - Mapped AC (`AC-<n>`)
@@ -56,8 +57,10 @@
   - Unit:
   - Component:
   - Integration:
-  - E2E:
-  - Non-functional:
+    - E2E:
+    - Non-functional:
+- AC coverage rule: every `AC-<n>` must appear in at least one matrix row or be listed in `Manual-only ACs`.
+- Negative-path rule: add at least one negative-path automated test for each behavior-changing AC unless not applicable, with rationale.
 - Manual-only ACs (if any): justify why automation is not feasible yet.
 - Non-functional/exploratory AC handling:
   - If strict 1:1 automation or a negative-path test is not meaningful, mark N/A with rationale and define a measurable verification probe/check.
