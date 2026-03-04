@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
-
-import 'app/app.dart';
+import 'package:money_tracker/app/app.dart';
 
 void main() {
   runApp(const MoneyTrackerApp());
