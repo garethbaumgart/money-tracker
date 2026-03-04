@@ -31,7 +31,11 @@
 - Decider:
 - Notes:
 
+## Review Artifact
+- Single-page reviewer: `docs/ux-mockups/<issue-id>-<slug>/index.html`
+
 ## Implementation Gate
 - [ ] `selected.txt` created with chosen option id
+- [ ] `index.html` exists and includes links/previews for options A-E
 - [ ] Link to selected HTML mockup
 - [ ] Issue updated with selected option rationale

@@ -21,8 +21,9 @@ Optimize for fast choice-making, not pixel-perfect Flutter parity.
 - Option D: selected-direction candidate
 - Option E: refined selected-direction version
 4. Keep all options in raw HTML/CSS with shared semantic token file.
-5. Build `decision.md` with option summaries, tradeoffs, recommendation, and selection status.
-6. Mark implementation as blocked until `selected.txt` exists with chosen option id.
+5. Create a one-page review surface at `index.html` that shows all options in one place (via embeds or direct links), includes recommendation context, and makes owner approval easy.
+6. Build `decision.md` with option summaries, tradeoffs, recommendation, and selection status.
+7. Mark implementation as blocked until `selected.txt` exists with chosen option id.
 
 ## Storage Contract
 
@@ -34,8 +35,9 @@ Store artifacts here:
 4. `docs/ux-mockups/<issue-id>-<slug>/option-c/index.html`
 5. `docs/ux-mockups/<issue-id>-<slug>/option-d/index.html`
 6. `docs/ux-mockups/<issue-id>-<slug>/option-e/index.html`
-7. `docs/ux-mockups/<issue-id>-<slug>/decision.md`
-8. `docs/ux-mockups/<issue-id>-<slug>/selected.txt` (created only after decision)
+7. `docs/ux-mockups/<issue-id>-<slug>/index.html` (single-page reviewer)
+8. `docs/ux-mockups/<issue-id>-<slug>/decision.md`
+9. `docs/ux-mockups/<issue-id>-<slug>/selected.txt` (created only after decision)
 
 ## Quality Rules
 
@@ -44,6 +46,7 @@ Store artifacts here:
 3. Keep token names semantic and aligned with Flutter theme roles.
 4. Keep options lightweight and inspectable in browser without build tooling.
 5. Explicitly state recommendation and tradeoffs in `decision.md`.
+6. Ensure `index.html` is fast to scan and clearly presents all options for approval.
 
 ## Flutter Parity Rules
 
@@ -56,6 +59,8 @@ Store artifacts here:
 
 1. Keep all options until a decision is made.
 2. After selection, keep:
+- `tokens.css`
+- `index.html`
 - `decision.md`
 - selected option folder
 - `selected.txt`

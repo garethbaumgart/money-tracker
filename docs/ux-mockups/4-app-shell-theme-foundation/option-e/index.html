@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Option E - Refined Hybrid Shell</title>
+    <link rel="stylesheet" href="../tokens.css">
+    <style>
+      .option-e-layout {
+        display: grid;
+        gap: var(--space-4);
+      }
+
+      .shell-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--space-3);
+      }
+
+      .overview-grid {
+        display: grid;
+        gap: var(--space-3);
+      }
+
+      .stage-grid {
+        display: grid;
+        gap: var(--space-3);
+      }
+
+      .focus-card {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        background: linear-gradient(
+          135deg,
+          color-mix(in srgb, var(--color-primary) 22%, var(--color-surface)) 0%,
+          var(--color-surface) 62%
+        );
+        padding: var(--space-4);
+      }
+
+      .split {
+        display: grid;
+        gap: var(--space-3);
+      }
+
+      .checklist {
+        margin: var(--space-3) 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: var(--space-2);
+      }
+
+      .checklist li {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        background: var(--color-surface);
+        padding: var(--space-3);
+      }
+
+      .support-row {
+        display: grid;
+        gap: var(--space-3);
+      }
+
+      @media (min-width: 980px) {
+        .overview-grid {
+          grid-template-columns: 1.45fr 1fr;
+          align-items: start;
+        }
+
+        .split {
+          grid-template-columns: 1.1fr 1fr;
+          align-items: start;
+        }
+
+        .support-row {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="canvas">
+      <section class="mock-shell">
+        <header class="mock-header">
+          <h1>Option E: Refined Hybrid Shell (Selected)</h1>
+          <p>Refines Option D with clearer priority ladder: confidence, next actions, then activity.</p>
+        </header>
+
+        <div class="view option-e-layout">
+          <section class="shell-top card" style="background: var(--color-surface-muted);">
+            <div>
+              <p class="kicker">Northside Household</p>
+              <h2 style="margin: 0.25rem 0 0;">Wednesday plan</h2>
+            </div>
+            <div class="action-row">
+              <button class="button">Switch household</button>
+              <button class="button primary">Add transaction</button>
+            </div>
+          </section>
+
+          <section class="overview-grid">
+            <article class="focus-card">
+              <p class="kicker">Forecast confidence</p>
+              <h2 style="margin: 0.25rem 0 0;">Finish this cycle with a $290 buffer.</h2>
+              <p style="margin-top: var(--space-2); color: var(--color-content-secondary);">Dining and fuel are the only categories trending above baseline.</p>
+              <div class="metric-grid" style="margin-top: var(--space-3);">
+                <div class="metric"><div class="label">Projected spend</div><div class="value">$3,210</div></div>
+                <div class="metric"><div class="label">Cycle target</div><div class="value">$3,500</div></div>
+                <div class="metric"><div class="label">Days remaining</div><div class="value">16</div></div>
+              </div>
+            </article>
+
+            <article class="card">
+              <h3>Priority checklist</h3>
+              <ul class="checklist">
+                <li><strong>Review dining cap</strong><br><span style="color: var(--color-content-secondary);">At 83 percent with 16 days left.</span></li>
+                <li><strong>Confirm transfer with partner</strong><br><span style="color: var(--color-content-secondary);">Split utility payment due tonight.</span></li>
+                <li><strong>Categorize uncategorized items</strong><br><span style="color: var(--color-content-secondary);">4 transactions pending.</span></li>
+              </ul>
+            </article>
+          </section>
+
+          <section class="split">
+            <article class="card">
+              <h3>Recent activity</h3>
+              <ul class="feed">
+                <li><span>Green Market groceries</span><strong>-$97.50</strong></li>
+                <li><span>City Servo fuel</span><strong>-$66.10</strong></li>
+                <li><span>Salary</span><strong class="badge success">+$2,100</strong></li>
+                <li><span>Streaming plan renewal</span><strong class="badge warning">Review</strong></li>
+              </ul>
+            </article>
+
+            <article class="card">
+              <h3>UI states</h3>
+              <div class="state-grid" style="margin-top: var(--space-3);">
+                <div class="state"><strong>Loading</strong>Refreshing confidence forecast.</div>
+                <div class="state"><strong>Empty</strong>No reminders for today.</div>
+                <div class="state"><strong>Error</strong>Could not load one bank account snapshot.</div>
+              </div>
+            </article>
+          </section>
+
+          <section class="support-row">
+            <article class="card">
+              <h3>Responsive rule</h3>
+              <p>Compact widths stack checklist below forecast. Expanded widths keep checklist visible beside forecast for scan speed.</p>
+            </article>
+            <article class="card">
+              <h3>Accessibility note</h3>
+              <p>Strong contrast surfaces and clear status labels support color-agnostic interpretation of alerts and success states.</p>
+            </article>
+          </section>
+
+          <div class="nav-line">
+            <span class="nav-pill active">Home</span>
+            <span class="nav-pill">Budgets</span>
+            <span class="nav-pill">Activity</span>
+            <span class="nav-pill">Household</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
