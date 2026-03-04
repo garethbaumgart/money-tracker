@@ -41,13 +41,42 @@ Required metrics:
 - PR URL
 - Unresolved actionable comment count
 - Pending required checks count
-- Last AI-reviewer comment timestamp (used to verify the AI-reviewer quiet window has elapsed)
+- Last AI-reviewer comment timestamp (used to verify the AI-reviewer quiet window has elapsed; `null` when no AI-reviewer comments exist on current head)
 - Merge-ready boolean (`true` only when all gate conditions are satisfied)
 
 Rules:
 - Do not claim completion if any required metric is omitted.
 - Do not claim completion using cached values after a new push/review event; repoll first.
 - Treat missing or ambiguous review/check data as blocking and continue the loop.
+
+### Required Metric Derivation (Deterministic)
+
+1. `unresolved_actionable_comments`
+- Count actionable PR review comments from threads where `isResolved == false` and `isOutdated == false`.
+- Count actionable PR issue comments as unresolved when there is no later maintainer response that either:
+  - references the comment URL/ID and links the fixing commit SHA, or
+  - references the comment URL/ID and provides an explicit technical rebuttal.
+- Use this combined unresolved queue size as the metric value.
+
+2. `pending_required_checks`
+- Prefer branch-protection required checks for the base branch.
+- Count only required checks in queued/in-progress states as pending.
+- Do not count optional checks as pending.
+- Treat `neutral`, `skipped`, and `cancelled` required checks as not pending.
+- If branch-protection required-check metadata is unavailable, fall back to `statusCheckRollup`/mergeability signals and treat ambiguous required-check state as pending (blocking).
+
+3. `last_ai_reviewer_comment_timestamp`
+- Use the latest timestamp from configured AI reviewers on the current head commit.
+- If no such comments exist on current head, set value to `null` (this counts as present, not omitted) and treat the AI quiet-window condition as satisfied for this metric.
+
+### Freshness Rules (Repoll Required)
+
+Treat verification metrics as fresh only when all are true for the last poll:
+- Polled `headRefOid` matches current PR head commit.
+- Latest review/comment timestamps (`reviews`, `review comments`, `issue comments`) are less than or equal to the last poll timestamp.
+- Latest required-check status timestamps are less than or equal to the last poll timestamp.
+
+If any push/review/comment/check update appears after last poll (via changed `headRefOid` or newer timestamps), repoll before deciding completion.
 
 ### Verification Block Format (Required)
 
