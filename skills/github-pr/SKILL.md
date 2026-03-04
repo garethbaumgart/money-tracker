@@ -49,6 +49,39 @@ Rules:
 - Do not claim completion using cached values after a new push/review event; repoll first.
 - Treat missing or ambiguous review/check data as blocking and continue the loop.
 
+### Verification Block Format (Required)
+
+Emit the verification block as a fenced `json` object with these exact keys:
+
+```json
+{
+  "pr_url": "https://github.com/<owner>/<repo>/pull/<n>",
+  "unresolved_actionable_comments": 0,
+  "pending_required_checks": 0,
+  "last_ai_reviewer_comment_timestamp": "2026-03-04T09:32:57Z",
+  "merge_ready": true
+}
+```
+
+Rules:
+- If a value cannot be computed, use `null` and treat the PR as not merge-ready.
+- Do not rename keys or change scalar types.
+
+### Last AI Reviewer Timestamp (Canonical)
+
+`last_ai_reviewer_comment_timestamp` is the latest timestamp from any AI-authored review signal on the current head commit:
+- PR review comments (`created_at` / `createdAt`)
+- PR issue comments (`created_at` / `createdAt`)
+- PR review summaries (`submitted_at` / `submittedAt`)
+
+Author match uses case-insensitive login regex `copilot|coderabbit|sourcery` by default, or a stricter configured override if the repo defines one.
+
+### API Failure Handling (Fail Closed)
+
+When polling GitHub state for verification metrics:
+1. Retry up to 3 times with backoff (`2s`, `5s`, `10s`) on transient API failures (network, 5xx, rate-limit retry windows).
+2. If any required metric is still unavailable after retries, set unknown metrics to `null`, set `merge_ready` to `false`, report the exact blocking API failure, and continue the loop.
+
 ## Review Parameters
 
 1. Poll interval: `POLL_SECONDS` (default `300`).
@@ -58,7 +91,7 @@ Rules:
 ## Comment Classification (Canonical)
 
 1. Actionable comments:
-- Inline review comments and concrete issue comments requesting code or documentation changes.
+- Inline review comments, concrete issue comments, and PR review summaries that request code or documentation changes.
 2. Non-actionable comments:
 - "review in progress", rate-limit notices, summaries/walkthroughs, ads/tips, and informational status updates.
 3. If a status-style comment includes a concrete requested change, treat it as actionable.
@@ -85,7 +118,7 @@ Use the `Round Completion Heuristic` (from `references/review-loop-commands.md`)
 - All checks are complete (no pending required checks).
 - No new actionable comments (from any reviewer, human or AI) for at least `QUIET_POLL_INTERVALS` poll intervals.
 - At least one signal from expected reviewers (required human reviewers and/or configured AI reviewers) on current head commit when possible.
-3. Build unresolved comment queue from review comments and issue comments.
+3. Build unresolved comment queue from review comments, issue comments, and PR review summaries.
 4. Classify comments using `Comment Classification (Canonical)` before acting.
 5. For each unresolved actionable comment:
 - Add a thumbs-up reaction first.
@@ -113,6 +146,8 @@ Output these sections:
 9. Review round log (comment URL -> action taken)
 10. Merge readiness status
 11. Verification block (required metrics listed in Pre-Final Verification)
+
+The verification block must use the required fenced `json` schema from `Verification Block Format (Required)`.
 
 `Merge readiness status` and the `Verification block` must agree. If they disagree, treat as not merge-ready and continue the loop.
 
