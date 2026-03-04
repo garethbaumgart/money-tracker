@@ -19,6 +19,19 @@ Focus on behavior, risk, verification evidence, and deterministic comment resolu
 5. Produce PR title, PR body, and reviewer checklist.
 6. Open or update PR.
 7. Run review loop until merge readiness criteria are met.
+8. Do not stop at "PR opened"; continue polling and resolving reviews/checks unless the user explicitly asks to stop.
+
+## Completion Gate (Required)
+
+A PR task is not complete until one of these is true:
+
+1. Merge-ready state reached:
+- No pending required checks.
+- No unresolved actionable review comments (PR review comments or issue comments).
+- AI-reviewer quiet window reached (default 10 minutes with no new actionable comments).
+2. User explicitly asks to stop before merge-ready.
+
+If merge-ready is not reached in the current turn, report exact blocking state and continue the loop on next request.
 
 ## Review Parameters
 
