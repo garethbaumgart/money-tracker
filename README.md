@@ -68,20 +68,31 @@ If a task needs changes in multiple lanes, split it into separate tasks or expli
 ## Agent-Driven Workflow
 
 Use this loop when you want agents to help from issue creation through merge.
+Keep this section as a quick-start summary. Detailed workflow rules live in:
 
-1. Create or capture the rough issue.
-2. Refine it with `$github-issue-refiner` so scope, acceptance criteria, and test plan are explicit.
-3. Assign lane(s) and split work into parallel worker tasks when possible (one lane per worker).
-4. Execute implementation with lane-appropriate skill:
-   - Backend: `$backend-ddd-vertical-slice`
-   - Mobile UI/theming: `$flutter-ux-theming`
-   - UX-heavy design exploration: `$ux-mockup-explorer` before Flutter implementation
-5. Verify each worker output with tests and evidence.
-6. Open PR using `$github-pr`, then run review rounds until merge-ready.
+- `docs/dev-guide/index.md`
+- `docs/dev-guide/verification.md`
+- `AGENTS.md`
+
+1. Capture a rough issue.
+2. Refine it with `$github-issue-refiner` so scope, acceptance criteria, and tests are explicit.
+3. Choose lane ownership (backend/mobile/platform).
+4. Implement with the lane-appropriate skill.
+5. Verify with tests/evidence (see `docs/dev-guide/verification.md`).
+6. Open/update PR using `$github-pr` and run review loops until merge-ready.
+
+### How Skills Are Invoked
+
+In Codex, invoke a skill by naming it in your prompt (for example, `$github-pr` or `$backend-ddd-vertical-slice`).
+
+- Skill routing rules: `AGENTS.md`
+- Skill definitions: `skills/*/SKILL.md`
 
 ### Parallel Worker Pattern
 
 Use parallel workers only when changes are independent.
+
+Do not parallelize when work is tiny, tightly coupled, or needs strict sequencing.
 
 1. Split by lane or isolated module.
 2. Give each worker a clear acceptance checklist.
@@ -90,29 +101,6 @@ Use parallel workers only when changes are independent.
    - Verification commands run
    - Risks/assumptions
 4. Integrate, run final verification, then open one PR (or stacked PRs if needed).
-
-### Example Prompts
-
-Issue refinement:
-
-```text
-Use $github-issue-refiner on issue #<n>. Produce a decision-complete spec with scope, acceptance criteria, and test plan.
-```
-
-Parallel execution:
-
-```text
-Implement issue #<n> with parallel workers:
-- Worker 1 (backend lane) uses $backend-ddd-vertical-slice
-- Worker 2 (mobile lane) uses $flutter-ux-theming
-Each worker must stay in-lane and return verification evidence.
-```
-
-PR and review loop:
-
-```text
-Use $github-pr for this branch. Open/update the PR and continue review rounds until all actionable comments are resolved and required checks are complete.
-```
 
 ## Mobile Shell
 
