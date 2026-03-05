@@ -95,7 +95,11 @@ jobs:
         run: |
           set -euo pipefail
           curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
-            | tar -xz gitleaks
+            -o gitleaks.tar.gz
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/checksums.txt" \
+            -o gitleaks-checksums.txt
+          grep "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" gitleaks-checksums.txt | sha256sum -c -
+          tar -xz -f gitleaks.tar.gz gitleaks
           sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
 
       - name: Install osv-scanner
@@ -105,6 +109,9 @@ jobs:
           set -euo pipefail
           curl -sSL "https://github.com/google/osv-scanner/releases/download/${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64" \
             -o osv-scanner
+          curl -sSL "https://github.com/google/osv-scanner/releases/download/${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64.sha256" \
+            -o osv-scanner.sha256
+          echo "$(cat osv-scanner.sha256)  osv-scanner" | sha256sum -c -
           sudo install -m 0755 osv-scanner /usr/local/bin/osv-scanner
 
       - name: Ensure CI scripts are executable

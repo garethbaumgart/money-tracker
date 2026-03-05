@@ -19,12 +19,14 @@ done
 mkdir -p "$artifacts_dir"
 
 echo "Running secret scan with gitleaks..."
+gitleaks_exit_code=0
 gitleaks dir "$repo_root" \
   --no-banner \
   --redact \
   --exit-code 1 \
   --report-format sarif \
-  --report-path "$gitleaks_report"
+  --report-path "$gitleaks_report" \
+  || gitleaks_exit_code=$?
 
 echo "Running dependency vulnerability scan with osv-scanner..."
 osv_scan_exit_code=0
@@ -56,14 +58,25 @@ high_critical_count="$(
 jq -r '.results[]?.packages[]? as $pkg | $pkg.vulnerabilities[]? | (.database_specific.severity // "" | ascii_upcase) as $severity | select($severity == "HIGH" or $severity == "CRITICAL") | "\($severity): \(.id) \($pkg.package.name)@\($pkg.package.version) [\($pkg.package.ecosystem)] \(.summary // "no summary")"' \
   "$osv_report" > "$osv_summary"
 
+security_failed=0
+
+if [[ "$gitleaks_exit_code" -ne 0 ]]; then
+  echo "gitleaks found potential secrets (exit code $gitleaks_exit_code). See report: $gitleaks_report" >&2
+  security_failed=1
+fi
+
 if [[ "$high_critical_count" -gt 0 ]]; then
   echo "Found $high_critical_count HIGH/CRITICAL dependency vulnerabilities." >&2
   cat "$osv_summary" >&2
-  exit 1
+  security_failed=1
 fi
 
 if [[ "$osv_scan_exit_code" -ne 0 ]]; then
   echo "osv-scanner reported non-high/critical vulnerabilities only." >&2
+fi
+
+if [[ "$security_failed" -ne 0 ]]; then
+  exit 1
 fi
 
 echo "Security baseline checks passed."
