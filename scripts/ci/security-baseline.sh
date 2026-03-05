@@ -51,9 +51,24 @@ fi
 
 high_critical_count="$(
   jq '[
+    def normalized_score:
+      (.max_severity // "") as $raw
+      | ($raw | tonumber?) as $numeric
+      | if $numeric != null then
+          $numeric
+        else
+          ($raw | ascii_upcase) as $label
+          | if $label == "CRITICAL" then 9
+            elif $label == "HIGH" then 7
+            elif $label == "MODERATE" or $label == "MEDIUM" then 4
+            elif $label == "LOW" then 0.1
+            else 0
+            end
+        end;
+
     .results[]?.packages[]? as $pkg
     | $pkg.groups[]?
-    | ((.max_severity | tonumber?) // 0) as $score
+    | (normalized_score) as $score
     | select($score >= 7)
     | {
       package: $pkg.package.name,
@@ -71,12 +86,27 @@ total_vulnerability_count="$(
 )"
 
 jq -r '
+  def normalized_score:
+    (.max_severity // "") as $raw
+    | ($raw | tonumber?) as $numeric
+    | if $numeric != null then
+        $numeric
+      else
+        ($raw | ascii_upcase) as $label
+        | if $label == "CRITICAL" then 9
+          elif $label == "HIGH" then 7
+          elif $label == "MODERATE" or $label == "MEDIUM" then 4
+          elif $label == "LOW" then 0.1
+          else 0
+          end
+      end;
+
   .results[]?.packages[]? as $pkg
   | $pkg.groups[]?
-  | ((.max_severity | tonumber?) // 0) as $score
+  | (normalized_score) as $score
   | select($score >= 7)
   | (if $score >= 9 then "CRITICAL" else "HIGH" end) as $severity
-  | "\($severity) (CVSS \($score)): \((.ids // [] | join(", "))) \($pkg.package.name)@\($pkg.package.version) [\($pkg.package.ecosystem)]"
+  | "\($severity) (CVSS \($score), raw=\(.max_severity // "unknown")): \((.ids // [] | join(", "))) \($pkg.package.name)@\($pkg.package.version) [\($pkg.package.ecosystem)]"
 ' "$osv_report" > "$osv_summary"
 
 if [[ "$high_critical_count" -gt 0 ]]; then

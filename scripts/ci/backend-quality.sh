@@ -25,6 +25,11 @@ dotnet build "$solution_path" \
   --no-restore \
   2>&1 | tee "$artifacts_dir/dotnet-build.log"
 
+if ! dotnet format --version >/dev/null 2>&1; then
+  echo "dotnet format is required to run backend analyzer/format checks." >&2
+  exit 1
+fi
+
 echo "Running backend analyzer/format gate..."
 dotnet format "$solution_path" \
   --verify-no-changes \
