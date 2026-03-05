@@ -23,9 +23,11 @@ on:
   workflow_dispatch:
 
 permissions:
+  checks: read
   contents: read
   issues: write
   pull-requests: read
+  statuses: read
 
 jobs:
   enforce-lifecycle:
@@ -188,15 +190,24 @@ jobs:
                   throw error;
                 }
 
-                await github.rest.issues.createLabel({
-                  owner,
-                  repo,
-                  name: definition.name,
-                  color: definition.color,
-                  description: definition.description,
-                });
+                try {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: definition.name,
+                    color: definition.color,
+                    description: definition.description,
+                  });
 
-                core.info(`Created missing label ${definition.name}`);
+                  core.info(`Created missing label ${definition.name}`);
+                } catch (createError) {
+                  if (createError.status === 422) {
+                    core.info(`Label ${definition.name} already exists (create race).`);
+                    return;
+                  }
+
+                  throw createError;
+                }
               }
             }
 
@@ -407,13 +418,17 @@ jobs:
 
             async function areChecksGreenForPr(ref) {
               try {
-                const [checkRunsResponse, statusResponse] = await Promise.all([
-                  github.rest.checks.listForRef({
-                    owner,
-                    repo,
-                    ref,
-                    per_page: 100,
-                  }),
+                const [checkRuns, statusResponse] = await Promise.all([
+                  github.paginate(
+                    github.rest.checks.listForRef,
+                    {
+                      owner,
+                      repo,
+                      ref,
+                      per_page: 100,
+                    },
+                    (response) => response.data.check_runs ?? [],
+                  ),
                   github.rest.repos.getCombinedStatusForRef({
                     owner,
                     repo,
@@ -421,7 +436,6 @@ jobs:
                   }),
                 ]);
 
-                const checkRuns = checkRunsResponse.data.check_runs ?? [];
                 const hasPendingCheckRun = checkRuns.some((checkRun) => checkRun.status !== 'completed');
                 if (hasPendingCheckRun) {
                   return false;
@@ -532,10 +546,14 @@ jobs:
                     }
                   }
 
+                  const preferredStageForIssue = currentLane === 'lane:untriaged' && !detectedPrLane
+                    ? null
+                    : preferredStage;
+
                   await applyIssueLabelRules(
                     issueNumber,
                     {
-                      preferredStage,
+                      preferredStage: preferredStageForIssue,
                       preferredLane,
                     },
                     labelsBefore,
