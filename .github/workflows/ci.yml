@@ -117,7 +117,9 @@ jobs:
           curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${checksums_file}" \
             -o "/tmp/${checksums_file}"
 
-          grep " ${gitleaks_asset}$" "/tmp/${checksums_file}" | sha256sum -c -
+          grep " ${gitleaks_asset}$" "/tmp/${checksums_file}" \
+            | sed "s|  ${gitleaks_asset}$|  /tmp/${gitleaks_asset}|" \
+            | sha256sum -c -
           tar -xzf "/tmp/${gitleaks_asset}" -C /tmp gitleaks
           sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
 
@@ -134,7 +136,9 @@ jobs:
           curl -sSL "https://github.com/google/osv-scanner/releases/download/${OSV_SCANNER_VERSION}/${checksums_file}" \
             -o "/tmp/${checksums_file}"
 
-          grep " ${osv_asset}$" "/tmp/${checksums_file}" | sha256sum -c -
+          grep " ${osv_asset}$" "/tmp/${checksums_file}" \
+            | sed "s|  ${osv_asset}$|  /tmp/${osv_asset}|" \
+            | sha256sum -c -
           sudo install -m 0755 "/tmp/${osv_asset}" /usr/local/bin/osv-scanner
 
       - name: Ensure CI scripts are executable
