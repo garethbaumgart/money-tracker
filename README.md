@@ -55,7 +55,7 @@ A lane is the area of the codebase you are responsible for in a task.
 
 - Backend lane: `backend/**` (API/domain/application/infrastructure changes)
 - Mobile lane: `mobile/**` (Flutter UI/app logic changes)
-- Platform lane: `.github/**`, `scripts/**`, and root tooling/docs
+- Platform lane: root tooling/docs, and (if present) `.github/**` and `scripts/**`
 
 Why this exists:
 
