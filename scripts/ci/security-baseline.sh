@@ -53,7 +53,7 @@ high_critical_count="$(
   jq '[
     def normalized_score:
       (.max_severity // "") as $raw
-      | ($raw | tonumber?) as $numeric
+      | (try ($raw | tonumber) catch null) as $numeric
       | if $numeric != null then
           $numeric
         else
@@ -88,7 +88,7 @@ total_vulnerability_count="$(
 jq -r '
   def normalized_score:
     (.max_severity // "") as $raw
-    | ($raw | tonumber?) as $numeric
+    | (try ($raw | tonumber) catch null) as $numeric
     | if $numeric != null then
         $numeric
       else
