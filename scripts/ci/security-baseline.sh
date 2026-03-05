@@ -33,15 +33,15 @@ osv-scanner scan source "$repo_root" \
   --format json \
   --output "$osv_report" \
   --verbosity error \
-  --experimental-exclude ".git" \
-  --experimental-exclude ".artifacts" \
-  --experimental-exclude "mobile/.dart_tool" \
-  --experimental-exclude "mobile/build" \
-  --experimental-exclude "mobile/ios/Flutter/ephemeral" \
-  --experimental-exclude "backend/src/MoneyTracker.Api/bin" \
-  --experimental-exclude "backend/src/MoneyTracker.Api/obj" \
-  --experimental-exclude "backend/tests/MoneyTracker.Api.Tests/bin" \
-  --experimental-exclude "backend/tests/MoneyTracker.Api.Tests/obj" \
+  --exclude ".git" \
+  --exclude ".artifacts" \
+  --exclude "mobile/.dart_tool" \
+  --exclude "mobile/build" \
+  --exclude "mobile/ios/Flutter/ephemeral" \
+  --exclude "backend/src/MoneyTracker.Api/bin" \
+  --exclude "backend/src/MoneyTracker.Api/obj" \
+  --exclude "backend/tests/MoneyTracker.Api.Tests/bin" \
+  --exclude "backend/tests/MoneyTracker.Api.Tests/obj" \
   || osv_scan_exit_code=$?
 
 if [[ ! -s "$osv_report" ]]; then

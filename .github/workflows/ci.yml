@@ -26,11 +26,16 @@ jobs:
       - name: Install actionlint
         env:
           ACTIONLINT_VERSION: 1.7.11
+          ACTIONLINT_SHA256: 900919a84f2229bac68ca9cd4103ea297abc35e9689ebb842c6e34a3d1b01b0a
         run: |
           set -euo pipefail
+          tmpdir=$(mktemp -d)
           curl -sSL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" \
-            | tar -xz actionlint
-          sudo install -m 0755 actionlint /usr/local/bin/actionlint
+            -o "$tmpdir/actionlint.tar.gz"
+          echo "${ACTIONLINT_SHA256}  $tmpdir/actionlint.tar.gz" | sha256sum -c -
+          tar -xz -f "$tmpdir/actionlint.tar.gz" -C "$tmpdir" actionlint
+          sudo install -m 0755 "$tmpdir/actionlint" /usr/local/bin/actionlint
+          rm -rf "$tmpdir"
 
       - name: Lint workflow files
         run: actionlint
@@ -101,20 +106,29 @@ jobs:
       - name: Install gitleaks
         env:
           GITLEAKS_VERSION: 8.27.2
+          GITLEAKS_SHA256: 141c3b2dede46d8b3a53b47116da756bd223decc0374797559a6b50ecba5590c
         run: |
           set -euo pipefail
+          tmpdir=$(mktemp -d)
           curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
-            | tar -xz gitleaks
-          sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
+            -o "$tmpdir/gitleaks.tar.gz"
+          echo "${GITLEAKS_SHA256}  $tmpdir/gitleaks.tar.gz" | sha256sum -c -
+          tar -xz -f "$tmpdir/gitleaks.tar.gz" -C "$tmpdir" gitleaks
+          sudo install -m 0755 "$tmpdir/gitleaks" /usr/local/bin/gitleaks
+          rm -rf "$tmpdir"
 
       - name: Install osv-scanner
         env:
           OSV_SCANNER_VERSION: v2.3.3
+          OSV_SCANNER_SHA256: 777b4bb7ddd10bdcc8a1aa398d37d05e91e866e7586f9cff3fca2f72b8153033
         run: |
           set -euo pipefail
+          tmpdir=$(mktemp -d)
           curl -sSL "https://github.com/google/osv-scanner/releases/download/${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64" \
-            -o osv-scanner
-          sudo install -m 0755 osv-scanner /usr/local/bin/osv-scanner
+            -o "$tmpdir/osv-scanner"
+          echo "${OSV_SCANNER_SHA256}  $tmpdir/osv-scanner" | sha256sum -c -
+          sudo install -m 0755 "$tmpdir/osv-scanner" /usr/local/bin/osv-scanner
+          rm -rf "$tmpdir"
 
       - name: Ensure CI scripts are executable
         run: chmod +x scripts/ci/*.sh
