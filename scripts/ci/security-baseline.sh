@@ -53,6 +53,10 @@ high_critical_count="$(
   jq '[.results[]?.packages[]? as $pkg | $pkg.vulnerabilities[]? | (.database_specific.severity // "" | ascii_upcase) as $severity | select($severity == "HIGH" or $severity == "CRITICAL") | {package: $pkg.package.name, version: $pkg.package.version, ecosystem: $pkg.package.ecosystem, id: .id, severity: $severity, summary: (.summary // "")}] | length' "$osv_report"
 )"
 
+total_vulnerability_count="$(
+  jq '[.results[]?.packages[]?.vulnerabilities[]?] | length' "$osv_report"
+)"
+
 jq -r '.results[]?.packages[]? as $pkg | $pkg.vulnerabilities[]? | (.database_specific.severity // "" | ascii_upcase) as $severity | select($severity == "HIGH" or $severity == "CRITICAL") | "\($severity): \(.id) \($pkg.package.name)@\($pkg.package.version) [\($pkg.package.ecosystem)] \(.summary // "no summary")"' \
   "$osv_report" > "$osv_summary"
 
@@ -62,8 +66,18 @@ if [[ "$high_critical_count" -gt 0 ]]; then
   exit 1
 fi
 
-if [[ "$osv_scan_exit_code" -ne 0 ]]; then
-  echo "osv-scanner reported non-high/critical vulnerabilities only." >&2
+if [[ "$osv_scan_exit_code" -gt 1 ]]; then
+  echo "osv-scanner failed with exit code $osv_scan_exit_code." >&2
+  exit 1
+fi
+
+if [[ "$osv_scan_exit_code" -eq 1 && "$total_vulnerability_count" -eq 0 ]]; then
+  echo "osv-scanner returned exit code 1 but no vulnerabilities were present in the report." >&2
+  exit 1
+fi
+
+if [[ "$osv_scan_exit_code" -eq 1 ]]; then
+  echo "osv-scanner reported vulnerabilities below HIGH severity only." >&2
 fi
 
 echo "Security baseline checks passed."
