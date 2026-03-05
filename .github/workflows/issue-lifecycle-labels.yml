@@ -72,6 +72,15 @@ jobs:
             const repoLower = repo.toLowerCase();
             const MAX_PR_FILES_PAGES = 30;
             const MAX_BACKFILL_ISSUES = 200;
+            const ROOT_PLATFORM_FILES = new Set([
+              'package.json',
+              'package-lock.json',
+              'pnpm-lock.yaml',
+              'yarn.lock',
+              'bun.lockb',
+              'tsconfig.json',
+              'Makefile',
+            ]);
 
             function uniq(values) {
               return [...new Set(values)];
@@ -365,6 +374,14 @@ jobs:
               }
 
               if (filename.startsWith('docs/')) {
+                return 'lane:platform';
+              }
+
+              if (filename.startsWith('tooling/') || filename.startsWith('tools/')) {
+                return 'lane:platform';
+              }
+
+              if (ROOT_PLATFORM_FILES.has(filename)) {
                 return 'lane:platform';
               }
 
@@ -726,8 +743,13 @@ jobs:
                     .map((label) => (typeof label === 'string' ? label : label.name))
                     .filter(Boolean);
 
-                  await applyIssueLabelRules(issue.number, {}, existingLabels);
-                  normalizedCount += 1;
+                  try {
+                    await applyIssueLabelRules(issue.number, {}, existingLabels);
+                    normalizedCount += 1;
+                  } catch (error) {
+                    core.warning(`Unable to normalize issue #${issue.number}: ${error.message}`);
+                    continue;
+                  }
                 }
 
                 if (openIssues.length < 100) {

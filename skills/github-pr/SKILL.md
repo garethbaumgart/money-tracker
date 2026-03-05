@@ -43,6 +43,7 @@ Required metrics:
 - Unresolved actionable comment count
 - Pending required checks count
 - Last AI-reviewer comment timestamp (used to verify the AI-reviewer quiet window has elapsed; `null` when no AI-reviewer comments exist on current head)
+- Copilot re-requested on current head (`true` only when Copilot re-review was explicitly requested after the latest push for `headRefOid`)
 - Merge-ready boolean (`true` only when all gate conditions are satisfied)
 
 Rules:
@@ -72,6 +73,10 @@ Rules:
   - PR issue comments with `created_at` greater than or equal to the push timestamp that produced current `headRefOid` (issue comments are not commit-scoped by GitHub).
 - If no such comments exist for current head, set value to `null` (this counts as present, not omitted) and treat the AI quiet-window condition as satisfied for this metric.
 
+4. `copilot_rerequested_on_head`
+- Set `true` only when a Copilot re-review trigger action is recorded for the current `headRefOid` (for example, reviewer-request API call accepted on current head, or `@copilot review` comment posted after the push that produced current `headRefOid`).
+- Set `false` if no explicit trigger can be proven for current head.
+
 ### Freshness Rules (Repoll Required)
 
 Treat verification metrics as fresh only when all are true for the last poll:
@@ -91,6 +96,7 @@ Emit the verification block as a fenced `json` object with these exact keys:
   "unresolved_actionable_comments": 0,
   "pending_required_checks": 0,
   "last_ai_reviewer_comment_timestamp": "2026-03-04T09:32:57Z",
+  "copilot_rerequested_on_head": true,
   "merge_ready": true
 }
 ```
@@ -194,6 +200,7 @@ Section header: `## Verification`
   "unresolved_actionable_comments": 0,
   "pending_required_checks": 0,
   "last_ai_reviewer_comment_timestamp": "2026-03-04T09:32:57Z",
+  "copilot_rerequested_on_head": true,
   "merge_ready": true
 }
 ```
