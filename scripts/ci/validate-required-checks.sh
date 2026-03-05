@@ -93,38 +93,20 @@ workflow_jobs=()
 while IFS= read -r line; do
   workflow_jobs+=("$line")
 done < <(
-  awk '
-    /^[[:space:]]*jobs:[[:space:]]*$/ {
-      in_jobs=1
-      jobs_indent = match($0, /[^[:space:]]/) - 1
-      job_indent = -1
-      next
-    }
+  python3 - "$workflow_path" <<'PYEOF'
+import sys
+try:
+    import yaml
+except ImportError:
+    print("Error: PyYAML is required. Install it with: pip install pyyaml", file=sys.stderr)
+    sys.exit(1)
 
-    !in_jobs { next }
-    /^[[:space:]]*$/ { next }
+with open(sys.argv[1]) as f:
+    data = yaml.safe_load(f)
 
-    {
-      current_indent = match($0, /[^[:space:]]/) - 1
-      if (current_indent <= jobs_indent) {
-        in_jobs=0
-        next
-      }
-
-      if ($0 ~ /^[[:space:]]+[A-Za-z0-9_-]+:[[:space:]]*$/) {
-        if (job_indent == -1) {
-          job_indent = current_indent
-        }
-
-        if (current_indent == job_indent) {
-          name=$0
-          sub(/^[[:space:]]*/, "", name)
-          sub(/:.*/, "", name)
-          print name
-        }
-      }
-    }
-  ' "$workflow_path"
+for job_id in (data.get("jobs") or {}):
+    print(job_id)
+PYEOF
 )
 
 if [[ "${#workflow_jobs[@]}" -eq 0 ]]; then
