@@ -23,8 +23,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install actionlint
+        env:
+          ACTIONLINT_VERSION: 1.7.11
+        run: |
+          set -euo pipefail
+          curl -sSL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" \
+            | tar -xz actionlint
+          sudo install -m 0755 actionlint /usr/local/bin/actionlint
+
       - name: Lint workflow files
-        uses: rhysd/actionlint@v1
+        run: actionlint
 
   backend-quality:
     name: backend-quality
