@@ -212,9 +212,7 @@ jobs:
             }
 
             async function ensureLifecycleLabels() {
-              for (const definition of [...STAGE_LABELS, ...LANE_LABELS]) {
-                await ensureLabel(definition);
-              }
+              await Promise.all([...STAGE_LABELS, ...LANE_LABELS].map((definition) => ensureLabel(definition)));
             }
 
             async function getIssueLabelNames(issueNumber) {
@@ -418,7 +416,9 @@ jobs:
 
             async function areChecksGreenForPr(ref) {
               try {
-                const [checkRuns, statusResponse] = await Promise.all([
+                const currentRunId = String(context.runId);
+
+                const [allCheckRuns, statusResponse] = await Promise.all([
                   github.paginate(
                     github.rest.checks.listForRef,
                     {
@@ -435,6 +435,13 @@ jobs:
                     ref,
                   }),
                 ]);
+
+                // Exclude this workflow's own check run to avoid self-blocking during
+                // ready_for_review and synchronize events where the run is still in-progress.
+                const checkRuns = allCheckRuns.filter((cr) => {
+                  const detailsUrl = cr.details_url || '';
+                  return !detailsUrl.includes(`/actions/runs/${currentRunId}/`);
+                });
 
                 const hasPendingCheckRun = checkRuns.some((checkRun) => checkRun.status !== 'completed');
                 if (hasPendingCheckRun) {
@@ -614,7 +621,11 @@ jobs:
                   break;
                 }
 
-                await applyIssueLabelRules(issue.number);
+                const existingLabels = (issue.labels ?? [])
+                  .map((label) => (typeof label === 'string' ? label : label.name))
+                  .filter(Boolean);
+
+                await applyIssueLabelRules(issue.number, {}, existingLabels);
                 normalizedCount += 1;
               }
 
