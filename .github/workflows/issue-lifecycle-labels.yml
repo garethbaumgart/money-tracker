@@ -1,0 +1,489 @@
+name: Issue Lifecycle Labels
+
+on:
+  issues:
+    types:
+      - opened
+      - reopened
+      - closed
+      - labeled
+      - unlabeled
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - edited
+      - synchronize
+      - ready_for_review
+      - converted_to_draft
+      - closed
+  pull_request_review:
+    types:
+      - submitted
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  enforce-lifecycle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply lane and stage rules
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const STAGE_LABELS = [
+              { name: 'stage:refining', color: 'D4C5F9', description: 'Issue requirements are being refined' },
+              { name: 'stage:refined', color: 'BFD4F2', description: 'Refinement complete and ready for planning' },
+              { name: 'stage:planning', color: 'C2E0C6', description: 'Implementation plan is being created' },
+              { name: 'stage:planned', color: '0E8A16', description: 'Planned and ready for implementation' },
+              { name: 'stage:in-progress', color: 'FBCA04', description: 'Implementation work is actively in progress' },
+              { name: 'stage:in-review', color: '1D76DB', description: 'Implementation is under pull request review' },
+              { name: 'stage:done', color: '5319E7', description: 'Merged and complete' },
+            ];
+
+            const LANE_LABELS = [
+              { name: 'lane:untriaged', color: 'BFD4F2', description: 'Lane assignment not completed yet' },
+              { name: 'lane:backend', color: 'B60205', description: 'Backend/API lane ownership' },
+              { name: 'lane:mobile', color: 'FBCA04', description: 'Flutter/mobile lane ownership' },
+              { name: 'lane:platform', color: '0052CC', description: 'Platform/tooling lane ownership' },
+              { name: 'lane:cross-cutting', color: '6F42C1', description: 'Work crosses multiple lanes' },
+            ];
+
+            const STAGE_NAMES = STAGE_LABELS.map((label) => label.name);
+            const LANE_NAMES = LANE_LABELS.map((label) => label.name);
+            const LEGACY_AREA_TO_LANE = {
+              'area:backend': 'lane:backend',
+              'area:mobile': 'lane:mobile',
+              'area:platform': 'lane:platform',
+            };
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            function uniq(values) {
+              return [...new Set(values)];
+            }
+
+            function sortUnique(values) {
+              return uniq(values).sort();
+            }
+
+            function sameLabelSet(left, right) {
+              const sortedLeft = sortUnique(left);
+              const sortedRight = sortUnique(right);
+              if (sortedLeft.length !== sortedRight.length) {
+                return false;
+              }
+
+              for (let i = 0; i < sortedLeft.length; i += 1) {
+                if (sortedLeft[i] !== sortedRight[i]) {
+                  return false;
+                }
+              }
+
+              return true;
+            }
+
+            function pickExistingByOrder(existingLabels, orderedLabels) {
+              for (const label of orderedLabels) {
+                if (existingLabels.includes(label)) {
+                  return label;
+                }
+              }
+
+              return existingLabels[0] ?? null;
+            }
+
+            function deriveLaneFromLegacy(labels) {
+              for (const [legacyLabel, laneLabel] of Object.entries(LEGACY_AREA_TO_LANE)) {
+                if (labels.includes(legacyLabel)) {
+                  return laneLabel;
+                }
+              }
+
+              return null;
+            }
+
+            function resolveLaneFromLabels(labels) {
+              const explicitLaneLabels = labels.filter((label) => LANE_NAMES.includes(label));
+              const explicitLane = pickExistingByOrder(explicitLaneLabels, LANE_NAMES);
+              if (explicitLane) {
+                return explicitLane;
+              }
+
+              const legacyLane = deriveLaneFromLegacy(labels);
+              if (legacyLane) {
+                return legacyLane;
+              }
+
+              return 'lane:untriaged';
+            }
+
+            function normalizeDimension(labels, allowedLabels, fallbackLabel, preferredLabel) {
+              const currentDimensionLabels = labels.filter((label) => allowedLabels.includes(label));
+
+              let chosenLabel = null;
+              if (preferredLabel && allowedLabels.includes(preferredLabel)) {
+                chosenLabel = preferredLabel;
+              } else {
+                chosenLabel = pickExistingByOrder(currentDimensionLabels, allowedLabels);
+              }
+
+              if (!chosenLabel) {
+                chosenLabel = fallbackLabel;
+              }
+
+              const labelsWithoutDimension = labels.filter((label) => !allowedLabels.includes(label));
+              const nextLabels = uniq([...labelsWithoutDimension, chosenLabel]);
+
+              return {
+                chosenLabel,
+                labels: nextLabels,
+              };
+            }
+
+            function buildNormalizedIssueLabels(existingLabels, options = {}) {
+              const preferredStage = options.preferredStage ?? null;
+              const preferredLane = options.preferredLane ?? null;
+
+              let labels = uniq(existingLabels);
+
+              const normalizedStage = normalizeDimension(labels, STAGE_NAMES, 'stage:refining', preferredStage);
+              labels = normalizedStage.labels;
+
+              const hasLaneLabel = labels.some((label) => LANE_NAMES.includes(label));
+              const inferredLaneFromLegacy = !preferredLane && !hasLaneLabel ? deriveLaneFromLegacy(labels) : null;
+              const normalizedLane = normalizeDimension(
+                labels,
+                LANE_NAMES,
+                'lane:untriaged',
+                preferredLane || inferredLaneFromLegacy,
+              );
+              labels = normalizedLane.labels;
+
+              return {
+                labels,
+                stage: normalizedStage.chosenLabel,
+                lane: normalizedLane.chosenLabel,
+              };
+            }
+
+            async function ensureLabel(definition) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner,
+                  repo,
+                  name: definition.name,
+                });
+              } catch (error) {
+                if (error.status !== 404) {
+                  throw error;
+                }
+
+                await github.rest.issues.createLabel({
+                  owner,
+                  repo,
+                  name: definition.name,
+                  color: definition.color,
+                  description: definition.description,
+                });
+
+                core.info(`Created missing label ${definition.name}`);
+              }
+            }
+
+            async function ensureLifecycleLabels() {
+              for (const definition of [...STAGE_LABELS, ...LANE_LABELS]) {
+                await ensureLabel(definition);
+              }
+            }
+
+            async function getIssueLabelNames(issueNumber) {
+              const issue = await github.rest.issues.get({
+                owner,
+                repo,
+                issue_number: issueNumber,
+              });
+
+              return issue.data.labels
+                .map((label) => (typeof label === 'string' ? label : label.name))
+                .filter(Boolean);
+            }
+
+            async function setIssueLabelNames(issueNumber, labels) {
+              await github.rest.issues.setLabels({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                labels: sortUnique(labels),
+              });
+            }
+
+            async function applyIssueLabelRules(issueNumber, options = {}, existingLabels = null) {
+              const labelsBefore = existingLabels || await getIssueLabelNames(issueNumber);
+              const normalized = buildNormalizedIssueLabels(labelsBefore, options);
+
+              if (!sameLabelSet(labelsBefore, normalized.labels)) {
+                await setIssueLabelNames(issueNumber, normalized.labels);
+                core.info(`Updated issue #${issueNumber} labels -> ${normalized.labels.join(', ')}`);
+              } else {
+                core.info(`No label updates needed for issue #${issueNumber}`);
+              }
+
+              return normalized;
+            }
+
+            function parseLinkedIssuesFromBody(prBody) {
+              const linkedIssues = new Set();
+              if (!prBody) {
+                return [];
+              }
+
+              const keywordPattern = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+(?:[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)?#(\d+)\b/gi;
+              const urlPattern = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/issues\/(\d+)\b/gi;
+
+              for (const pattern of [keywordPattern, urlPattern]) {
+                for (const match of prBody.matchAll(pattern)) {
+                  const issueNumber = Number.parseInt(match[1], 10);
+                  if (Number.isInteger(issueNumber) && issueNumber > 0) {
+                    linkedIssues.add(issueNumber);
+                  }
+                }
+              }
+
+              return [...linkedIssues];
+            }
+
+            async function getLinkedIssueNumbersFromPr(prNumber, prBody) {
+              const linkedIssues = new Set();
+
+              try {
+                const response = await github.graphql(
+                  `query($owner: String!, $repo: String!, $number: Int!) {
+                    repository(owner: $owner, name: $repo) {
+                      pullRequest(number: $number) {
+                        closingIssuesReferences(first: 20) {
+                          nodes {
+                            number
+                          }
+                        }
+                      }
+                    }
+                  }`,
+                  {
+                    owner,
+                    repo,
+                    number: prNumber,
+                  },
+                );
+
+                for (const issue of response.repository.pullRequest.closingIssuesReferences.nodes) {
+                  if (Number.isInteger(issue.number)) {
+                    linkedIssues.add(issue.number);
+                  }
+                }
+              } catch (error) {
+                core.warning(`GraphQL linked issue lookup failed: ${error.message}`);
+              }
+
+              if (linkedIssues.size === 0) {
+                for (const issueNumber of parseLinkedIssuesFromBody(prBody)) {
+                  linkedIssues.add(issueNumber);
+                }
+              }
+
+              return [...linkedIssues];
+            }
+
+            function classifyChangedPath(filename) {
+              if (filename.startsWith('backend/')) {
+                return 'lane:backend';
+              }
+
+              if (filename.startsWith('mobile/')) {
+                return 'lane:mobile';
+              }
+
+              if (filename.startsWith('.github/') || filename.startsWith('scripts/')) {
+                return 'lane:platform';
+              }
+
+              return null;
+            }
+
+            async function detectPrLane(prNumber) {
+              const files = await github.paginate(github.rest.pulls.listFiles, {
+                owner,
+                repo,
+                pull_number: prNumber,
+                per_page: 100,
+              });
+
+              const detectedLanes = new Set();
+              for (const file of files) {
+                const lane = classifyChangedPath(file.filename);
+                if (lane) {
+                  detectedLanes.add(lane);
+                }
+              }
+
+              if (detectedLanes.size === 0) {
+                return null;
+              }
+
+              if (detectedLanes.size === 1) {
+                return [...detectedLanes][0];
+              }
+
+              return 'lane:cross-cutting';
+            }
+
+            function stageFromPullRequestEvent(action, pullRequest) {
+              if (action === 'closed' && pullRequest.merged) {
+                return 'stage:done';
+              }
+
+              if (action === 'converted_to_draft') {
+                return 'stage:in-progress';
+              }
+
+              if (action === 'ready_for_review') {
+                return 'stage:in-review';
+              }
+
+              if (['opened', 'reopened', 'edited', 'synchronize'].includes(action)) {
+                return pullRequest.draft ? 'stage:in-progress' : 'stage:in-review';
+              }
+
+              return null;
+            }
+
+            async function handleIssueEvent() {
+              const issueNumber = context.payload.issue.number;
+              const action = context.payload.action;
+              const eventLabel = context.payload.label?.name ?? null;
+
+              let preferredStage = null;
+              if (action === 'opened' || action === 'reopened') {
+                preferredStage = 'stage:refining';
+              } else if (action === 'closed') {
+                preferredStage = 'stage:done';
+              } else if (action === 'labeled' && eventLabel && STAGE_NAMES.includes(eventLabel)) {
+                preferredStage = eventLabel;
+              }
+
+              let preferredLane = null;
+              if (action === 'labeled' && eventLabel && LANE_NAMES.includes(eventLabel)) {
+                preferredLane = eventLabel;
+              }
+
+              await applyIssueLabelRules(issueNumber, {
+                preferredStage,
+                preferredLane,
+              });
+            }
+
+            async function handlePullRequestEvent() {
+              const pullRequest = context.payload.pull_request;
+              const action = context.payload.action;
+
+              const linkedIssueNumbers = await getLinkedIssueNumbersFromPr(
+                pullRequest.number,
+                pullRequest.body || '',
+              );
+
+              if (linkedIssueNumbers.length === 0) {
+                core.info('No linked issues detected from pull request keywords.');
+                return;
+              }
+
+              const preferredStage = stageFromPullRequestEvent(action, pullRequest);
+              const detectedPrLane = await detectPrLane(pullRequest.number);
+
+              for (const issueNumber of linkedIssueNumbers) {
+                const labelsBefore = await getIssueLabelNames(issueNumber);
+                const currentLane = resolveLaneFromLabels(labelsBefore);
+
+                let preferredLane = null;
+                if (detectedPrLane) {
+                  if (currentLane === 'lane:untriaged') {
+                    preferredLane = detectedPrLane;
+                  } else if (currentLane !== detectedPrLane) {
+                    preferredLane = 'lane:cross-cutting';
+                  }
+                }
+
+                await applyIssueLabelRules(
+                  issueNumber,
+                  {
+                    preferredStage,
+                    preferredLane,
+                  },
+                  labelsBefore,
+                );
+              }
+            }
+
+            async function handlePullRequestReviewEvent() {
+              const review = context.payload.review;
+              if (!review || review.state.toLowerCase() !== 'changes_requested') {
+                core.info('No stage transition required for this review state.');
+                return;
+              }
+
+              const pullRequest = context.payload.pull_request;
+              const linkedIssueNumbers = await getLinkedIssueNumbersFromPr(
+                pullRequest.number,
+                pullRequest.body || '',
+              );
+
+              if (linkedIssueNumbers.length === 0) {
+                core.info('No linked issues detected from pull request review event.');
+                return;
+              }
+
+              for (const issueNumber of linkedIssueNumbers) {
+                await applyIssueLabelRules(issueNumber, {
+                  preferredStage: 'stage:in-progress',
+                });
+              }
+            }
+
+            async function handleWorkflowDispatch() {
+              const openIssues = await github.paginate(github.rest.issues.listForRepo, {
+                owner,
+                repo,
+                state: 'open',
+                per_page: 100,
+              });
+
+              let normalizedCount = 0;
+              for (const issue of openIssues) {
+                if (issue.pull_request) {
+                  continue;
+                }
+
+                await applyIssueLabelRules(issue.number);
+                normalizedCount += 1;
+              }
+
+              core.info(`Normalized lifecycle labels for ${normalizedCount} open issues.`);
+            }
+
+            await ensureLifecycleLabels();
+
+            if (context.eventName === 'workflow_dispatch') {
+              await handleWorkflowDispatch();
+            } else if (context.eventName === 'issues') {
+              await handleIssueEvent();
+            } else if (context.eventName === 'pull_request') {
+              await handlePullRequestEvent();
+            } else if (context.eventName === 'pull_request_review') {
+              await handlePullRequestReviewEvent();
+            } else {
+              core.info(`Event ${context.eventName} has no lifecycle handler.`);
+            }
