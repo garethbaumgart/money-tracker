@@ -12,6 +12,7 @@ class AppThemeController extends ChangeNotifier {
 
   AppThemeMode _mode;
   final ThemeModePreferencesGateway _preferencesGateway;
+  Future<void> _saveChain = Future<void>.value();
 
   AppThemeMode get mode => _mode;
 
@@ -24,11 +25,15 @@ class AppThemeController extends ChangeNotifier {
 
     _mode = mode;
     notifyListeners();
-    try {
-      await _preferencesGateway.save(mode);
-    } catch (_) {
-      // Keep the in-memory mode applied even if persistence is temporarily unavailable.
-    }
+    final modeToPersist = mode;
+    _saveChain = _saveChain.then((_) async {
+      try {
+        await _preferencesGateway.save(modeToPersist);
+      } catch (_) {
+        // Keep the in-memory mode applied even if persistence is temporarily unavailable.
+      }
+    });
+    await _saveChain;
   }
 }
 
