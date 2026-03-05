@@ -15,15 +15,19 @@ New features must start from:
 ## Layer Responsibilities
 
 ### Endpoints
+
 HTTP mapping and DTO translation only.
 
 ### Application
+
 Use cases and orchestration logic.
 
 ### Domain
+
 Business rules and invariants.
 
 ### Infrastructure
+
 Persistence, messaging, and external services.
 
 ## Rules

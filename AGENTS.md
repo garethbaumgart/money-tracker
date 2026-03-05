@@ -45,13 +45,13 @@ Before opening a pull request:
 PRs must include verification evidence and reference the issue they resolve.
 
 ### Available skills
-- `github-issue-refiner`: Refine rough GitHub issues into decision-complete implementation specs with scope, acceptance criteria, and test plan. (file: `/Users/garethbaumgart/Source/money-tracker/skills/github-issue-refiner/SKILL.md`)
-- `github-pr`: Prepare high-signal PR packages from local changes, including summary, risk analysis, and test evidence. (file: `/Users/garethbaumgart/Source/money-tracker/skills/github-pr/SKILL.md`)
-- `ux-mockup-explorer`: Generate raw HTML UX option packs (A-E) and decision artifacts for UX-heavy issues before Flutter implementation. (file: `/Users/garethbaumgart/Source/money-tracker/skills/ux-mockup-explorer/SKILL.md`)
-- `flutter-ux-theming`: Apply project Flutter UX/theming standards using Material 3, semantic tokens, ThemeExtension, and component themes. Use for UI feature build/refactor/review tasks. (file: `/Users/garethbaumgart/Source/money-tracker/skills/flutter-ux-theming/SKILL.md`)
-- `backend-ddd-vertical-slice`: Implement backend/API features using pragmatic DDD + vertical slices with clear domain/application/infrastructure/presentation boundaries. (file: `/Users/garethbaumgart/Source/money-tracker/skills/backend-ddd-vertical-slice/SKILL.md`)
-- `skill-creator`: Guide for creating or updating Codex skills. Use when creating new project skills. (file: `/Users/garethbaumgart/.codex/skills/.system/skill-creator/SKILL.md`)
-- `skill-installer`: Install Codex skills from curated or GitHub sources into Codex home. (file: `/Users/garethbaumgart/.codex/skills/.system/skill-installer/SKILL.md`)
+- `github-issue-refiner`: Refine rough GitHub issues into decision-complete implementation specs with scope, acceptance criteria, and test plan. (file: `skills/github-issue-refiner/SKILL.md`)
+- `github-pr`: Prepare high-signal PR packages from local changes, including summary, risk analysis, and test evidence. (file: `skills/github-pr/SKILL.md`)
+- `ux-mockup-explorer`: Generate raw HTML UX option packs (A-E) and decision artifacts for UX-heavy issues before Flutter implementation. (file: `skills/ux-mockup-explorer/SKILL.md`)
+- `flutter-ux-theming`: Apply project Flutter UX/theming standards using Material 3, semantic tokens, ThemeExtension, and component themes. Use for UI feature build/refactor/review tasks. (file: `skills/flutter-ux-theming/SKILL.md`)
+- `backend-ddd-vertical-slice`: Implement backend/API features using pragmatic DDD + vertical slices with clear domain/application/infrastructure/presentation boundaries. (file: `skills/backend-ddd-vertical-slice/SKILL.md`)
+- `skill-creator`: Guide for creating or updating Codex skills. Use when creating new project skills. (file: `~/.codex/skills/.system/skill-creator/SKILL.md`)
+- `skill-installer`: Install Codex skills from curated or GitHub sources into Codex home. (file: `~/.codex/skills/.system/skill-installer/SKILL.md`)
 
 ### How to use skills
 - Trigger by naming a skill directly (for example, `$github-pr`) or by asking for work that clearly matches the skill description.
