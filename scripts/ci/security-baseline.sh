@@ -50,15 +50,34 @@ if [[ ! -s "$osv_report" ]]; then
 fi
 
 high_critical_count="$(
-  jq '[.results[]?.packages[]? as $pkg | $pkg.vulnerabilities[]? | (.database_specific.severity // "" | ascii_upcase) as $severity | select($severity == "HIGH" or $severity == "CRITICAL") | {package: $pkg.package.name, version: $pkg.package.version, ecosystem: $pkg.package.ecosystem, id: .id, severity: $severity, summary: (.summary // "")}] | length' "$osv_report"
+  jq '[
+    .results[]?.packages[]? as $pkg
+    | $pkg.groups[]?
+    | ((.max_severity | tonumber?) // 0) as $score
+    | select($score >= 7)
+    | {
+      package: $pkg.package.name,
+      version: $pkg.package.version,
+      ecosystem: $pkg.package.ecosystem,
+      ids: (.ids // []),
+      score: $score,
+      severity: (if $score >= 9 then "CRITICAL" else "HIGH" end)
+    }
+  ] | length' "$osv_report"
 )"
 
 total_vulnerability_count="$(
   jq '[.results[]?.packages[]?.vulnerabilities[]?] | length' "$osv_report"
 )"
 
-jq -r '.results[]?.packages[]? as $pkg | $pkg.vulnerabilities[]? | (.database_specific.severity // "" | ascii_upcase) as $severity | select($severity == "HIGH" or $severity == "CRITICAL") | "\($severity): \(.id) \($pkg.package.name)@\($pkg.package.version) [\($pkg.package.ecosystem)] \(.summary // "no summary")"' \
-  "$osv_report" > "$osv_summary"
+jq -r '
+  .results[]?.packages[]? as $pkg
+  | $pkg.groups[]?
+  | ((.max_severity | tonumber?) // 0) as $score
+  | select($score >= 7)
+  | (if $score >= 9 then "CRITICAL" else "HIGH" end) as $severity
+  | "\($severity) (CVSS \($score)): \((.ids // [] | join(", "))) \($pkg.package.name)@\($pkg.package.version) [\($pkg.package.ecosystem)]"
+' "$osv_report" > "$osv_summary"
 
 if [[ "$high_critical_count" -gt 0 ]]; then
   echo "Found $high_critical_count HIGH/CRITICAL dependency vulnerabilities." >&2

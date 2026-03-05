@@ -16,7 +16,8 @@ fi
 mkdir -p "$artifacts_dir" "$test_results_dir"
 
 echo "Running backend restore..."
-dotnet restore "$solution_path"
+dotnet restore "$solution_path" \
+  2>&1 | tee "$artifacts_dir/dotnet-restore.log"
 
 echo "Running backend build..."
 dotnet build "$solution_path" \
