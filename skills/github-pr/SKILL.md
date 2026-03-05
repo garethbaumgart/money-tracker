@@ -19,7 +19,8 @@ Focus on behavior, risk, verification evidence, and deterministic comment resolu
 5. Produce PR title, PR body, and reviewer checklist.
 6. Open or update PR.
 7. Run review loop until merge readiness criteria are met.
-8. Do not stop at "PR opened"; continue polling and resolving reviews/checks unless the user explicitly asks to stop.
+8. After each push in the review loop, explicitly trigger Copilot re-review for the new PR head.
+9. Do not stop at "PR opened"; continue polling and resolving reviews/checks unless the user explicitly asks to stop.
 
 ## Completion Gate (Required)
 
@@ -42,6 +43,7 @@ Required metrics:
 - Unresolved actionable comment count
 - Pending required checks count
 - Last AI-reviewer comment timestamp (used to verify the AI-reviewer quiet window has elapsed; `null` when no AI-reviewer comments exist on current head)
+- Copilot re-requested on current head (`true` only when Copilot re-review was explicitly requested after the latest push for `headRefOid`)
 - Merge-ready boolean (`true` only when all gate conditions are satisfied)
 
 Rules:
@@ -71,6 +73,10 @@ Rules:
   - PR issue comments with `created_at` greater than or equal to the push timestamp that produced current `headRefOid` (issue comments are not commit-scoped by GitHub).
 - If no such comments exist for current head, set value to `null` (this counts as present, not omitted) and treat the AI quiet-window condition as satisfied for this metric.
 
+4. `copilot_rerequested_on_head`
+- Set `true` only when a Copilot re-review trigger action is recorded for the current `headRefOid` (for example, reviewer-request API call accepted on current head, or `@copilot review` comment posted after the push that produced current `headRefOid`).
+- Set `false` if no explicit trigger can be proven for current head.
+
 ### Freshness Rules (Repoll Required)
 
 Treat verification metrics as fresh only when all are true for the last poll:
@@ -90,6 +96,7 @@ Emit the verification block as a fenced `json` object with these exact keys:
   "unresolved_actionable_comments": 0,
   "pending_required_checks": 0,
   "last_ai_reviewer_comment_timestamp": "2026-03-04T09:32:57Z",
+  "copilot_rerequested_on_head": true,
   "merge_ready": true
 }
 ```
@@ -139,6 +146,7 @@ Only end the run when all are true:
 1. All review and check statuses have completed.
 2. All actionable comments have been resolved.
 3. No new actionable comments have appeared for at least `QUIET_POLL_INTERVALS` poll intervals.
+4. Copilot has been re-requested for the current head commit (when available in the repo) and no unresolved Copilot feedback remains.
 
 Use the `Round Completion Heuristic` (from `references/review-loop-commands.md`) to determine when one review round has ended. Then apply this `Run Completion Gate` to decide whether to start another round or end the full skill run.
 
@@ -157,8 +165,10 @@ Use the `Round Completion Heuristic` (from `references/review-loop-commands.md`)
 6. Never use "push to later feature" as the reason to skip a valid fix.
 7. If rejecting a comment, provide specific evidence: incorrect assumption, constraint conflict, duplicate, or already addressed.
 8. Push updates, post round summary, and request re-review.
-9. Sleep `POLL_SECONDS` seconds and re-poll.
-10. Repeat until run completion gate is satisfied.
+9. Explicitly trigger Copilot re-review on each pushed head using command patterns in `references/review-loop-commands.md`.
+10. Verify whether Copilot produced a review signal for current `headRefOid`; if not, keep polling through the quiet window and report the exact state.
+11. Sleep `POLL_SECONDS` seconds and re-poll.
+12. Repeat until run completion gate is satisfied.
 
 Multiple rounds per PR are normal and expected.
 
@@ -190,6 +200,7 @@ Section header: `## Verification`
   "unresolved_actionable_comments": 0,
   "pending_required_checks": 0,
   "last_ai_reviewer_comment_timestamp": "2026-03-04T09:32:57Z",
+  "copilot_rerequested_on_head": true,
   "merge_ready": true
 }
 ```

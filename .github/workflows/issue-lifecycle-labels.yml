@@ -1,0 +1,779 @@
+name: Issue Lifecycle Labels
+
+on:
+  issues:
+    types:
+      - opened
+      - reopened
+      - closed
+      - labeled
+      - unlabeled
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - edited
+      - synchronize
+      - ready_for_review
+      - converted_to_draft
+      - closed
+  pull_request_review:
+    types:
+      - submitted
+  check_suite:
+    types:
+      - completed
+  workflow_dispatch:
+
+permissions:
+  checks: read
+  contents: read
+  issues: write
+  pull-requests: read
+  statuses: read
+
+jobs:
+  enforce-lifecycle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply lane and stage rules
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # actions/github-script v8
+        with:
+          script: |
+            const STAGE_LABELS = [
+              { name: 'stage:done', color: '5319E7', description: 'Merged and complete' },
+              { name: 'stage:refining', color: 'D4C5F9', description: 'Issue requirements are being refined' },
+              { name: 'stage:refined', color: 'BFD4F2', description: 'Refinement complete and ready for planning' },
+              { name: 'stage:planning', color: 'C2E0C6', description: 'Implementation plan is being created' },
+              { name: 'stage:planned', color: '0E8A16', description: 'Planned and ready for implementation' },
+              { name: 'stage:in-progress', color: 'FBCA04', description: 'Implementation work is actively in progress' },
+              { name: 'stage:in-review', color: '1D76DB', description: 'Implementation is under pull request review' },
+            ];
+
+            const LANE_LABELS = [
+              { name: 'lane:backend', color: 'B60205', description: 'Backend/API lane ownership' },
+              { name: 'lane:mobile', color: 'FBCA04', description: 'Flutter/mobile lane ownership' },
+              { name: 'lane:platform', color: '0052CC', description: 'Platform/tooling lane ownership' },
+              { name: 'lane:cross-cutting', color: '6F42C1', description: 'Work crosses multiple lanes' },
+              { name: 'lane:untriaged', color: 'BFD4F2', description: 'Lane assignment not completed yet' },
+            ];
+
+            const STAGE_NAMES = STAGE_LABELS.map((label) => label.name);
+            const LANE_NAMES = LANE_LABELS.map((label) => label.name);
+            const LEGACY_AREA_TO_LANE = {
+              'area:backend': 'lane:backend',
+              'area:mobile': 'lane:mobile',
+              'area:platform': 'lane:platform',
+            };
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const ownerLower = owner.toLowerCase();
+            const repoLower = repo.toLowerCase();
+            const MAX_PR_FILES_PAGES = 30;
+            const MAX_BACKFILL_ISSUES = 200;
+            const ROOT_PLATFORM_FILES = new Set([
+              'package.json',
+              'package-lock.json',
+              'pnpm-lock.yaml',
+              'yarn.lock',
+              'bun.lockb',
+              'tsconfig.json',
+              'Makefile',
+            ]);
+
+            function uniq(values) {
+              return [...new Set(values)];
+            }
+
+            function sortUnique(values) {
+              return uniq(values).sort();
+            }
+
+            function sameLabelSet(left, right) {
+              const sortedLeft = sortUnique(left);
+              const sortedRight = sortUnique(right);
+              if (sortedLeft.length !== sortedRight.length) {
+                return false;
+              }
+
+              for (let i = 0; i < sortedLeft.length; i += 1) {
+                if (sortedLeft[i] !== sortedRight[i]) {
+                  return false;
+                }
+              }
+
+              return true;
+            }
+
+            function pickExistingByOrder(existingLabels, orderedLabels) {
+              for (const label of orderedLabels) {
+                if (existingLabels.includes(label)) {
+                  return label;
+                }
+              }
+
+              return existingLabels[0] ?? null;
+            }
+
+            function deriveLaneFromLegacy(labels) {
+              for (const [legacyLabel, laneLabel] of Object.entries(LEGACY_AREA_TO_LANE)) {
+                if (labels.includes(legacyLabel)) {
+                  return laneLabel;
+                }
+              }
+
+              return null;
+            }
+
+            function resolveLaneFromLabels(labels) {
+              const explicitLaneLabels = labels.filter((label) => LANE_NAMES.includes(label));
+              const explicitLane = pickExistingByOrder(explicitLaneLabels, LANE_NAMES);
+              if (explicitLane) {
+                return explicitLane;
+              }
+
+              const legacyLane = deriveLaneFromLegacy(labels);
+              if (legacyLane) {
+                return legacyLane;
+              }
+
+              return 'lane:untriaged';
+            }
+
+            function normalizeDimension(labels, allowedLabels, fallbackLabel, preferredLabel) {
+              const currentDimensionLabels = labels.filter((label) => allowedLabels.includes(label));
+
+              let chosenLabel = null;
+              if (preferredLabel && allowedLabels.includes(preferredLabel)) {
+                chosenLabel = preferredLabel;
+              } else {
+                chosenLabel = pickExistingByOrder(currentDimensionLabels, allowedLabels);
+              }
+
+              if (!chosenLabel) {
+                chosenLabel = fallbackLabel;
+              }
+
+              const labelsWithoutDimension = labels.filter((label) => !allowedLabels.includes(label));
+              const nextLabels = uniq([...labelsWithoutDimension, chosenLabel]);
+
+              return {
+                chosenLabel,
+                labels: nextLabels,
+              };
+            }
+
+            function buildNormalizedIssueLabels(existingLabels, options = {}) {
+              const preferredStage = options.preferredStage ?? null;
+              const preferredLane = options.preferredLane ?? null;
+
+              let labels = uniq(existingLabels);
+
+              const normalizedStage = normalizeDimension(labels, STAGE_NAMES, 'stage:refining', preferredStage);
+              labels = normalizedStage.labels;
+
+              const hasLaneLabel = labels.some((label) => LANE_NAMES.includes(label));
+              const inferredLaneFromLegacy = !preferredLane && !hasLaneLabel ? deriveLaneFromLegacy(labels) : null;
+              const normalizedLane = normalizeDimension(
+                labels,
+                LANE_NAMES,
+                'lane:untriaged',
+                preferredLane || inferredLaneFromLegacy,
+              );
+              labels = normalizedLane.labels;
+
+              return {
+                labels,
+                stage: normalizedStage.chosenLabel,
+                lane: normalizedLane.chosenLabel,
+              };
+            }
+
+            async function ensureLabel(definition) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner,
+                  repo,
+                  name: definition.name,
+                });
+              } catch (error) {
+                if (error.status !== 404) {
+                  throw error;
+                }
+
+                try {
+                  await github.rest.issues.createLabel({
+                    owner,
+                    repo,
+                    name: definition.name,
+                    color: definition.color,
+                    description: definition.description,
+                  });
+
+                  core.info(`Created missing label ${definition.name}`);
+                } catch (createError) {
+                  if (createError.status === 422) {
+                    core.info(`Label ${definition.name} already exists (create race).`);
+                    return;
+                  }
+
+                  throw createError;
+                }
+              }
+            }
+
+            async function ensureLifecycleLabels() {
+              for (const definition of [...STAGE_LABELS, ...LANE_LABELS]) {
+                await ensureLabel(definition);
+              }
+            }
+
+            async function getIssueLabelNames(issueNumber) {
+              const issue = await github.rest.issues.get({
+                owner,
+                repo,
+                issue_number: issueNumber,
+              });
+
+              return issue.data.labels
+                .map((label) => (typeof label === 'string' ? label : label.name))
+                .filter(Boolean);
+            }
+
+            async function setIssueLabelNames(issueNumber, labels) {
+              await github.rest.issues.setLabels({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                labels: sortUnique(labels),
+              });
+            }
+
+            async function applyIssueLabelRules(issueNumber, options = {}, existingLabels = null) {
+              const labelsBefore = existingLabels || await getIssueLabelNames(issueNumber);
+              const normalized = buildNormalizedIssueLabels(labelsBefore, options);
+
+              if (!sameLabelSet(labelsBefore, normalized.labels)) {
+                await setIssueLabelNames(issueNumber, normalized.labels);
+                core.info(`Updated issue #${issueNumber} labels -> ${normalized.labels.join(', ')}`);
+              } else {
+                core.info(`No label updates needed for issue #${issueNumber}`);
+              }
+
+              return normalized;
+            }
+
+            function parseLinkedIssuesFromBody(prBody) {
+              const linkedIssues = new Set();
+              if (!prBody) {
+                return [];
+              }
+
+              const keywordPattern = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+(?:(?<refOwner>[A-Za-z0-9_.-]+)\/(?<refRepo>[A-Za-z0-9_.-]+))?#(?<issueNumber>\d+)\b/gi;
+              const urlPattern = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+https:\/\/github\.com\/(?<refOwner>[A-Za-z0-9_.-]+)\/(?<refRepo>[A-Za-z0-9_.-]+)\/issues\/(?<issueNumber>\d+)\b/gi;
+
+              for (const pattern of [keywordPattern, urlPattern]) {
+                for (const match of prBody.matchAll(pattern)) {
+                  const matchedOwner = (match.groups?.refOwner ?? owner).toLowerCase();
+                  const matchedRepo = (match.groups?.refRepo ?? repo).toLowerCase();
+                  if (matchedOwner !== ownerLower || matchedRepo !== repoLower) {
+                    continue;
+                  }
+
+                  const issueNumberToken = match.groups?.issueNumber;
+                  if (!issueNumberToken) {
+                    continue;
+                  }
+
+                  const issueNumber = Number.parseInt(issueNumberToken, 10);
+                  if (Number.isInteger(issueNumber) && issueNumber > 0) {
+                    linkedIssues.add(issueNumber);
+                  }
+                }
+              }
+
+              return [...linkedIssues];
+            }
+
+            async function getLinkedIssueNumbersFromPr(prNumber, prBody) {
+              const linkedIssues = new Set();
+
+              try {
+                let hasNextPage = true;
+                let cursor = null;
+
+                while (hasNextPage) {
+                  const response = await github.graphql(
+                    `query($owner: String!, $repo: String!, $number: Int!, $cursor: String) {
+                      repository(owner: $owner, name: $repo) {
+                        pullRequest(number: $number) {
+                          closingIssuesReferences(first: 100, after: $cursor) {
+                            nodes {
+                              number
+                            }
+                            pageInfo {
+                              hasNextPage
+                              endCursor
+                            }
+                          }
+                        }
+                      }
+                    }`,
+                    {
+                      owner,
+                      repo,
+                      number: prNumber,
+                      cursor,
+                    },
+                  );
+
+                  if (!response?.repository?.pullRequest) {
+                    core.warning(`Unable to resolve pull request #${prNumber} when reading linked issues.`);
+                    break;
+                  }
+
+                  const closingIssuesReferences = response?.repository?.pullRequest?.closingIssuesReferences;
+                  if (!closingIssuesReferences) {
+                    break;
+                  }
+
+                  for (const issue of closingIssuesReferences.nodes ?? []) {
+                    if (Number.isInteger(issue.number)) {
+                      linkedIssues.add(issue.number);
+                    }
+                  }
+
+                  hasNextPage = Boolean(closingIssuesReferences.pageInfo?.hasNextPage);
+                  cursor = closingIssuesReferences.pageInfo?.endCursor ?? null;
+                }
+              } catch (error) {
+                core.warning(`GraphQL linked issue lookup failed: ${error.message}`);
+              }
+
+              if (linkedIssues.size === 0) {
+                for (const issueNumber of parseLinkedIssuesFromBody(prBody)) {
+                  linkedIssues.add(issueNumber);
+                }
+              }
+
+              return [...linkedIssues];
+            }
+
+            function classifyChangedPath(filename) {
+              if (filename.startsWith('backend/')) {
+                return 'lane:backend';
+              }
+
+              if (filename.startsWith('mobile/')) {
+                return 'lane:mobile';
+              }
+
+              if (filename.startsWith('.github/') || filename.startsWith('scripts/')) {
+                return 'lane:platform';
+              }
+
+              if (filename.startsWith('docs/')) {
+                return 'lane:platform';
+              }
+
+              if (filename.startsWith('tooling/') || filename.startsWith('tools/')) {
+                return 'lane:platform';
+              }
+
+              if (ROOT_PLATFORM_FILES.has(filename)) {
+                return 'lane:platform';
+              }
+
+              return null;
+            }
+
+            async function detectPrLane(prNumber) {
+              const detectedLanes = new Set();
+              let hitPageLimit = false;
+              for (let page = 1; page <= MAX_PR_FILES_PAGES; page += 1) {
+                const response = await github.rest.pulls.listFiles({
+                  owner,
+                  repo,
+                  pull_number: prNumber,
+                  per_page: 100,
+                  page,
+                });
+
+                const files = response.data;
+                if (files.length === 0) {
+                  break;
+                }
+
+                for (const file of files) {
+                  const lane = classifyChangedPath(file.filename);
+                  if (lane) {
+                    detectedLanes.add(lane);
+                  }
+
+                  if (detectedLanes.size > 1) {
+                    return 'lane:cross-cutting';
+                  }
+                }
+
+                if (files.length < 100) {
+                  break;
+                }
+
+                if (page === MAX_PR_FILES_PAGES) {
+                  hitPageLimit = true;
+                }
+              }
+
+              if (hitPageLimit) {
+                core.warning(`Stopped lane detection after ${MAX_PR_FILES_PAGES} pages for PR #${prNumber}.`);
+              }
+
+              if (detectedLanes.size === 0) {
+                return null;
+              }
+
+              if (detectedLanes.size === 1) {
+                return [...detectedLanes][0];
+              }
+
+              return 'lane:cross-cutting';
+            }
+
+            async function areChecksGreenForPr(ref) {
+              try {
+                const [checkRuns, statusResponse] = await Promise.all([
+                  github.paginate(
+                    github.rest.checks.listForRef,
+                    {
+                      owner,
+                      repo,
+                      ref,
+                      per_page: 100,
+                    },
+                    (response) => response.data.check_runs ?? [],
+                  ),
+                  github.rest.repos.getCombinedStatusForRef({
+                    owner,
+                    repo,
+                    ref,
+                  }),
+                ]);
+
+                const hasPendingCheckRun = checkRuns.some((checkRun) => checkRun.status !== 'completed');
+                if (hasPendingCheckRun) {
+                  return false;
+                }
+
+                const hasFailingCheckRun = checkRuns.some((checkRun) => {
+                  if (checkRun.status !== 'completed') {
+                    return false;
+                  }
+
+                  const conclusion = (checkRun.conclusion || '').toLowerCase();
+                  return !['success', 'neutral', 'skipped'].includes(conclusion);
+                });
+                if (hasFailingCheckRun) {
+                  return false;
+                }
+
+                const combinedStatus = (statusResponse.data.state || '').toLowerCase();
+                if (combinedStatus === 'pending' || combinedStatus === 'failure' || combinedStatus === 'error') {
+                  return false;
+                }
+
+                return true;
+              } catch (error) {
+                core.warning(`Unable to evaluate checks for ${ref}: ${error.message}`);
+                return false;
+              }
+            }
+
+            function stageFromPullRequestEvent(action, pullRequest, checksGreen) {
+              if (action === 'closed' && pullRequest.merged) {
+                return 'stage:done';
+              }
+
+              if (action === 'converted_to_draft') {
+                return 'stage:in-progress';
+              }
+
+              if (action === 'ready_for_review') {
+                return checksGreen ? 'stage:in-review' : 'stage:in-progress';
+              }
+
+              if (['opened', 'reopened', 'edited', 'synchronize'].includes(action)) {
+                if (pullRequest.draft) {
+                  return 'stage:in-progress';
+                }
+
+                return checksGreen ? 'stage:in-review' : 'stage:in-progress';
+              }
+
+              return null;
+            }
+
+            async function applyPullRequestLinkedIssueRules(
+              pullRequest,
+              preferredStage,
+              detectedPrLane,
+              noLinkedIssuesMessage,
+            ) {
+              const linkedIssueNumbers = await getLinkedIssueNumbersFromPr(
+                pullRequest.number,
+                pullRequest.body || '',
+              );
+
+              if (linkedIssueNumbers.length === 0) {
+                core.info(noLinkedIssuesMessage);
+                return;
+              }
+
+              for (const issueNumber of linkedIssueNumbers) {
+                try {
+                  const labelsBefore = await getIssueLabelNames(issueNumber);
+                  const currentLane = resolveLaneFromLabels(labelsBefore);
+
+                  let preferredLane = null;
+                  if (detectedPrLane) {
+                    if (currentLane === 'lane:untriaged') {
+                      preferredLane = detectedPrLane;
+                    } else if (currentLane !== detectedPrLane) {
+                      preferredLane = 'lane:cross-cutting';
+                    }
+                  }
+
+                  const preferredStageForIssue = currentLane === 'lane:untriaged' && !detectedPrLane
+                    ? null
+                    : preferredStage;
+
+                  await applyIssueLabelRules(
+                    issueNumber,
+                    {
+                      preferredStage: preferredStageForIssue,
+                      preferredLane,
+                    },
+                    labelsBefore,
+                  );
+                } catch (error) {
+                  core.warning(`Unable to process linked issue #${issueNumber}: ${error.message}`);
+                  continue;
+                }
+              }
+            }
+
+            async function handleIssueEvent() {
+              const issueNumber = context.payload.issue.number;
+              const action = context.payload.action;
+              const eventLabel = context.payload.label?.name ?? null;
+
+              let preferredStage = null;
+              if (action === 'opened' || action === 'reopened') {
+                preferredStage = 'stage:refining';
+              } else if (action === 'closed') {
+                preferredStage = 'stage:done';
+              } else if (action === 'labeled' && eventLabel && STAGE_NAMES.includes(eventLabel)) {
+                preferredStage = eventLabel;
+              }
+
+              let preferredLane = null;
+              if (action === 'labeled' && eventLabel && LANE_NAMES.includes(eventLabel)) {
+                preferredLane = eventLabel;
+              }
+
+              await applyIssueLabelRules(issueNumber, {
+                preferredStage,
+                preferredLane,
+              });
+            }
+
+            async function handlePullRequestEvent() {
+              const pullRequest = context.payload.pull_request;
+              const action = context.payload.action;
+
+              const checksGreen = await areChecksGreenForPr(pullRequest.head.sha);
+              const preferredStage = stageFromPullRequestEvent(action, pullRequest, checksGreen);
+              const detectedPrLane = await detectPrLane(pullRequest.number);
+
+              await applyPullRequestLinkedIssueRules(
+                pullRequest,
+                preferredStage,
+                detectedPrLane,
+                'No linked issues detected from pull request keywords.',
+              );
+            }
+
+            async function handlePullRequestReviewEvent() {
+              const review = context.payload.review;
+              if (!review || review.state.toLowerCase() !== 'changes_requested') {
+                core.info('No stage transition required for this review state.');
+                return;
+              }
+
+              const pullRequest = context.payload.pull_request;
+              const linkedIssueNumbers = await getLinkedIssueNumbersFromPr(
+                pullRequest.number,
+                pullRequest.body || '',
+              );
+
+              if (linkedIssueNumbers.length === 0) {
+                core.info('No linked issues detected from pull request review event.');
+                return;
+              }
+
+              for (const issueNumber of linkedIssueNumbers) {
+                try {
+                  await applyIssueLabelRules(issueNumber, {
+                    preferredStage: 'stage:in-progress',
+                  });
+                } catch (error) {
+                  core.warning(`Unable to process review transition for issue #${issueNumber}: ${error.message}`);
+                  continue;
+                }
+              }
+            }
+
+            async function handleCheckSuiteEvent() {
+              const checkSuite = context.payload.check_suite;
+              const action = context.payload.action;
+              if (!checkSuite || action !== 'completed') {
+                core.info('No lifecycle transition required for this check suite event.');
+                return;
+              }
+
+              const checkConclusion = (checkSuite.conclusion || '').toLowerCase();
+              if (!['success', 'neutral', 'skipped'].includes(checkConclusion)) {
+                core.info(`Ignoring check suite conclusion ${checkConclusion || 'unknown'}.`);
+                return;
+              }
+
+              const openPrNumbers = new Set();
+              for (const pullRequestRef of checkSuite.pull_requests ?? []) {
+                if (Number.isInteger(pullRequestRef.number)) {
+                  openPrNumbers.add(pullRequestRef.number);
+                }
+              }
+
+              if (openPrNumbers.size === 0 && checkSuite.head_sha) {
+                try {
+                  const associatedPullRequests = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                    owner,
+                    repo,
+                    commit_sha: checkSuite.head_sha,
+                  });
+
+                  for (const pullRequestRef of associatedPullRequests.data ?? []) {
+                    if (pullRequestRef.state === 'open' && Number.isInteger(pullRequestRef.number)) {
+                      openPrNumbers.add(pullRequestRef.number);
+                    }
+                  }
+                } catch (error) {
+                  core.warning(`Unable to map check suite to pull requests: ${error.message}`);
+                }
+              }
+
+              if (openPrNumbers.size === 0) {
+                core.info('No open pull requests found for check suite event.');
+                return;
+              }
+
+              for (const pullRequestNumber of openPrNumbers) {
+                try {
+                  const pullRequestResponse = await github.rest.pulls.get({
+                    owner,
+                    repo,
+                    pull_number: pullRequestNumber,
+                  });
+                  const pullRequest = pullRequestResponse.data;
+
+                  if (pullRequest.state !== 'open' || pullRequest.draft) {
+                    continue;
+                  }
+
+                  const checksGreen = await areChecksGreenForPr(pullRequest.head.sha);
+                  if (!checksGreen) {
+                    core.info(`Checks are not fully green for PR #${pullRequest.number}; skipping stage transition.`);
+                    continue;
+                  }
+
+                  const detectedPrLane = await detectPrLane(pullRequest.number);
+                  await applyPullRequestLinkedIssueRules(
+                    pullRequest,
+                    'stage:in-review',
+                    detectedPrLane,
+                    `No linked issues detected for check suite transition on PR #${pullRequest.number}.`,
+                  );
+                } catch (error) {
+                  core.warning(`Unable to process check suite transition for PR #${pullRequestNumber}: ${error.message}`);
+                  continue;
+                }
+              }
+            }
+
+            async function handleWorkflowDispatch() {
+              let normalizedCount = 0;
+              let page = 1;
+              let hitIssueLimit = false;
+
+              while (!hitIssueLimit) {
+                const openIssuesResponse = await github.rest.issues.listForRepo({
+                  owner,
+                  repo,
+                  state: 'open',
+                  per_page: 100,
+                  page,
+                });
+                const openIssues = openIssuesResponse.data;
+                if (openIssues.length === 0) {
+                  break;
+                }
+
+                for (const issue of openIssues) {
+                  if (issue.pull_request) {
+                    continue;
+                  }
+
+                  if (normalizedCount >= MAX_BACKFILL_ISSUES) {
+                    hitIssueLimit = true;
+                    core.warning(`Stopped backfill after ${MAX_BACKFILL_ISSUES} issues to avoid rate limits.`);
+                    break;
+                  }
+
+                  const existingLabels = (issue.labels || [])
+                    .map((label) => (typeof label === 'string' ? label : label.name))
+                    .filter(Boolean);
+
+                  try {
+                    await applyIssueLabelRules(issue.number, {}, existingLabels);
+                    normalizedCount += 1;
+                  } catch (error) {
+                    core.warning(`Unable to normalize issue #${issue.number}: ${error.message}`);
+                    continue;
+                  }
+                }
+
+                if (openIssues.length < 100) {
+                  break;
+                }
+
+                page += 1;
+              }
+
+              core.info(`Normalized lifecycle labels for ${normalizedCount} open issues.`);
+            }
+
+            await ensureLifecycleLabels();
+
+            if (context.eventName === 'workflow_dispatch') {
+              await handleWorkflowDispatch();
+            } else if (context.eventName === 'issues') {
+              await handleIssueEvent();
+            } else if (context.eventName === 'pull_request') {
+              await handlePullRequestEvent();
+            } else if (context.eventName === 'pull_request_review') {
+              await handlePullRequestReviewEvent();
+            } else if (context.eventName === 'check_suite') {
+              await handleCheckSuiteEvent();
+            } else {
+              core.info(`Event ${context.eventName} has no lifecycle handler.`);
+            }
