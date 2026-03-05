@@ -19,7 +19,8 @@ Focus on behavior, risk, verification evidence, and deterministic comment resolu
 5. Produce PR title, PR body, and reviewer checklist.
 6. Open or update PR.
 7. Run review loop until merge readiness criteria are met.
-8. Do not stop at "PR opened"; continue polling and resolving reviews/checks unless the user explicitly asks to stop.
+8. After each push in the review loop, explicitly trigger Copilot re-review for the new PR head.
+9. Do not stop at "PR opened"; continue polling and resolving reviews/checks unless the user explicitly asks to stop.
 
 ## Completion Gate (Required)
 
@@ -139,6 +140,7 @@ Only end the run when all are true:
 1. All review and check statuses have completed.
 2. All actionable comments have been resolved.
 3. No new actionable comments have appeared for at least `QUIET_POLL_INTERVALS` poll intervals.
+4. Copilot has been re-requested for the current head commit (when available in the repo) and no unresolved Copilot feedback remains.
 
 Use the `Round Completion Heuristic` (from `references/review-loop-commands.md`) to determine when one review round has ended. Then apply this `Run Completion Gate` to decide whether to start another round or end the full skill run.
 
@@ -157,8 +159,10 @@ Use the `Round Completion Heuristic` (from `references/review-loop-commands.md`)
 6. Never use "push to later feature" as the reason to skip a valid fix.
 7. If rejecting a comment, provide specific evidence: incorrect assumption, constraint conflict, duplicate, or already addressed.
 8. Push updates, post round summary, and request re-review.
-9. Sleep `POLL_SECONDS` seconds and re-poll.
-10. Repeat until run completion gate is satisfied.
+9. Explicitly trigger Copilot re-review on each pushed head using command patterns in `references/review-loop-commands.md`.
+10. Verify whether Copilot produced a review signal for current `headRefOid`; if not, keep polling through the quiet window and report the exact state.
+11. Sleep `POLL_SECONDS` seconds and re-poll.
+12. Repeat until run completion gate is satisfied.
 
 Multiple rounds per PR are normal and expected.
 

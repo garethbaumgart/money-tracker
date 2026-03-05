@@ -8,6 +8,7 @@ Use these command patterns when running PR review rounds.
 OWNER_REPO="<owner>/<repo>" # e.g. garethbaumgart/money-tracker
 PR_NUMBER="<pr-number>"
 AI_REVIEWERS_REGEX="copilot|coderabbit|sourcery"
+COPILOT_REVIEWER_LOGIN="copilot-pull-request-reviewer"
 POLL_SECONDS=300
 QUIET_POLL_INTERVALS=2
 ```
@@ -48,6 +49,31 @@ gh api --paginate "repos/$OWNER_REPO/issues/$PR_NUMBER/comments?per_page=100" \
   --jq ".[] | select(.user.login | test(\"$AI_REVIEWERS_REGEX\"; \"i\")) | {id, user: .user.login, url: .html_url, body}"
 ```
 
+## Trigger Copilot Re-Review After Each Push
+
+Try requesting Copilot as a reviewer first. If that is unsupported in the repository, fall back to mention-trigger:
+
+```bash
+triggered="false"
+
+if gh api --method POST "repos/$OWNER_REPO/pulls/$PR_NUMBER/requested_reviewers" \
+  -F "reviewers[]=$COPILOT_REVIEWER_LOGIN" >/dev/null 2>&1; then
+  triggered="true"
+fi
+
+if [ "$triggered" != "true" ]; then
+  gh pr comment "$PR_NUMBER" --repo "$OWNER_REPO" --body "@copilot review"
+fi
+```
+
+## Verify Copilot Signal On Current Head Commit
+
+```bash
+gh pr view "$PR_NUMBER" --repo "$OWNER_REPO" \
+  --json headRefOid,reviews \
+  --jq '. as $pr | [.reviews[] | select((.author.login | ascii_downcase) == "copilot-pull-request-reviewer") | {submittedAt, commitOid: .commit.oid, onCurrentHead: (.commit.oid == $pr.headRefOid)}]'
+```
+
 ## Add Thumbs-Up Reaction Before Responding
 
 PR review comment reaction:
@@ -85,6 +111,7 @@ Treat a review round as complete when all are true:
 1. No pending required checks.
 2. No new actionable comments (human or AI) for at least `QUIET_POLL_INTERVALS` poll intervals.
 3. All actionable comments in the queue have been resolved.
+4. Copilot re-review has been triggered for the latest pushed head (when available).
 
 Then push next iteration summary or mark PR merge-ready.
 
@@ -111,9 +138,9 @@ while true; do
   gh api --paginate "repos/$OWNER_REPO/issues/$PR_NUMBER/comments?per_page=100"
 
   # 3) If actionable comments exist:
-  #    - react + fix/rebut + push + reply
+  #    - react + fix/rebut + push + reply + trigger Copilot re-review
   #    - quiet_count=0
-  # 4) Else if pending checks exist:
+  # 4) Else if pending checks or pending Copilot signal on current head exist:
   #    - quiet_count=0
   # 5) Else (no pending checks and no actionable comments):
   #    - quiet_count=$((quiet_count + 1))
