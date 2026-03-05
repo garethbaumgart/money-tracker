@@ -1,6 +1,49 @@
 ## Skills
 A skill is a set of local instructions stored in a `SKILL.md` file.
 
+## Skill Routing
+
+The following skills must be used when performing specific workflows.
+
+Pull request creation  
+→ `$github-pr`
+
+Backend feature implementation  
+→ `$backend-ddd-vertical-slice`
+
+Flutter UI or theming work  
+→ `$flutter-ux-theming`
+
+UX exploration and design option generation  
+→ `$ux-mockup-explorer`
+
+Issue clarification or specification drafting  
+→ `$github-issue-refiner`
+
+## Worker Startup Rules
+
+When beginning a task, workers must first read:
+
+`docs/dev-guide/index.md`
+
+Then read the guide corresponding to their lane:
+
+Backend work → `docs/dev-guide/backend.md`  
+Mobile work → `docs/dev-guide/mobile.md`  
+Platform work → `docs/dev-guide/platform.md`
+
+Workers must declare their lane before implementation begins.
+
+## Pull Request Workflow
+
+Before opening a pull request:
+
+1. Ensure tests pass
+2. Ensure acceptance criteria are satisfied
+3. Use the `$github-pr` skill to generate the PR description
+
+PRs must include verification evidence and reference the issue they resolve.
+
 ### Available skills
 - `github-issue-refiner`: Refine rough GitHub issues into decision-complete implementation specs with scope, acceptance criteria, and test plan. (file: `/Users/garethbaumgart/Source/money-tracker/skills/github-issue-refiner/SKILL.md`)
 - `github-pr`: Prepare high-signal PR packages from local changes, including summary, risk analysis, and test evidence. (file: `/Users/garethbaumgart/Source/money-tracker/skills/github-pr/SKILL.md`)
