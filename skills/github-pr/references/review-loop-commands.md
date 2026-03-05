@@ -71,7 +71,7 @@ fi
 ```bash
 gh pr view "$PR_NUMBER" --repo "$OWNER_REPO" \
   --json headRefOid,reviews \
-  --jq '. as $pr | [.reviews[] | select((.author.login | ascii_downcase) == "copilot-pull-request-reviewer") | {submittedAt, commitOid: .commit.oid, onCurrentHead: (.commit.oid == $pr.headRefOid)}]'
+  --jq --arg copilot_login "$COPILOT_REVIEWER_LOGIN" '. as $pr | [.reviews[] | select((.author.login | ascii_downcase) == ($copilot_login | ascii_downcase)) | {submittedAt, commitOid: .commit.oid, onCurrentHead: (.commit.oid == $pr.headRefOid)}]'
 ```
 
 ## Add Thumbs-Up Reaction Before Responding

@@ -20,6 +20,9 @@ on:
   pull_request_review:
     types:
       - submitted
+  check_suite:
+    types:
+      - completed
   workflow_dispatch:
 
 permissions:
@@ -269,7 +272,11 @@ jobs:
                     continue;
                   }
 
-                  const issueNumberToken = match.groups?.issueNumber ?? match[1];
+                  const issueNumberToken = match.groups?.issueNumber;
+                  if (!issueNumberToken) {
+                    continue;
+                  }
+
                   const issueNumber = Number.parseInt(issueNumberToken, 10);
                   if (Number.isInteger(issueNumber) && issueNumber > 0) {
                     linkedIssues.add(issueNumber);
@@ -489,48 +496,21 @@ jobs:
               return null;
             }
 
-            async function handleIssueEvent() {
-              const issueNumber = context.payload.issue.number;
-              const action = context.payload.action;
-              const eventLabel = context.payload.label?.name ?? null;
-
-              let preferredStage = null;
-              if (action === 'opened' || action === 'reopened') {
-                preferredStage = 'stage:refining';
-              } else if (action === 'closed') {
-                preferredStage = 'stage:done';
-              } else if (action === 'labeled' && eventLabel && STAGE_NAMES.includes(eventLabel)) {
-                preferredStage = eventLabel;
-              }
-
-              let preferredLane = null;
-              if (action === 'labeled' && eventLabel && LANE_NAMES.includes(eventLabel)) {
-                preferredLane = eventLabel;
-              }
-
-              await applyIssueLabelRules(issueNumber, {
-                preferredStage,
-                preferredLane,
-              });
-            }
-
-            async function handlePullRequestEvent() {
-              const pullRequest = context.payload.pull_request;
-              const action = context.payload.action;
-
+            async function applyPullRequestLinkedIssueRules(
+              pullRequest,
+              preferredStage,
+              detectedPrLane,
+              noLinkedIssuesMessage,
+            ) {
               const linkedIssueNumbers = await getLinkedIssueNumbersFromPr(
                 pullRequest.number,
                 pullRequest.body || '',
               );
 
               if (linkedIssueNumbers.length === 0) {
-                core.info('No linked issues detected from pull request keywords.');
+                core.info(noLinkedIssuesMessage);
                 return;
               }
-
-              const checksGreen = await areChecksGreenForPr(pullRequest.head.sha);
-              const preferredStage = stageFromPullRequestEvent(action, pullRequest, checksGreen);
-              const detectedPrLane = await detectPrLane(pullRequest.number);
 
               for (const issueNumber of linkedIssueNumbers) {
                 try {
@@ -565,6 +545,47 @@ jobs:
               }
             }
 
+            async function handleIssueEvent() {
+              const issueNumber = context.payload.issue.number;
+              const action = context.payload.action;
+              const eventLabel = context.payload.label?.name ?? null;
+
+              let preferredStage = null;
+              if (action === 'opened' || action === 'reopened') {
+                preferredStage = 'stage:refining';
+              } else if (action === 'closed') {
+                preferredStage = 'stage:done';
+              } else if (action === 'labeled' && eventLabel && STAGE_NAMES.includes(eventLabel)) {
+                preferredStage = eventLabel;
+              }
+
+              let preferredLane = null;
+              if (action === 'labeled' && eventLabel && LANE_NAMES.includes(eventLabel)) {
+                preferredLane = eventLabel;
+              }
+
+              await applyIssueLabelRules(issueNumber, {
+                preferredStage,
+                preferredLane,
+              });
+            }
+
+            async function handlePullRequestEvent() {
+              const pullRequest = context.payload.pull_request;
+              const action = context.payload.action;
+
+              const checksGreen = await areChecksGreenForPr(pullRequest.head.sha);
+              const preferredStage = stageFromPullRequestEvent(action, pullRequest, checksGreen);
+              const detectedPrLane = await detectPrLane(pullRequest.number);
+
+              await applyPullRequestLinkedIssueRules(
+                pullRequest,
+                preferredStage,
+                detectedPrLane,
+                'No linked issues detected from pull request keywords.',
+              );
+            }
+
             async function handlePullRequestReviewEvent() {
               const review = context.payload.review;
               if (!review || review.state.toLowerCase() !== 'changes_requested') {
@@ -595,27 +616,125 @@ jobs:
               }
             }
 
-            async function handleWorkflowDispatch() {
-              const openIssues = await github.paginate(github.rest.issues.listForRepo, {
-                owner,
-                repo,
-                state: 'open',
-                per_page: 100,
-              });
+            async function handleCheckSuiteEvent() {
+              const checkSuite = context.payload.check_suite;
+              const action = context.payload.action;
+              if (!checkSuite || action !== 'completed') {
+                core.info('No lifecycle transition required for this check suite event.');
+                return;
+              }
 
-              let normalizedCount = 0;
-              for (const issue of openIssues) {
-                if (issue.pull_request) {
+              const checkConclusion = (checkSuite.conclusion || '').toLowerCase();
+              if (!['success', 'neutral', 'skipped'].includes(checkConclusion)) {
+                core.info(`Ignoring check suite conclusion ${checkConclusion || 'unknown'}.`);
+                return;
+              }
+
+              const openPrNumbers = new Set();
+              for (const pullRequestRef of checkSuite.pull_requests ?? []) {
+                if (Number.isInteger(pullRequestRef.number)) {
+                  openPrNumbers.add(pullRequestRef.number);
+                }
+              }
+
+              if (openPrNumbers.size === 0 && checkSuite.head_sha) {
+                try {
+                  const associatedPullRequests = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                    owner,
+                    repo,
+                    commit_sha: checkSuite.head_sha,
+                  });
+
+                  for (const pullRequestRef of associatedPullRequests.data ?? []) {
+                    if (pullRequestRef.state === 'open' && Number.isInteger(pullRequestRef.number)) {
+                      openPrNumbers.add(pullRequestRef.number);
+                    }
+                  }
+                } catch (error) {
+                  core.warning(`Unable to map check suite to pull requests: ${error.message}`);
+                }
+              }
+
+              if (openPrNumbers.size === 0) {
+                core.info('No open pull requests found for check suite event.');
+                return;
+              }
+
+              for (const pullRequestNumber of openPrNumbers) {
+                try {
+                  const pullRequestResponse = await github.rest.pulls.get({
+                    owner,
+                    repo,
+                    pull_number: pullRequestNumber,
+                  });
+                  const pullRequest = pullRequestResponse.data;
+
+                  if (pullRequest.state !== 'open' || pullRequest.draft) {
+                    continue;
+                  }
+
+                  const checksGreen = await areChecksGreenForPr(pullRequest.head.sha);
+                  if (!checksGreen) {
+                    core.info(`Checks are not fully green for PR #${pullRequest.number}; skipping stage transition.`);
+                    continue;
+                  }
+
+                  const detectedPrLane = await detectPrLane(pullRequest.number);
+                  await applyPullRequestLinkedIssueRules(
+                    pullRequest,
+                    'stage:in-review',
+                    detectedPrLane,
+                    `No linked issues detected for check suite transition on PR #${pullRequest.number}.`,
+                  );
+                } catch (error) {
+                  core.warning(`Unable to process check suite transition for PR #${pullRequestNumber}: ${error.message}`);
                   continue;
                 }
+              }
+            }
 
-                if (normalizedCount >= MAX_BACKFILL_ISSUES) {
-                  core.warning(`Stopped backfill after ${MAX_BACKFILL_ISSUES} issues to avoid rate limits.`);
+            async function handleWorkflowDispatch() {
+              let normalizedCount = 0;
+              let page = 1;
+              let hitIssueLimit = false;
+
+              while (!hitIssueLimit) {
+                const openIssuesResponse = await github.rest.issues.listForRepo({
+                  owner,
+                  repo,
+                  state: 'open',
+                  per_page: 100,
+                  page,
+                });
+                const openIssues = openIssuesResponse.data;
+                if (openIssues.length === 0) {
                   break;
                 }
 
-                await applyIssueLabelRules(issue.number);
-                normalizedCount += 1;
+                for (const issue of openIssues) {
+                  if (issue.pull_request) {
+                    continue;
+                  }
+
+                  if (normalizedCount >= MAX_BACKFILL_ISSUES) {
+                    hitIssueLimit = true;
+                    core.warning(`Stopped backfill after ${MAX_BACKFILL_ISSUES} issues to avoid rate limits.`);
+                    break;
+                  }
+
+                  const existingLabels = (issue.labels || [])
+                    .map((label) => (typeof label === 'string' ? label : label.name))
+                    .filter(Boolean);
+
+                  await applyIssueLabelRules(issue.number, {}, existingLabels);
+                  normalizedCount += 1;
+                }
+
+                if (openIssues.length < 100) {
+                  break;
+                }
+
+                page += 1;
               }
 
               core.info(`Normalized lifecycle labels for ${normalizedCount} open issues.`);
@@ -631,6 +750,8 @@ jobs:
               await handlePullRequestEvent();
             } else if (context.eventName === 'pull_request_review') {
               await handlePullRequestReviewEvent();
+            } else if (context.eventName === 'check_suite') {
+              await handleCheckSuiteEvent();
             } else {
               core.info(`Event ${context.eventName} has no lifecycle handler.`);
             }
