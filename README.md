@@ -133,6 +133,24 @@ Before opening a PR:
 3. Use `$github-pr` to generate the PR description.
 4. Include verification evidence and reference the issue being resolved.
 
+## CI Quality Gates
+
+Issue #7 adds CI parity scripts and required status checks for `main`.
+
+Local parity commands:
+
+```bash
+./scripts/ci/backend-quality.sh
+./scripts/ci/mobile-quality.sh
+./scripts/ci/security-baseline.sh
+```
+
+Security baseline script requires `gitleaks`, `osv-scanner`, and `jq`.
+
+Branch protection setup and required check names:
+
+- `docs/ci-required-checks.md`
+
 ## First Contribution Path
 
 1. Pick an issue with clear acceptance criteria.

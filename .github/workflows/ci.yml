@@ -1,0 +1,136 @@
+name: CI Quality Gates
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  workflow-lint:
+    name: workflow-lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lint workflow files
+        uses: rhysd/actionlint@v1
+
+  backend-quality:
+    name: backend-quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Ensure CI scripts are executable
+        run: chmod +x scripts/ci/*.sh
+
+      - name: Run backend quality checks
+        run: ./scripts/ci/backend-quality.sh
+
+      - name: Upload backend quality artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-quality-artifacts
+          path: .artifacts/backend-quality
+          if-no-files-found: warn
+
+  mobile-quality:
+    name: mobile-quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Ensure CI scripts are executable
+        run: chmod +x scripts/ci/*.sh
+
+      - name: Run mobile quality checks
+        run: ./scripts/ci/mobile-quality.sh
+
+      - name: Upload mobile quality artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-quality-artifacts
+          path: .artifacts/mobile-quality
+          if-no-files-found: warn
+
+  security-baseline:
+    name: security-baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install gitleaks
+        env:
+          GITLEAKS_VERSION: 8.27.2
+        run: |
+          set -euo pipefail
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz gitleaks
+          sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
+
+      - name: Install osv-scanner
+        env:
+          OSV_SCANNER_VERSION: v2.3.3
+        run: |
+          set -euo pipefail
+          curl -sSL "https://github.com/google/osv-scanner/releases/download/${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64" \
+            -o osv-scanner
+          sudo install -m 0755 osv-scanner /usr/local/bin/osv-scanner
+
+      - name: Ensure CI scripts are executable
+        run: chmod +x scripts/ci/*.sh
+
+      - name: Run security baseline checks
+        run: ./scripts/ci/security-baseline.sh
+
+      - name: Upload security baseline artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-baseline-artifacts
+          path: .artifacts/security-baseline
+          if-no-files-found: warn
+
+  required-checks-doc-parity:
+    name: required-checks-doc-parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure CI scripts are executable
+        run: chmod +x scripts/ci/*.sh
+
+      - name: Validate required check documentation parity
+        run: ./scripts/ci/validate-required-checks.sh
