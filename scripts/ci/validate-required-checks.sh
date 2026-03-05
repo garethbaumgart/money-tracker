@@ -17,6 +17,11 @@ if [[ ! -f "$docs_path" ]]; then
   exit 1
 fi
 
+if ! command -v yq &>/dev/null; then
+  echo "yq is required but not installed. See: https://github.com/mikefarah/yq#install" >&2
+  exit 1
+fi
+
 documented_checks=()
 while IFS= read -r line; do
   documented_checks+=("$line")
@@ -92,40 +97,7 @@ fi
 workflow_jobs=()
 while IFS= read -r line; do
   workflow_jobs+=("$line")
-done < <(
-  awk '
-    /^[[:space:]]*jobs:[[:space:]]*$/ {
-      in_jobs=1
-      jobs_indent = match($0, /[^[:space:]]/) - 1
-      job_indent = -1
-      next
-    }
-
-    !in_jobs { next }
-    /^[[:space:]]*$/ { next }
-
-    {
-      current_indent = match($0, /[^[:space:]]/) - 1
-      if (current_indent <= jobs_indent) {
-        in_jobs=0
-        next
-      }
-
-      if ($0 ~ /^[[:space:]]+[A-Za-z0-9_-]+:[[:space:]]*$/) {
-        if (job_indent == -1) {
-          job_indent = current_indent
-        }
-
-        if (current_indent == job_indent) {
-          name=$0
-          sub(/^[[:space:]]*/, "", name)
-          sub(/:.*/, "", name)
-          print name
-        }
-      }
-    }
-  ' "$workflow_path"
-)
+done < <(yq '.jobs | keys | .[]' "$workflow_path")
 
 if [[ "${#workflow_jobs[@]}" -eq 0 ]]; then
   echo "No workflow jobs found in $workflow_path" >&2
