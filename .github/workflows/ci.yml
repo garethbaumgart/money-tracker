@@ -1,0 +1,186 @@
+name: CI Quality Gates
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# required-checks:start
+# - backend-quality
+# - mobile-quality
+# - security-baseline
+# required-checks:end
+
+jobs:
+  workflow-lint:
+    name: workflow-lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Install actionlint
+        env:
+          ACTIONLINT_VERSION: 1.7.11
+        run: |
+          set -euo pipefail
+          actionlint_asset="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          checksums_file="actionlint_${ACTIONLINT_VERSION}_checksums.txt"
+          base_url="https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}"
+
+          curl -sSL "${base_url}/${actionlint_asset}" -o "/tmp/${actionlint_asset}"
+          curl -sSL "${base_url}/${checksums_file}" -o "/tmp/${checksums_file}"
+
+          grep " ${actionlint_asset}$" "/tmp/${checksums_file}" \
+            | sed "s|  ${actionlint_asset}$|  /tmp/${actionlint_asset}|" \
+            | sha256sum -c -
+
+          tar -xzf "/tmp/${actionlint_asset}" -C /tmp actionlint
+          sudo install -m 0755 /tmp/actionlint /usr/local/bin/actionlint
+
+      - name: Lint workflow files
+        run: actionlint
+
+  backend-quality:
+    name: backend-quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          global-json-file: global.json
+
+      - name: Ensure CI scripts are executable
+        run: chmod +x scripts/ci/*.sh
+
+      - name: Run backend quality checks
+        run: ./scripts/ci/backend-quality.sh
+
+      - name: Upload backend quality artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: backend-quality-artifacts
+          path: .artifacts/backend-quality
+          if-no-files-found: warn
+
+  mobile-quality:
+    name: mobile-quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@fd55f4c5af5b953cc57a2be44cb082c8f6635e8e # v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Ensure CI scripts are executable
+        run: chmod +x scripts/ci/*.sh
+
+      - name: Run mobile quality checks
+        run: ./scripts/ci/mobile-quality.sh
+
+      - name: Upload mobile quality artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mobile-quality-artifacts
+          path: .artifacts/mobile-quality
+          if-no-files-found: warn
+
+  security-baseline:
+    name: security-baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Install gitleaks
+        env:
+          GITLEAKS_VERSION: 8.27.2
+        run: |
+          set -euo pipefail
+          gitleaks_asset="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          checksums_file="gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${gitleaks_asset}" \
+            -o "/tmp/${gitleaks_asset}"
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${checksums_file}" \
+            -o "/tmp/${checksums_file}"
+
+          grep " ${gitleaks_asset}$" "/tmp/${checksums_file}" \
+            | sed "s|  ${gitleaks_asset}$|  /tmp/${gitleaks_asset}|" \
+            | sha256sum -c -
+          tar -xzf "/tmp/${gitleaks_asset}" -C /tmp gitleaks
+          sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+
+      - name: Install osv-scanner
+        env:
+          OSV_SCANNER_VERSION: v2.3.3
+        run: |
+          set -euo pipefail
+          osv_asset="osv-scanner_linux_amd64"
+          checksums_file="osv-scanner_SHA256SUMS"
+
+          curl -sSL "https://github.com/google/osv-scanner/releases/download/${OSV_SCANNER_VERSION}/${osv_asset}" \
+            -o "/tmp/${osv_asset}"
+          curl -sSL "https://github.com/google/osv-scanner/releases/download/${OSV_SCANNER_VERSION}/${checksums_file}" \
+            -o "/tmp/${checksums_file}"
+
+          grep " ${osv_asset}$" "/tmp/${checksums_file}" \
+            | sed "s|  ${osv_asset}$|  /tmp/${osv_asset}|" \
+            | sha256sum -c -
+          sudo install -m 0755 "/tmp/${osv_asset}" /usr/local/bin/osv-scanner
+
+      - name: Install jq
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes jq
+
+      - name: Ensure CI scripts are executable
+        run: chmod +x scripts/ci/*.sh
+
+      - name: Run security baseline checks
+        run: ./scripts/ci/security-baseline.sh
+
+      - name: Upload security baseline artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: security-baseline-artifacts
+          path: .artifacts/security-baseline
+          if-no-files-found: warn
+
+  required-checks-doc-parity:
+    name: required-checks-doc-parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Ensure CI scripts are executable
+        run: chmod +x scripts/ci/*.sh
+
+      - name: Validate required check documentation parity
+        run: ./scripts/ci/validate-required-checks.sh

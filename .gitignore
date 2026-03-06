@@ -24,6 +24,7 @@ __pycache__/
 # Logs/temp
 *.log
 *.tmp
+.artifacts/
 
 # Build artifacts
 coverage/
