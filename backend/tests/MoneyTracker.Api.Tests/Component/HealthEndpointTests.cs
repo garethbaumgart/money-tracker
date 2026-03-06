@@ -58,4 +58,33 @@ public sealed class HealthEndpointTests : IClassFixture<MoneyTrackerApiFactory>
         var correlationId = headerValues.Single();
         Assert.False(string.IsNullOrWhiteSpace(correlationId));
     }
+
+    public static IEnumerable<object[]> InvalidCorrelationIds =>
+        new[]
+        {
+            new object[] { string.Empty },
+            new object[] { "   " }
+        };
+
+    [Theory]
+    [MemberData(nameof(InvalidCorrelationIds))]
+    [Trait("Category", "Component")]
+    public async Task GetHealth_GeneratesCorrelationHeaderWhenGivenInvalidValue(
+        string invalidCorrelationId
+    )
+    {
+        using var client = _factory.CreateClient();
+        var request = new HttpRequestMessage(HttpMethod.Get, "/health");
+        request.Headers.Add(CorrelationHeaders.CorrelationIdHeader, invalidCorrelationId);
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.TryGetValues(
+            CorrelationHeaders.CorrelationIdHeader,
+            out var headerValues));
+        var correlationId = headerValues.Single();
+        Assert.False(string.IsNullOrWhiteSpace(correlationId));
+        Assert.NotEqual(invalidCorrelationId, correlationId);
+    }
 }

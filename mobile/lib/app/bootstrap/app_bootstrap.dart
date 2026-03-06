@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:money_tracker/app/app.dart';
 import 'package:money_tracker/app/config/app_config.dart';
@@ -18,14 +19,18 @@ Future<void> runMoneyTrackerApp({
   ThemeModePreferencesGatewayLoader? preferencesGatewayLoader,
   RunMoneyTrackerApp? runAppCallback,
 }) async {
+  final previousErrorHandler = FlutterError.onError;
   await runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
-      FlutterError.onError = (details) => _reportStartupException(
-            errorReporter,
-            details.exception,
-            details.stack ?? StackTrace.current,
-          );
+      FlutterError.onError = (details) {
+        _reportStartupException(
+          errorReporter,
+          details.exception,
+          details.stack ?? StackTrace.current,
+        );
+        previousErrorHandler?.call(details);
+      };
 
       final appConfig = appConfigLoader();
       final gatewayLoader =
@@ -49,7 +54,10 @@ Future<void> runMoneyTrackerApp({
       }
     },
     (error, stackTrace) => _reportStartupException(errorReporter, error, stackTrace),
+    zoneValues: const {},
   );
+
+  FlutterError.onError = previousErrorHandler;
 }
 
 Future<AppThemeMode> _loadInitialThemeMode(
@@ -69,7 +77,17 @@ void _reportStartupException(
 ) {
   try {
     errorReporter.reportStartupException(error, stackTrace);
-  } catch (_) {
+  } catch (reportingError, reportingStackTrace) {
     // Reporter implementations must not crash startup.
+    FlutterError.reportError(
+      FlutterErrorDetails(
+        exception: error,
+        stack: stackTrace,
+        library: 'app_bootstrap',
+        context: ErrorDescription(
+          'Failed to report startup exception with $reportingError; reporting stack: $reportingStackTrace',
+        ),
+      ),
+    );
   }
 }
