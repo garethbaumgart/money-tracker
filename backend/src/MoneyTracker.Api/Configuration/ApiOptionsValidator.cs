@@ -23,7 +23,7 @@ internal sealed class ApiOptionsValidator(IHostEnvironment hostEnvironment) : IV
             var normalizedApiEnvironment = AppEnvironmentNames.Normalize(options.Environment);
             if (normalizedApiEnvironment is null)
             {
-                failures.Add("Api:Environment must be Local, Staging, Production, or Testing.");
+                failures.Add("Api:Environment must be Local (or Development), Staging, Production, or Testing.");
             }
             else
             {

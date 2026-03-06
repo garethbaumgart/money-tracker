@@ -51,7 +51,7 @@ public sealed class ApiOptionsValidationTests
         });
 
         Assert.False(result.Succeeded);
-        Assert.Contains(result.Failures!, failure => failure.Contains("Api:Environment must be Local, Staging, Production, or Testing.", StringComparison.Ordinal));
+        Assert.Contains(result.Failures!, failure => failure.Contains("Api:Environment must be Local (or Development), Staging, Production, or Testing.", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -68,6 +68,24 @@ public sealed class ApiOptionsValidationTests
 
         Assert.False(result.Succeeded);
         Assert.Contains(result.Failures!, failure => failure.Contains("does not match host environment", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("Development", "Local")]
+    [InlineData("Local", "Development")]
+    [InlineData("Staging", "staging")]
+    [Trait("Category", "Unit")]
+    public void Validate_Succeeds_WhenEnvironmentMatchesAfterNormalization(string hostEnvironment, string configuredEnvironment)
+    {
+        var validator = new ApiOptionsValidator(new FakeHostEnvironment(hostEnvironment));
+
+        var result = validator.Validate(Options.DefaultName, new ApiOptions
+        {
+            ServiceName = "MoneyTracker.Api",
+            Environment = configuredEnvironment
+        });
+
+        Assert.True(result.Succeeded);
     }
 }
 

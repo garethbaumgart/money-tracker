@@ -17,7 +17,7 @@ Backend and mobile use these canonical environment names:
 | Scope | Key | Local | Staging | Production | Notes |
 | --- | --- | --- | --- | --- | --- |
 | Backend | `Api:ServiceName` | Required | Required | Required | Stable service identifier in logs and diagnostics. |
-| Backend | `Api:Environment` | Required | Required | Required | Must be `Local`, `Staging`, `Production`, or `Testing`. |
+| Backend | `Api:Environment` | Required | Required | Required | Must be `Local`, `Staging`, `Production`, or `Testing`. `Development` is accepted as an alias of `Local`. |
 | Backend | `Database:ConnectionString` | Optional | Required | Required | Required only for staging/production startup validation. |
 | Backend | `Observability:ErrorReporterDsn` | Optional | Optional | Optional | Provider-specific reporter DSN. |
 | Mobile (`--dart-define`) | `APP_ENV` | Required | Required | Required | Accepted values: `local`, `staging`, `production`. |
