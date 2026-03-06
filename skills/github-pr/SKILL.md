@@ -27,7 +27,7 @@ Use AI-review-loop mode only when the repository workflow and tooling support it
 4. Collect test evidence and list uncovered risk gaps.
 5. Produce PR title, PR body, and reviewer checklist.
 6. Open or update PR.
-7. Run an immediate full review pass on the newly opened/updated PR head. Build unresolved actionable queue and address or rebut every item.
+7. Run an immediate full review pass on the newly opened/updated PR head. Build an unresolved actionable queue and address or rebut every item.
 8. Determine if pre-merge full review is required:
    - Required when post-open review had actionable findings, or when risk is high.
    - If post-open review was clean and risk is low, perform a checklist recheck on the latest head.
