@@ -2,7 +2,6 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using MoneyTracker.Modules.Auth.Application.GetAuthenticatedUser;
@@ -62,11 +61,9 @@ public static class AuthEndpoint
             var httpResult = TypedResults.Created($"/auth/challenges/{result.Challenge.Token}", response);
             await httpResult.ExecuteAsync(httpContext);
         })
-            .WithName("RequestAuthCode")
-            .WithSummary("Request a challenge code.")
-            .WithDescription("Issues a short-lived, single-use challenge token for sign-in verification.")
-            .Produces<RequestAuthCodeResponse>(StatusCodes.Status201Created)
-            .ProducesProblem(StatusCodes.Status400BadRequest);
+        .WithName("RequestAuthCode")
+        .WithSummary("Request a challenge code.")
+        .WithDescription("Issues a short-lived, single-use challenge token for sign-in verification.");
 
         app.MapPost("/auth/verify-code", async (HttpContext httpContext) =>
         {
@@ -104,11 +101,9 @@ public static class AuthEndpoint
             var httpResult = TypedResults.Ok(response);
             await httpResult.ExecuteAsync(httpContext);
         })
-            .WithName("VerifyAuthCode")
-            .WithSummary("Verify a challenge code.")
-            .WithDescription("Exchanges an email and challenge token for access and refresh tokens.")
-            .Produces<VerifyCodeResponse>(StatusCodes.Status200OK)
-            .ProducesProblem(StatusCodes.Status401Unauthorized);
+        .WithName("VerifyAuthCode")
+        .WithSummary("Verify a challenge code.")
+        .WithDescription("Exchanges an email and challenge token for access and refresh tokens.");
 
         app.MapPost("/auth/refresh", async (HttpContext httpContext) =>
         {
@@ -145,12 +140,10 @@ public static class AuthEndpoint
                 result.Tokens.RefreshTokenExpiresAtUtc);
             await TypedResults.Ok(response).ExecuteAsync(httpContext);
         })
-            .WithName("RefreshAuthSession")
-            .WithSummary("Refresh an authentication session.")
-            .WithDescription("Uses a refresh token to rotate access and refresh credentials.")
-            .Produces<VerifyCodeResponse>(StatusCodes.Status200OK)
-            .ProducesProblem(StatusCodes.Status401Unauthorized)
-            .ProducesProblem(StatusCodes.Status400BadRequest);
+        .WithName("RefreshAuthSession")
+        .WithSummary("Refresh an authentication session.")
+        .WithDescription("Uses a refresh token to rotate access and refresh credentials.")
+        .WithDescription("Uses a refresh token to rotate access and refresh credentials.");
 
         app.MapPost("/auth/logout", async (HttpContext httpContext) =>
         {
@@ -166,11 +159,10 @@ public static class AuthEndpoint
 
             await TypedResults.NoContent().ExecuteAsync(httpContext);
         })
-            .WithName("Logout")
-            .WithSummary("Logout an authenticated session.")
-            .WithDescription("Revokes a refresh token and associated access token.")
-            .Produces(StatusCodes.Status204NoContent)
-            .ProducesProblem(StatusCodes.Status400BadRequest);
+        .WithName("Logout")
+        .WithSummary("Logout an authenticated session.")
+        .WithDescription("Revokes a refresh token and associated access token.")
+        .WithDescription("Revokes a refresh token and associated access token.");
 
         return app;
     }
