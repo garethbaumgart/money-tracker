@@ -27,18 +27,28 @@ public static class CreateHouseholdEndpoint
             CreateHouseholdRequest? request;
             try
             {
+                var contentType = httpContext.Request.ContentType;
+                if (string.IsNullOrWhiteSpace(contentType) || !IsJsonContentType(contentType))
+                {
+                    await WriteValidationProblemAsync(httpContext, "The request payload is required to be JSON.");
+                    return;
+                }
+
                 request = await httpContext.Request.ReadFromJsonAsync<CreateHouseholdRequest>(cancellationToken: httpContext.RequestAborted);
             }
             catch (JsonException)
             {
-                var malformedPayloadResult = TypedResults.Problem(CreateProblemDetails(
-                    statusCode: StatusCodes.Status400BadRequest,
-                    title: "Validation failed.",
-                    detail: "The request payload is invalid.",
-                    code: HouseholdErrors.ValidationError,
-                    instance: httpContext.Request.Path));
-
-                await malformedPayloadResult.ExecuteAsync(httpContext);
+                await WriteValidationProblemAsync(httpContext, "The request payload is invalid.");
+                return;
+            }
+            catch (NotSupportedException)
+            {
+                await WriteValidationProblemAsync(httpContext, "The request payload is invalid.");
+                return;
+            }
+            catch (BadHttpRequestException)
+            {
+                await WriteValidationProblemAsync(httpContext, "The request payload is invalid.");
                 return;
             }
 
@@ -110,6 +120,12 @@ public static class CreateHouseholdEndpoint
         return app;
     }
 
+    private static bool IsJsonContentType(string contentType)
+    {
+        var mediaType = contentType.Split(';')[0].Trim();
+        return mediaType.Equals("application/json", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static ProblemDetails CreateProblemDetails(int statusCode, string title, string detail, string code, string instance)
     {
         var problem = new ProblemDetails
@@ -122,6 +138,18 @@ public static class CreateHouseholdEndpoint
 
         problem.Extensions["code"] = code;
         return problem;
+    }
+
+    private static async Task WriteValidationProblemAsync(HttpContext httpContext, string detail)
+    {
+        var malformedPayloadResult = TypedResults.Problem(CreateProblemDetails(
+            statusCode: StatusCodes.Status400BadRequest,
+            title: "Validation failed.",
+            detail: detail,
+            code: HouseholdErrors.ValidationError,
+            instance: httpContext.Request.Path));
+
+        await malformedPayloadResult.ExecuteAsync(httpContext);
     }
 }
 

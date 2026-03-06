@@ -27,10 +27,10 @@ public sealed class CreateHouseholdHandlerTests
     [Trait("Category", "Unit")]
     public async Task HandleAsync_ReturnsConflict_WhenNameAlreadyExistsCaseInsensitive()
     {
-        var repository = new FakeHouseholdRepository(addSucceeds: false);
+        var repository = new FakeHouseholdRepository(addSucceeds: true, existingName: " Shared ");
         var handler = new CreateHouseholdHandler(repository, TimeProvider.System);
 
-        var result = await handler.HandleAsync(new CreateHouseholdCommand("shared"), CancellationToken.None);
+        var result = await handler.HandleAsync(new CreateHouseholdCommand("sHaReD"), CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(HouseholdErrors.HouseholdNameConflict, result.ErrorCode);
@@ -52,14 +52,25 @@ public sealed class CreateHouseholdHandlerTests
     }
 }
 
-internal sealed class FakeHouseholdRepository(bool addSucceeds) : IHouseholdRepository
+internal sealed class FakeHouseholdRepository(bool addSucceeds, string? existingName = null) : IHouseholdRepository
 {
+    private readonly HashSet<string> _existingNames = new(
+        new[] { Household.NormalizeName(existingName) },
+        StringComparer.OrdinalIgnoreCase);
+
     public int AddIfNotExistsCalls { get; private set; }
     public Household? LastAddedHousehold { get; private set; }
 
     public Task<bool> AddIfNotExistsAsync(Household household, CancellationToken cancellationToken)
     {
         AddIfNotExistsCalls++;
+        if (_existingNames.Contains(household.Name))
+        {
+            return Task.FromResult(false);
+        }
+
+        _existingNames.Add(household.Name);
+
         if (addSucceeds)
         {
             LastAddedHousehold = household;
