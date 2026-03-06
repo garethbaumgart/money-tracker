@@ -15,6 +15,9 @@ Application build guardrails
 Agent workflow and skills  
 → `AGENTS.md`
 
+Workflow execution contract (startup, routing, PR modes)  
+→ `docs/dev-guide/workflow-catalog.md`
+
 ## Principles
 
 ### Follow existing patterns
@@ -39,7 +42,7 @@ Backend features should start from the vertical slice template.
 
 UI features should follow the Flutter theming standard.
 
-PR workflows should use the `$github-pr` skill.
+PR workflows should use the `$github-pr` skill as defined in the workflow catalog.
 
 ### Prefer minimal correct change
 
@@ -49,7 +52,11 @@ Keep PRs small and atomic.
 
 ### Verification is mandatory
 
-All changes require tests and verification evidence before creating a pull request. See the [Verification guide](verification.md) for detailed requirements.
+All changes require tests and verification evidence before creating a pull request. See the [Verification guide](docs/dev-guide/verification.md)
+
+Verification in this guide uses the canonical contract from:
+
+- `docs/dev-guide/verification.md` for detailed requirements.
 
 ### When patterns are unclear
 

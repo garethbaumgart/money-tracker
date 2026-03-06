@@ -24,13 +24,8 @@ Use separate worktrees and open separate PRs by default for every issue in the r
 
 For each issue worker:
 
-1. Declare lane before implementation.
-2. Read `docs/dev-guide/index.md`.
-3. Read lane guide:
-   - Backend: `docs/dev-guide/backend.md`
-   - Mobile: `docs/dev-guide/mobile.md`
-   - Platform: `docs/dev-guide/platform.md`
-4. Stay within lane unless the issue explicitly requires cross-lane edits.
+1. Follow the canonical startup contract in `docs/dev-guide/workflow-catalog.md`.
+2. Stay within lane unless the issue explicitly requires cross-lane edits.
 
 ## Skill Routing
 

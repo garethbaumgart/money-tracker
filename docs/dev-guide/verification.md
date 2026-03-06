@@ -4,22 +4,46 @@ Every pull request must include verification evidence.
 
 Verification should include:
 
-Test results  
-Verification steps  
-Screenshots or logs where applicable
+- Test results (commands + outcomes)
+- Evidence of changed behavior
+- Screenshots or logs where applicable
 
 ## PR Requirements
 
 PR descriptions must include:
 
-Summary  
-Changes made  
-Acceptance criteria checklist  
-Verification evidence  
-Risk notes
+- Summary  
+- Changes made  
+- Acceptance criteria checklist  
+- Verification evidence  
+- Risk notes
+
+## Canonical verification contract
+
+Default mode (no configured AI reviewer loop):
+
+- Verification evidence is required for all changed acceptance criteria.
+- Use a concise evidence table and note any known gaps.
+
+AI-review-loop mode (explicitly enabled for the repo/workspace):
+
+- Run the `$github-pr` loop contract from `skills/github-pr/SKILL.md`, including AI reviewer quiet-window checks and merge-readiness metrics.
+
+When a mode cannot be executed, explicitly document why and proceed in default mode.
+
+Use this minimal evidence block (recommended):
+
+```text
+Verification
+- PR URL:
+- Required checks run:
+- AC mapped to tests:
+- Manual checks:
+- Known gaps:
+- Merge-readiness status:
+```
 
 ## Skill Usage
 
-When generating pull requests, use the `$github-pr` skill.
-
-This ensures PR descriptions follow the repository template and include the required verification information.
+- Use the `$github-pr` skill to generate PR descriptions and optional review-loop evidence.
+- If AI review loop is required, run both the PR template and the `$github-pr` completion verification contract.

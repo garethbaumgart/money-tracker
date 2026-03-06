@@ -3,25 +3,9 @@ A skill is a set of local instructions stored in a `SKILL.md` file.
 
 ## Skill Routing
 
-The following skills must be used when performing specific workflows.
+Workflow and skill routing is centralized in:
 
-Pull request creation  
-→ `$github-pr`
-
-Backend feature implementation  
-→ `$backend-ddd-vertical-slice`
-
-Flutter UI or theming work  
-→ `$flutter-ux-theming`
-
-UX exploration and design option generation  
-→ `$ux-mockup-explorer`
-
-Issue clarification or specification drafting  
-→ `$github-issue-refiner`
-
-Parallel issue execution with isolated worktrees and PRs  
-→ `$execute-issues-parallel`
+- [workflow-catalog](docs/dev-guide/workflow-catalog.md)
 
 ## Worker Startup Rules
 
@@ -37,34 +21,36 @@ Platform work → `docs/dev-guide/platform.md`
 
 Workers must declare their lane before implementation begins.
 
+Use [workflow catalog](docs/dev-guide/workflow-catalog.md) as the canonical source for startup format, lane declaration schema, skill routing, and PR mode policy.
+
+Before implementation, emit a compact task declaration in the session:
+
+- `Lane:` backend | mobile | platform
+- `Task type:` implementation | issue-refinement | ux-design | parallel-issues | pr-only
+- `Primary skills:` one or more `$skill-name`
+- `Merge-ready mode:` draft | ai-review-loop
+
+If `merge-ready mode` is `ai-review-loop`, it must be supported in the repo/environment before running that flow.
+
 ## Pull Request Workflow
 
-Before opening a pull request:
+Before opening a pull request (draft mode):
 
 1. Ensure tests pass
 2. Ensure acceptance criteria are satisfied
 3. Use the `$github-pr` skill to generate the PR description
 
+Before claiming merge-ready completion (only in `ai-review-loop` mode):
+
+1. Ensure required checks and PR comments are cleared per repo policy
+2. If `ai-review-loop` is declared, use the full `$github-pr` completion contract (including AI reviewer quiet-window checks)
+3. If AI review loop is not available in the environment, provide explicit evidence of the PR's required verification only
+
 PRs must include verification evidence and reference the issue they resolve.
 
-### Available skills
-- `github-issue-refiner`: Refine rough GitHub issues into decision-complete implementation specs with scope, acceptance criteria, and test plan. (file: `skills/github-issue-refiner/SKILL.md`)
-- `github-pr`: Prepare high-signal PR packages from local changes, including summary, risk analysis, and test evidence. (file: `skills/github-pr/SKILL.md`)
-- `ux-mockup-explorer`: Generate raw HTML UX option packs (A-E) and decision artifacts for UX-heavy issues before Flutter implementation. (file: `skills/ux-mockup-explorer/SKILL.md`)
-- `flutter-ux-theming`: Apply project Flutter UX/theming standards using Material 3, semantic tokens, ThemeExtension, and component themes. Use for UI feature build/refactor/review tasks. (file: `skills/flutter-ux-theming/SKILL.md`)
-- `backend-ddd-vertical-slice`: Implement backend/API features using pragmatic DDD + vertical slices with clear domain/application/infrastructure/presentation boundaries. (file: `skills/backend-ddd-vertical-slice/SKILL.md`)
-- `execute-issues-parallel`: Execute multiple GitHub issues with one worktree and one PR per issue, dependency-aware sequencing, and lane-specific skill routing. (file: `skills/execute-issues-parallel/SKILL.md`)
-- `skill-creator`: Guide for creating or updating Codex skills. Use when creating new project skills. (file: `~/.codex/skills/.system/skill-creator/SKILL.md`)
-- `skill-installer`: Install Codex skills from curated or GitHub sources into Codex home. (file: `~/.codex/skills/.system/skill-installer/SKILL.md`)
+PR mode defaults are defined in [docs/dev-guide/workflow-catalog.md](docs/dev-guide/workflow-catalog.md).
 
-### How to use skills
-- Trigger by naming a skill directly (for example, `$github-pr`) or by asking for work that clearly matches the skill description.
-- For UX-heavy issue refinement, use `github-issue-refiner` plus `ux-mockup-explorer` and require selected option evidence before implementation.
-- For any Flutter UI or theming task, default to `flutter-ux-theming` unless the user explicitly asks for a different approach.
-- For any backend/API implementation or refactor task, default to `backend-ddd-vertical-slice` unless the user explicitly asks for a different approach.
-- For multi-issue execution requests (for example, "Execute issues 5,6,7"), default to `execute-issues-parallel`.
-- If multiple skills apply, use the minimal set and apply them in sequence.
-- For implementation + PR tasks, prefer explicit completion prompts such as: `Implement issue #<n>, open PR, then continue review rounds until required checks pass and actionable comments are resolved (or I say stop).`
-- Read only the needed sections/files from each skill to keep context lean.
-- Prefer bundled `scripts/` and `references/` inside skills over rewriting the same workflow repeatedly.
-- If a skill path is missing or unreadable, continue with a direct fallback workflow and note the gap.
+### Skills references
+
+- Use [workflow-catalog skill matrix](docs/dev-guide/workflow-catalog.md) for routing.
+- If multiple skills apply, run the minimal set in sequence; read only needed skill sections; fall back to direct workflow only if a skill is unavailable.
