@@ -119,7 +119,7 @@ Required checks before merge:
 - run a full review immediately after PR creation
 - if findings are identified, run a second full pre-merge review on latest head
 - if no findings and risk is low, run a pre-merge checklist recheck
-- issue status labels (`status:*`, `lane:*`) match current state
+- issue status labels (`status:triage`, `status:refined`, `status:ready`, `status:in-progress`, `status:review`, `status:blocked`, `status:done`) and lane labels (`lane:backend`, `lane:mobile`, `lane:platform`, `lane:cross-cutting`, `lane:untriaged`) match current state
 - AC evidence present
 - required checks/checksuite pass
 - open blocking comments resolved
@@ -156,5 +156,5 @@ Keep one ownership label:
 Use this checklist when changing automations, labels, or PR rules:
 - workflow triggers reviewed (`on:` blocks)
 - permissions/secrets remain minimal
-- event-driven transitions still map to `status:*` and `lane:*`
+- event-driven transitions still map to canonical `status:*` and `lane:*` label values
 - failure/timeout behavior and fallback documented
