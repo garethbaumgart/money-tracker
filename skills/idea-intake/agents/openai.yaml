@@ -1,0 +1,4 @@
+interface:
+  display_name: "Idea Intake"
+  short_description: "Shape raw ideas into implementation-ready issue-ready packages"
+  default_prompt: "Convert a raw idea into an issue-ready plan with scope, acceptance criteria, lane, and execution mode."
