@@ -56,6 +56,10 @@ class AppConfig {
       throw AppConfigException('API_BASE_URL must be an absolute URL.');
     }
 
+    if (parsedBaseUrl.scheme != 'http' && parsedBaseUrl.scheme != 'https') {
+      throw AppConfigException('API_BASE_URL must use http or https.');
+    }
+
     final normalizedDsn = errorReportingDsn?.trim();
 
     return AppConfig._(

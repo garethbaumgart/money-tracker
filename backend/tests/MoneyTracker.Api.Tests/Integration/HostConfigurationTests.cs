@@ -29,14 +29,16 @@ public sealed class HostConfigurationTests
     {
         var configurationOverrides = new Dictionary<string, string?>
         {
-            ["Api:Environment"] = "Local"
+            ["Api:ServiceName"] = "MoneyTracker.Api.Override",
+            ["Api:Environment"] = "Production"
         };
 
-        using var factory = new MoneyTrackerApiFactory("Local", configurationOverrides);
+        using var factory = new MoneyTrackerApiFactory("Production", configurationOverrides);
         using var scope = factory.Services.CreateScope();
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
-        Assert.Equal("Local", configuration["Api:Environment"]);
+        Assert.Equal("MoneyTracker.Api.Override", configuration["Api:ServiceName"]);
+        Assert.Equal("Production", configuration["Api:Environment"]);
     }
 
     [Fact]

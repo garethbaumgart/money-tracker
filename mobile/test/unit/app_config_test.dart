@@ -55,4 +55,17 @@ void main() {
       ),
     );
   });
+
+  test('throws when API_BASE_URL scheme is not http or https', () {
+    expect(
+      () => AppConfig.fromRaw(appEnv: 'staging', apiBaseUrl: 'ftp://files.money'),
+      throwsA(
+        isA<AppConfigException>().having(
+          (exception) => exception.message,
+          'message',
+          contains('http or https'),
+        ),
+      ),
+    );
+  });
 }

@@ -9,6 +9,21 @@ public sealed class ApiOptionsValidationTests
 {
     [Fact]
     [Trait("Category", "Unit")]
+    public void Validate_Succeeds_WhenValuesAreValidForHostEnvironment()
+    {
+        var validator = new ApiOptionsValidator(new FakeHostEnvironment("Production"));
+
+        var result = validator.Validate(Options.DefaultName, new ApiOptions
+        {
+            ServiceName = "MoneyTracker.Api",
+            Environment = "Production"
+        });
+
+        Assert.True(result.Succeeded);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
     public void Validate_Fails_WhenServiceNameMissing()
     {
         var validator = new ApiOptionsValidator(new FakeHostEnvironment("Production"));
@@ -37,6 +52,22 @@ public sealed class ApiOptionsValidationTests
 
         Assert.False(result.Succeeded);
         Assert.Contains(result.Failures!, failure => failure.Contains("Api:Environment must be Local, Staging, Production, or Testing.", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void Validate_Fails_WhenApiEnvironmentDoesNotMatchHostEnvironment()
+    {
+        var validator = new ApiOptionsValidator(new FakeHostEnvironment("Staging"));
+
+        var result = validator.Validate(Options.DefaultName, new ApiOptions
+        {
+            ServiceName = "MoneyTracker.Api",
+            Environment = "Production"
+        });
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Failures!, failure => failure.Contains("does not match host environment", StringComparison.Ordinal));
     }
 }
 
