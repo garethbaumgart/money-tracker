@@ -33,42 +33,22 @@ public static class CreateHouseholdEndpoint
         app.MapPost("/households", CreateHousehold)
             .WithName("CreateHousehold")
             .WithSummary("Create a household.")
-            .WithDescription("Creates a household owned by the authenticated user.")
-            .Accepts<CreateHouseholdRequest>("application/json")
-            .Produces<CreateHouseholdResponse>(StatusCodes.Status201Created)
-            .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status401Unauthorized)
-            .ProducesProblem(StatusCodes.Status409Conflict);
+            .WithDescription("Creates a household owned by the authenticated user.");
 
         app.MapPost("/households/{householdId:guid}/invite", InviteHouseholdMember)
             .WithName("InviteHouseholdMember")
             .WithSummary("Invite a user to a household.")
-            .WithDescription("Only the household owner may issue an invitation token.")
-            .Accepts<InviteHouseholdMemberRequest>("application/json")
-            .Produces<InviteHouseholdMemberResponse>(StatusCodes.Status201Created)
-            .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status401Unauthorized)
-            .ProducesProblem(StatusCodes.Status403Forbidden)
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .WithDescription("Only the household owner may issue an invitation token.");
 
         app.MapPost("/households/invitations/{invitationToken}/accept", AcceptHouseholdInvitation)
             .WithName("AcceptHouseholdInvitation")
             .WithSummary("Accept a household invitation.")
-            .WithDescription("Adds the authenticated user as a household member.")
-            .Produces(StatusCodes.Status200OK)
-            .ProducesProblem(StatusCodes.Status401Unauthorized)
-            .ProducesProblem(StatusCodes.Status403Forbidden)
-            .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesProblem(StatusCodes.Status409Conflict);
+            .WithDescription("Adds the authenticated user as a household member.");
 
         app.MapGet("/households/{householdId:guid}/members", GetHouseholdMembers)
             .WithName("GetHouseholdMembers")
             .WithSummary("Get household members.")
-            .WithDescription("Returns all members for an existing household.")
-            .Produces<GetHouseholdMembersResponse>(StatusCodes.Status200OK)
-            .ProducesProblem(StatusCodes.Status401Unauthorized)
-            .ProducesProblem(StatusCodes.Status403Forbidden)
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .WithDescription("Returns all members for an existing household.");
 
         return app;
     }
@@ -83,16 +63,36 @@ public static class CreateHouseholdEndpoint
         }
 
         var authUser = authResult.AuthenticatedUser;
-        var (isValidRequest, request, parseProblem) = await ReadJsonRequestAsync<CreateHouseholdRequest>(httpContext);
-        if (!isValidRequest)
+        if (authUser is null)
         {
-            await parseProblem!.ExecuteAsync(httpContext);
+            await authResult.Problem!.ExecuteAsync(httpContext);
+            return;
+        }
+
+        var (isValidRequest, request, parseProblem) = await ReadJsonRequestAsync<CreateHouseholdRequest>(httpContext);
+        if (!isValidRequest || request is null)
+        {
+            if (parseProblem is not null)
+            {
+                await parseProblem.ExecuteAsync(httpContext);
+            }
+            else
+            {
+                await WriteProblemAsync(
+                    httpContext,
+                    StatusCodes.Status400BadRequest,
+                    "Validation failed.",
+                    "The request payload is required.",
+                    HouseholdErrors.ValidationError,
+                    HouseholdErrors.ValidationError);
+            }
             return;
         }
 
         var handler = httpContext.RequestServices.GetRequiredService<CreateHouseholdHandler>();
+        var householdRequest = request;
         var result = await handler.HandleAsync(
-            new CreateHouseholdCommand(request!.Name, authUser.UserId),
+            new CreateHouseholdCommand(householdRequest.Name, authUser.UserId),
             httpContext.RequestAborted);
 
         if (!result.IsSuccess)
@@ -122,10 +122,29 @@ public static class CreateHouseholdEndpoint
         }
 
         var authUser = authResult.AuthenticatedUser;
-        var (isValidRequest, request, parseProblem) = await ReadJsonRequestAsync<InviteHouseholdMemberRequest>(httpContext);
-        if (!isValidRequest)
+        if (authUser is null)
         {
-            await parseProblem!.ExecuteAsync(httpContext);
+            await authResult.Problem!.ExecuteAsync(httpContext);
+            return;
+        }
+
+        var (isValidRequest, request, parseProblem) = await ReadJsonRequestAsync<InviteHouseholdMemberRequest>(httpContext);
+        if (!isValidRequest || request is null)
+        {
+            if (parseProblem is not null)
+            {
+                await parseProblem.ExecuteAsync(httpContext);
+            }
+            else
+            {
+                await WriteProblemAsync(
+                    httpContext,
+                    StatusCodes.Status400BadRequest,
+                    "Validation failed.",
+                    "The request payload is required.",
+                    HouseholdErrors.ValidationError,
+                    HouseholdErrors.ValidationError);
+            }
             return;
         }
 
@@ -134,7 +153,7 @@ public static class CreateHouseholdEndpoint
             new InviteHouseholdMemberCommand(
                 new HouseholdId(householdId),
                 authUser.UserId,
-                request!.InviteeEmail),
+                request.InviteeEmail),
             httpContext.RequestAborted);
 
         if (!result.IsSuccess)
@@ -171,6 +190,12 @@ public static class CreateHouseholdEndpoint
         }
 
         var authUser = authResult.AuthenticatedUser;
+        if (authUser is null)
+        {
+            await authResult.Problem!.ExecuteAsync(httpContext);
+            return;
+        }
+
         var handler = httpContext.RequestServices.GetRequiredService<AcceptHouseholdInvitationHandler>();
         var result = await handler.HandleAsync(
             new AcceptHouseholdInvitationCommand(invitationToken, authUser.UserId, authUser.Email),
@@ -215,6 +240,12 @@ public static class CreateHouseholdEndpoint
         }
 
         var authUser = authResult.AuthenticatedUser;
+        if (authUser is null)
+        {
+            await authResult.Problem!.ExecuteAsync(httpContext);
+            return;
+        }
+
         var handler = httpContext.RequestServices.GetRequiredService<GetHouseholdMembersHandler>();
         var result = await handler.HandleAsync(
             new GetHouseholdMembersQuery(new HouseholdId(householdId), authUser.UserId),
