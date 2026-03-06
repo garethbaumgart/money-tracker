@@ -59,10 +59,10 @@ PRs must include verification evidence and reference the issue they resolve.
 
 ### How to use skills
 - Trigger by naming a skill directly (for example, `$github-pr`) or by asking for work that clearly matches the skill description.
-- For UX-heavy issue refinement, use `github-issue-refiner` plus `ux-mockup-explorer` and require selected option evidence before implementation.
-- For any Flutter UI or theming task, default to `flutter-ux-theming` unless the user explicitly asks for a different approach.
-- For any backend/API implementation or refactor task, default to `backend-ddd-vertical-slice` unless the user explicitly asks for a different approach.
-- For multi-issue execution requests (for example, "Execute issues 5,6,7"), default to `execute-issues-parallel`.
+- For UX-heavy issue refinement, use `$github-issue-refiner` plus `$ux-mockup-explorer` and require selected option evidence before implementation.
+- For any Flutter UI or theming task, default to `$flutter-ux-theming` unless the user explicitly asks for a different approach.
+- For any backend/API implementation or refactor task, default to `$backend-ddd-vertical-slice` unless the user explicitly asks for a different approach.
+- For multi-issue execution requests (for example, "Execute issues 5,6,7"), default to `$execute-issues-parallel`.
 - If multiple skills apply, use the minimal set and apply them in sequence.
 - For implementation + PR tasks, prefer explicit completion prompts such as: `Implement issue #<n>, open PR, then continue review rounds until required checks pass and actionable comments are resolved (or I say stop).`
 - Read only the needed sections/files from each skill to keep context lean.

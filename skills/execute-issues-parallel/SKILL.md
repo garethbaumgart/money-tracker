@@ -93,3 +93,10 @@ Report these items:
 3. Verification evidence per issue (tests/checks).
 4. PR URL per issue.
 5. Status per issue: `completed`, `in review`, `blocked`, or `failed`.
+
+## Reference Files
+
+1. Execution checklist:
+- `references/execute-issues-parallel-checklist.md`
+
+Load this checklist before starting any multi-issue execution run.
