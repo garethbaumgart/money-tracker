@@ -58,7 +58,7 @@ wait_for_openapi() {
     if curl -fsS "http://127.0.0.1:${port}/openapi/v1.json" -o "$response_file"; then
       if jq -e '.openapi and .info and .paths' "$response_file" >/dev/null 2>&1; then
         set -e
-        jq -S . "$response_file" > "$out_file.tmp"
+        jq -S 'del(.servers)' "$response_file" > "$out_file.tmp"
         rm -f "$response_file"
         return 0
       fi
