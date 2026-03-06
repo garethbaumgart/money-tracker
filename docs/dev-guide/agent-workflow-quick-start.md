@@ -69,7 +69,7 @@ Then run:
 
 ```text
 $ux-mockup-explorer
-Generate options A-E and compare tradeoffs.
+Generate options A-E and compare trade-offs.
 Return a selected option and why.
 ```
 

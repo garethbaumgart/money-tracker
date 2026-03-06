@@ -190,12 +190,10 @@ jobs:
 
               let labels = uniq(existingLabels);
               const legacyStatus = deriveStatusFromLegacy(labels);
-              let preferredStatusWithLegacy = preferredStatus;
-              if (preferredStatusWithLegacy === null || preferredStatusWithLegacy === undefined) {
-                preferredStatusWithLegacy = legacyStatus;
-              }
+              const existingStatus = pickExistingByOrder(labels.filter((label) => STATUS_NAMES.includes(label)), STATUS_NAMES);
+              const preferredStatusWithLegacy = preferredStatus ?? existingStatus ?? legacyStatus;
 
-              const labelsWithoutLegacyStatus = labels.filter((label) => !LEGACY_STATUS_NAMES.includes(label));
+              const labelsWithoutLegacyStatus = labels.filter((label) => !label.startsWith('stage:'));
 
               const normalizedStatus = normalizeDimension(
                 labelsWithoutLegacyStatus,
