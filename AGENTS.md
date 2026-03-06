@@ -34,7 +34,7 @@ If `merge-ready mode` is `ai-review-loop`, it must be supported in the repo/envi
 
 ## Pull Request Workflow
 
-Before opening a pull request in draft mode:
+Before opening a pull request (draft mode):
 
 1. Ensure tests pass
 2. Ensure acceptance criteria are satisfied

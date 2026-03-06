@@ -7,7 +7,7 @@
 - `Primary skills:` one or more `$skill-name`
 - `Merge-ready mode:` draft | ai-review-loop
 
-Before work:
+Before implementation:
 
 1. Read [docs/dev-guide/index.md](docs/dev-guide/index.md)
 2. Read the lane guide:
@@ -29,14 +29,14 @@ Before work:
 
 ## Lane guardrails
 
-- backend: prefer `backend/**`
-- mobile: prefer `mobile/**`
-- platform: prefer `.github/**` and root tooling
-- any cross-lane change should be explicitly approved
+- backend: stay in `backend/**`
+- mobile: stay in `mobile/**`
+- platform: stay in `.github/**` and root tooling
+- any cross-lane change requires explicit approval
 
 ## PR mode matrix
 
-- Draft mode (default): PR package + verification evidence required; AI-loop metrics are optional.
+- Draft mode (default): PR package + verification evidence required; AI-loop metrics optional.
 - AI-review-loop mode: merge-ready loop, comment resolution, and AI reviewer metrics required.
 
 ## Skills artifact table
