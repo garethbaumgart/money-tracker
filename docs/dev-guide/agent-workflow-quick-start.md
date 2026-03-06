@@ -116,6 +116,7 @@ Prepare PR package for issue {{#}} with test evidence and risk summary.
 ```
 
 Required checks before merge:
+- run a full review immediately after PR creation
 - issue status labels (`status:*`, `lane:*`) match current state
 - AC evidence present
 - required checks/checksuite pass

@@ -17,6 +17,7 @@ PR descriptions must include:
 - Acceptance criteria checklist  
 - Verification evidence  
 - Risk notes
+- Full review log for the initial post-open review and pre-merge review
 
 ## Canonical verification contract
 
@@ -24,6 +25,7 @@ Default mode (no configured AI reviewer loop):
 
 - Verification evidence is required for all changed acceptance criteria.
 - Use a concise evidence table and note any known gaps.
+- A full PR review pass is required immediately after PR creation and again before merge.
 
 AI-review-loop mode (explicitly enabled for the repo/workspace):
 

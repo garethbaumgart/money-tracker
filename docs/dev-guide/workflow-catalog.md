@@ -62,8 +62,14 @@ Avoid ad hoc status labels and avoid stacking more than one `status:*` label on 
 
 ## PR mode matrix
 
-- Draft mode (default): PR package + verification evidence required; AI-loop metrics optional.
-- AI-review-loop mode: merge-ready loop, comment resolution, and AI reviewer metrics required.
+- Draft mode (default): PR package + verification evidence required; every PR still runs an immediate full review pass after opening, with actionable issues tracked.
+- AI-review-loop mode: merge-ready loop, comment resolution, and AI reviewer metrics required, plus immediate post-open and pre-merge review passes.
+
+## PR review gate (all modes)
+
+- All PRs require a full review pass immediately after opening.
+- Before merge, run another full review pass on the latest head and clear all actionable findings.
+- PR merge is blocked if unresolved actionable findings exist and no explicit technical rebuttal exists.
 
 ## Skills artifact table
 
@@ -136,6 +142,10 @@ Merge-ready mode: {{draft|ai-review-loop}}
 
 Single issue: implement issue {{#}} and open a PR.
 Parallel execution: execute issues {{1,2,3}} with dependency-aware sequencing, one PR per issue.
+
+After each PR is opened:
+- run an immediate full review pass on that PR
+- before merge, run a full review pass on the latest head and resolve/rebut all actionable feedback
 ```
 
 ## GitHub event workflow review (recommended)
