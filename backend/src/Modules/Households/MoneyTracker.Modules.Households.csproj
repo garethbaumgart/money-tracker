@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\\Auth\\MoneyTracker.Modules.Auth.csproj" />
   </ItemGroup>
 
 </Project>

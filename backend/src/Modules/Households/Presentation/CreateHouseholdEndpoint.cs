@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using MoneyTracker.Modules.Auth.Application.GetAuthenticatedUser;
@@ -211,7 +213,7 @@ public static class CreateHouseholdEndpoint
             return;
         }
 
-        var authUser = authResult.Value.AuthenticatedUser;
+        var authUser = authResult.AuthenticatedUser;
         var handler = httpContext.RequestServices.GetRequiredService<GetHouseholdMembersHandler>();
         var result = await handler.HandleAsync(
             new GetHouseholdMembersQuery(new HouseholdId(householdId), authUser.UserId),
