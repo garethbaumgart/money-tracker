@@ -156,5 +156,5 @@ Keep one ownership label:
 Use this checklist when changing automations, labels, or PR rules:
 - workflow triggers reviewed (`on:` blocks)
 - permissions/secrets remain minimal
-- event-driven transitions still map to canonical `status:*` and `lane:*` label values
+- event-driven transitions still map to canonical `status:` and `lane:` label values
 - failure/timeout behavior and fallback documented
