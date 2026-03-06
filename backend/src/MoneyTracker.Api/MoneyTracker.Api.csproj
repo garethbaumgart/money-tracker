@@ -9,6 +9,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Modules\Households\MoneyTracker.Modules.Households.csproj" />
     <ProjectReference Include="..\Modules\Auth\MoneyTracker.Modules.Auth.csproj" />
+    <ProjectReference Include="..\Modules\Budgets\MoneyTracker.Modules.Budgets.csproj" />
+    <ProjectReference Include="..\Modules\Transactions\MoneyTracker.Modules.Transactions.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
   </ItemGroup>
 

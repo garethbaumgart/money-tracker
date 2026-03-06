@@ -9,9 +9,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="..\\Auth\\MoneyTracker.Modules.Auth.csproj" />
-    <ProjectReference Include="..\\Budgets\\MoneyTracker.Modules.Budgets.csproj" />
     <ProjectReference Include="..\\SharedKernel\\MoneyTracker.Modules.SharedKernel.csproj" />
-    <ProjectReference Include="..\\Transactions\\MoneyTracker.Modules.Transactions.csproj" />
   </ItemGroup>
 
 </Project>
