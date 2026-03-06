@@ -35,5 +35,5 @@ public sealed class GetAuthenticatedUserResult
             email: string.Empty,
             errorCode: errorCode,
             errorMessage: errorMessage);
-        }
+    }
 }
