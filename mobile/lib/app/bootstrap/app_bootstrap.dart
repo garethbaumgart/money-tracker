@@ -79,7 +79,7 @@ void _reportStartupException(
     errorReporter.reportStartupException(error, stackTrace);
   } catch (reportingError, reportingStackTrace) {
     // Reporter implementations must not crash startup.
-    FlutterError.reportError(
+    FlutterError.dumpErrorToConsole(
       FlutterErrorDetails(
         exception: error,
         stack: stackTrace,
@@ -88,6 +88,7 @@ void _reportStartupException(
           'Failed to report startup exception with $reportingError; reporting stack: $reportingStackTrace',
         ),
       ),
+      forceReport: true,
     );
   }
 }

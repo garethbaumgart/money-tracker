@@ -9,13 +9,14 @@ class FlutterErrorStartupErrorReporter implements StartupErrorReporter {
 
   @override
   void reportStartupException(Object error, StackTrace stackTrace) {
-    FlutterError.reportError(
+    FlutterError.dumpErrorToConsole(
       FlutterErrorDetails(
         exception: error,
         stack: stackTrace,
         library: 'startup_error_reporter',
         context: ErrorDescription('Unhandled startup exception'),
       ),
+      forceReport: true,
     );
   }
 }
