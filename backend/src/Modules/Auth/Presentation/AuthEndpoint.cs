@@ -10,6 +10,7 @@ using MoneyTracker.Modules.Auth.Application.Logout;
 using MoneyTracker.Modules.Auth.Application.RefreshSession;
 using MoneyTracker.Modules.Auth.Application.RequestAuthCode;
 using MoneyTracker.Modules.Auth.Application.VerifyCode;
+using MoneyTracker.Modules.Auth.Infrastructure;
 using MoneyTracker.Modules.Auth.Domain;
 
 namespace MoneyTracker.Modules.Auth.Presentation;
@@ -64,7 +65,6 @@ public static class AuthEndpoint
             .WithName("RequestAuthCode")
             .WithSummary("Request a challenge code.")
             .WithDescription("Issues a short-lived, single-use challenge token for sign-in verification.")
-            .Accepts<RequestAuthCodeRequest>("application/json")
             .Produces<RequestAuthCodeResponse>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
@@ -107,7 +107,6 @@ public static class AuthEndpoint
             .WithName("VerifyAuthCode")
             .WithSummary("Verify a challenge code.")
             .WithDescription("Exchanges an email and challenge token for access and refresh tokens.")
-            .Accepts<VerifyCodeRequest>("application/json")
             .Produces<VerifyCodeResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status401Unauthorized);
 
@@ -149,7 +148,6 @@ public static class AuthEndpoint
             .WithName("RefreshAuthSession")
             .WithSummary("Refresh an authentication session.")
             .WithDescription("Uses a refresh token to rotate access and refresh credentials.")
-            .Accepts<RefreshRequest>("application/json")
             .Produces<VerifyCodeResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status400BadRequest);
@@ -171,7 +169,6 @@ public static class AuthEndpoint
             .WithName("Logout")
             .WithSummary("Logout an authenticated session.")
             .WithDescription("Revokes a refresh token and associated access token.")
-            .Accepts<LogoutRequest>("application/json")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
