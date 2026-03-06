@@ -74,7 +74,15 @@ jobs:
               'stage:in-review': 'status:review',
               'stage:done': 'status:done',
             };
-            const LEGACY_STATUS_NAMES = Object.keys(LEGACY_STATUS_TO_STATUS);
+            const LEGACY_STATUS_NAMES = [
+              'stage:done',
+              'stage:in-review',
+              'stage:in-progress',
+              'stage:planned',
+              'stage:planning',
+              'stage:refined',
+              'stage:refining',
+            ];
 
             const owner = context.repo.owner;
             const repo = context.repo.repo;

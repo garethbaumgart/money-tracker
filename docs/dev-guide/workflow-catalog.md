@@ -11,12 +11,12 @@ If you are onboarding a new engineer, start with [agent workflow quick start](./
 
 Before implementation:
 
-1. Read [docs/dev-guide/index.md](docs/dev-guide/index.md)
+1. Read [index.md](./index.md)
 2. Read the lane guide:
-   - backend → `docs/dev-guide/backend.md`
-   - mobile → `docs/dev-guide/mobile.md`
-   - platform → `docs/dev-guide/platform.md`
-3. For PR-facing work, read [docs/dev-guide/verification.md](docs/dev-guide/verification.md)
+   - backend → `./backend.md`
+   - mobile → `./mobile.md`
+   - platform → `./platform.md`
+3. For PR-facing work, read [verification.md](./verification.md)
 
 Before implementation, if your scope touches automations, labels, event hooks, or PR rules, run the GitHub event workflow review checklist in the section below.
 
@@ -139,7 +139,7 @@ Return option summaries and a concise recommendation with trade-offs.
 
 ```text
 Lane: {{backend|mobile|platform}}
-Task type: {{implementation|issue-refinement|parallel-issues|pr-only}}
+Task type: {{implementation|parallel-issues|pr-only}}
 Primary skills: {{$skill-name list}}
 Merge-ready mode: {{draft|ai-review-loop}}
 

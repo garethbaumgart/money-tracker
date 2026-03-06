@@ -3,7 +3,7 @@ A skill is a set of local instructions stored in a `SKILL.md` file.
 
 ## Skill Routing
 
-Workflow and skill routing is centralized in:
+Workflow and skill routing are centralized in:
 
 - [workflow-catalog](docs/dev-guide/workflow-catalog.md)
 - [agent workflow quick start](docs/dev-guide/agent-workflow-quick-start.md)
