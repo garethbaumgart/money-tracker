@@ -8,6 +8,7 @@ namespace MoneyTracker.Api.Tests.Component;
 public sealed class HealthEndpointTests : IClassFixture<MoneyTrackerApiFactory>
 {
     private readonly MoneyTrackerApiFactory _factory;
+    private const int OversizedCorrelationIdLength = 129;
 
     public HealthEndpointTests(MoneyTrackerApiFactory factory) => _factory = factory;
 
@@ -63,7 +64,8 @@ public sealed class HealthEndpointTests : IClassFixture<MoneyTrackerApiFactory>
         new[]
         {
             new object[] { string.Empty },
-            new object[] { "   " }
+            new object[] { "   " },
+            new object[] { new string('a', OversizedCorrelationIdLength) }
         };
 
     [Theory]
@@ -86,5 +88,28 @@ public sealed class HealthEndpointTests : IClassFixture<MoneyTrackerApiFactory>
         var correlationId = headerValues.Single();
         Assert.False(string.IsNullOrWhiteSpace(correlationId));
         Assert.NotEqual(invalidCorrelationId, correlationId);
+    }
+
+    [Fact]
+    [Trait("Category", "Component")]
+    public async Task GetHealth_GeneratesCorrelationHeaderWhenMultipleValuesProvided()
+    {
+        using var client = _factory.CreateClient();
+        var request = new HttpRequestMessage(HttpMethod.Get, "/health");
+        request.Headers.Add(
+            CorrelationHeaders.CorrelationIdHeader,
+            new[] { "abc-123", "def-456" });
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.TryGetValues(
+            CorrelationHeaders.CorrelationIdHeader,
+            out var headerValues));
+        var correlationId = headerValues.Single();
+        Assert.False(string.IsNullOrWhiteSpace(correlationId));
+        Assert.NotEqual("abc-123", correlationId);
+        Assert.NotEqual("def-456", correlationId);
+        Assert.NotEqual("abc-123,def-456", correlationId);
     }
 }

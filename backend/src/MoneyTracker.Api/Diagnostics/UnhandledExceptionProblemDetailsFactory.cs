@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using MoneyTracker.Api.Observability;
 
@@ -20,7 +19,7 @@ internal static class UnhandledExceptionProblemDetailsFactory
         };
 
         problemDetails.Extensions["code"] = ApiErrorCodes.InternalServerError;
-        problemDetails.Extensions["traceId"] = Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier;
+        problemDetails.Extensions["traceId"] = CorrelationHeaders.GetTraceId(httpContext);
         problemDetails.Extensions["correlationId"] = correlationId;
 
         return problemDetails;

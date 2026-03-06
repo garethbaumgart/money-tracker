@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using MoneyTracker.Api.Observability;
-using System.Diagnostics;
 
 namespace MoneyTracker.Api.Diagnostics;
 
@@ -20,7 +19,7 @@ internal sealed class GlobalExceptionHandler(
                 httpContext.Request.Method,
                 httpContext.Request.Path,
                 CorrelationHeaders.GetCorrelationId(httpContext),
-                Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier,
+                CorrelationHeaders.GetTraceId(httpContext),
                 ApiErrorCodes.OperationCanceled);
 
             return true;
@@ -32,7 +31,7 @@ internal sealed class GlobalExceptionHandler(
             httpContext.Request.Method,
             httpContext.Request.Path,
             CorrelationHeaders.GetCorrelationId(httpContext),
-            Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier,
+            CorrelationHeaders.GetTraceId(httpContext),
             ApiErrorCodes.InternalServerError);
 
         if (httpContext.Response.HasStarted)
@@ -42,7 +41,7 @@ internal sealed class GlobalExceptionHandler(
                 httpContext.Request.Method,
                 httpContext.Request.Path,
                 CorrelationHeaders.GetCorrelationId(httpContext),
-                Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier,
+                CorrelationHeaders.GetTraceId(httpContext),
                 ApiErrorCodes.InternalServerError);
             return false;
         }

@@ -11,15 +11,16 @@ import 'package:money_tracker/shared_kernel/preferences/theme_mode_preferences_g
 
 typedef AppConfigLoader = AppConfig Function();
 typedef ThemeModePreferencesGatewayLoader = FutureOr<ThemeModePreferencesGateway> Function();
-typedef RunMoneyTrackerApp = FutureOr<void> Function(Widget app);
+typedef RunAppCallback = FutureOr<void> Function(Widget app);
 
 Future<void> runMoneyTrackerApp({
   required StartupErrorReporter errorReporter,
   AppConfigLoader appConfigLoader = AppConfig.fromEnvironment,
   ThemeModePreferencesGatewayLoader? preferencesGatewayLoader,
-  RunMoneyTrackerApp? runAppCallback,
+  RunAppCallback? runAppCallback,
 }) async {
   final previousErrorHandler = FlutterError.onError;
+  // This error wiring stays active after startup to capture uncaught errors.
   await runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();

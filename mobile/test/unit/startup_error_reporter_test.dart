@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:money_tracker/app/bootstrap/app_bootstrap.dart';
 import 'package:money_tracker/app/config/app_config.dart';
 import 'package:money_tracker/app/observability/startup_error_reporter.dart';
-import 'package:money_tracker/app/theme/app_theme_mode.dart';
 import 'package:money_tracker/shared_kernel/preferences/theme_mode_preferences_gateway.dart';
 
 void main() {
@@ -16,7 +15,7 @@ void main() {
           appEnv: 'local',
           apiBaseUrl: 'https://api.local.money-tracker.test',
         ),
-        preferencesGatewayLoader: () => const _NullPreferencesGateway(),
+        preferencesGatewayLoader: () => const NoopThemeModePreferencesGateway(),
         runAppCallback: (_) => throw StateError('startup failure'),
       );
 
@@ -31,23 +30,13 @@ void main() {
           appEnv: 'local',
           apiBaseUrl: 'https://api.local.money-tracker.test',
         ),
-        preferencesGatewayLoader: () => const _NullPreferencesGateway(),
+        preferencesGatewayLoader: () => const NoopThemeModePreferencesGateway(),
         runAppCallback: (_) => throw StateError('startup failure'),
       );
 
       expect(true, isTrue);
     });
   });
-}
-
-class _NullPreferencesGateway implements ThemeModePreferencesGateway {
-  const _NullPreferencesGateway();
-
-  @override
-  Future<AppThemeMode> load() async => AppThemeMode.system;
-
-  @override
-  Future<void> save(AppThemeMode mode) async {}
 }
 
 class _RecordingStartupErrorReporter implements StartupErrorReporter {
