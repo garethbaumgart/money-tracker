@@ -121,7 +121,7 @@ Required checks before merge:
 - if no findings and risk is low, run a pre-merge checklist recheck
 - issue status labels (`status:triage`, `status:refined`, `status:ready`, `status:in-progress`, `status:review`, `status:blocked`, `status:done`) and lane labels (`lane:backend`, `lane:mobile`, `lane:platform`, `lane:cross-cutting`, `lane:untriaged`) match current state
 - AC evidence present
-- required checks/checksuite pass
+- required checks/check suite pass
 - open blocking comments resolved
 
 ## 6) Deploy and close
