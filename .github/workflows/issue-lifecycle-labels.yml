@@ -190,7 +190,10 @@ jobs:
 
               let labels = uniq(existingLabels);
               const legacyStatus = deriveStatusFromLegacy(labels);
-              const preferredStatusWithLegacy = preferredStatus ?? legacyStatus;
+              let preferredStatusWithLegacy = preferredStatus;
+              if (preferredStatusWithLegacy === null || preferredStatusWithLegacy === undefined) {
+                preferredStatusWithLegacy = legacyStatus;
+              }
 
               const labelsWithoutLegacyStatus = labels.filter((label) => !LEGACY_STATUS_NAMES.includes(label));
 
