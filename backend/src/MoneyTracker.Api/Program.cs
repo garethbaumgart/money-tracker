@@ -10,10 +10,16 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddValidatedConfiguration(builder.Configuration);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHouseholdsModule();
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
+
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
+{
+    app.MapOpenApi("/openapi/v1.json");
+}
 
 app.MapGet("/", static () => Results.Ok(new { message = "MoneyTracker API" }));
 app.MapGet("/health", static () => Results.Ok(new HealthResponse("ok")));

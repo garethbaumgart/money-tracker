@@ -23,6 +23,20 @@ flutter --version
 dotnet --version
 ```
 
+## OpenAPI Contract Artifact
+
+When API endpoints or request/response models change:
+
+```bash
+./backend/scripts/export-openapi.sh
+```
+
+The command regenerates:
+
+- `backend/openapi/openapi.v1.json`
+
+CI regenerates this artifact and fails if the committed file has drift.
+
 ## Project Layout
 
 ```text

@@ -10,6 +10,7 @@ Configure branch protection to require the following checks:
 - backend-quality
 - mobile-quality
 - security-baseline
+- openapi-contract-check
 <!-- required-checks:end -->
 
 `required-checks-doc-parity` is a documentation parity guard and can be enabled as an additional required check.
