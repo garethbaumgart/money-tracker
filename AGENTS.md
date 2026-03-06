@@ -40,7 +40,7 @@ Before opening a pull request in draft mode:
 2. Ensure acceptance criteria are satisfied
 3. Use the `$github-pr` skill to generate the PR description
 
-Before claiming merge-ready completion:
+Before claiming merge-ready completion (only in `ai-review-loop` mode):
 
 1. Ensure required checks and PR comments are cleared per repo policy
 2. If `ai-review-loop` is declared, use the full `$github-pr` completion contract (including AI reviewer quiet-window checks)
@@ -52,5 +52,5 @@ PR mode defaults are defined in [docs/dev-guide/workflow-catalog.md](docs/dev-gu
 
 ### Skills references
 
-- Use [workflow-catalog skill matrix](docs/dev-guide/workflow-catalog.md#5-skills-matrix-canonical) for routing.
+- Use [workflow-catalog skill matrix](docs/dev-guide/workflow-catalog.md) for routing.
 - If multiple skills apply, run the minimal set in sequence; read only needed skill sections; fall back to direct workflow only if a skill is unavailable.

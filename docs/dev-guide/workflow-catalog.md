@@ -21,7 +21,7 @@ Before work:
 - PR creation → `$github-pr`
 - Backend/API implementation → `$backend-ddd-vertical-slice`
 - Flutter UI/theming implementation → `$flutter-ux-theming`
-- UX exploration/options → `$ux-mockup-explorer` (+ optionally `$github-issue-refiner` first)
+- UX exploration/options → `$github-issue-refiner` then `$ux-mockup-explorer` (when requirements are ambiguous or UX-heavy); use only `$ux-mockup-explorer` directly when requirements are already precise.
 - Issue refinement/spec drafting → `$github-issue-refiner`
 - Multi-issue execution → `$execute-issues-parallel`
 - Skill creation/update → `$skill-creator` (system path)
