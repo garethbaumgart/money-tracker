@@ -606,4 +606,4 @@ Use this file to create GitHub issues for Phase 1 execution.
 1. `phase:1-foundations`
 2. `type:epic` or `type:feature`
 3. `lane:backend` / `lane:mobile` / `lane:platform` / `lane:cross-cutting`
-4. `status:triage` / `status:ready` / `status:in-progress` / `status:review` / `status:done`
+4. `status:triage` / `status:refined` / `status:ready` / `status:in-progress` / `status:blocked` / `status:review` / `status:done`

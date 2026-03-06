@@ -69,8 +69,8 @@ Avoid ad hoc status labels and avoid stacking more than one `status:*` label on 
 
 ## PR mode matrix
 
-- Draft mode (default): PR package + verification evidence required; every PR runs an immediate full review pass after opening. A second pre-merge full pass is required only when the change is broad/high-concern or post-open review found findings; narrow clean PRs use a checklist pre-merge recheck.
-- AI-review-loop mode: merge-ready loop, comment resolution, and AI reviewer metrics required, plus immediate post-open pass and the same high-concern pre-merge pass/recheck requirements.
+- Draft mode (default): A PR package and verification evidence are required; every PR runs an immediate full review pass after opening. A second pre-merge full pass is required only when the change is broad/high-concern or post-open review found findings; narrow clean PRs use a checklist pre-merge recheck.
+- AI-review-loop mode: A merge-ready loop, comment resolution, and AI reviewer metrics are required, plus an immediate post-open pass and the same high-concern pre-merge pass/recheck requirements.
 
 ## PR review gate (all modes)
 
@@ -155,7 +155,7 @@ Parallel execution: execute issues {{1,2,3}} with dependency-aware sequencing, o
 
 After each PR is opened:
 - run an immediate full review pass on that PR
-- before merge, run another full review pass on latest head if post-open review has findings or risk is high; otherwise run a checklist recheck
+- before merge, run another full review pass on latest head if post-open review has findings or the change is broad/high-concern; otherwise run a checklist recheck
 ```
 
 ## GitHub event workflow review (recommended)
