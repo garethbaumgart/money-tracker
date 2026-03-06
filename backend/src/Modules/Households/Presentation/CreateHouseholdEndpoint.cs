@@ -30,10 +30,15 @@ public static class CreateHouseholdEndpoint
 
     public static IEndpointRouteBuilder MapHouseholdEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/households", CreateHousehold)
+        var createHouseholdEndpoint = (RouteHandlerBuilder)app.MapPost("/households", CreateHousehold);
+        createHouseholdEndpoint
             .WithName("CreateHousehold")
             .WithSummary("Create a household.")
-            .WithDescription("Creates a household owned by the authenticated user.");
+            .WithDescription("Creates a household owned by the authenticated user.")
+            .Accepts<CreateHouseholdRequest>("application/json")
+            .Produces<CreateHouseholdResponse>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status409Conflict);
 
         app.MapPost("/households/{householdId:guid}/invite", InviteHouseholdMember)
             .WithName("InviteHouseholdMember")
@@ -97,9 +102,15 @@ public static class CreateHouseholdEndpoint
 
         if (!result.IsSuccess)
         {
+            var statusCode = result.ErrorCode switch
+            {
+                HouseholdErrors.HouseholdNameConflict => StatusCodes.Status409Conflict,
+                _ => StatusCodes.Status400BadRequest
+            };
+
             await WriteProblemAsync(
                 httpContext,
-                StatusCodes.Status400BadRequest,
+                statusCode,
                 "Validation failed.",
                 result.ErrorMessage!,
                 result.ErrorCode,
