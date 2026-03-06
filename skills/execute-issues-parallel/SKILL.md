@@ -46,8 +46,9 @@ Before creating workers:
 
 1. Load each requested issue with `gh issue view <n>`.
 2. Parse dependency cues from issue sections such as `Dependencies`, `Depends on`, and `Sequencing notes`.
-3. Build a dependency graph across requested and external issues.
-4. Mark each issue as:
+3. Load each referenced same-repo numeric dependency issue with `gh issue view <n>` to capture current open/closed state.
+4. Build a dependency graph across requested and external issues.
+5. Mark each issue as:
    - `ready`: all dependencies already completed.
    - `in-set-blocked`: depends on another requested issue.
    - `externally-blocked`: depends on an issue outside the request that is not done.
