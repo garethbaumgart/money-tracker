@@ -28,14 +28,17 @@ Use AI-review-loop mode only when the repository workflow and tooling support it
 5. Produce PR title, PR body, and reviewer checklist.
 6. Open or update PR.
 7. Run an immediate full review pass on the newly opened/updated PR head. Build unresolved actionable queue and address or rebut every item.
-8. In AI-review-loop mode:
-  - Run review loop until merge readiness criteria are met.
-  - After each push in the review loop, explicitly trigger Copilot re-review for the new PR head.
-  - Never post `@copilot review`; use reviewer-request APIs only to avoid triggering coding-agent PR creation.
-  - Do not stop at "PR opened"; continue polling and resolving reviews/checks unless the user explicitly asks to stop.
-9. In non-loop draft mode:
-  - If the request is only PR packaging, you may return with findings and mitigation plan from the immediate review.
-  - If the request includes merge readiness, continue until the pre-merge full review also runs on the final head and all actionable findings are resolved or explicitly rebutted.
+8. Determine if pre-merge full review is required:
+   - Required when post-open review had actionable findings, or when risk is high.
+   - If post-open review was clean and risk is low, perform a checklist recheck on the latest head.
+9. In AI-review-loop mode:
+   - Run review loop until merge readiness criteria are met.
+   - After each push in the review loop, explicitly trigger Copilot re-review for the new PR head.
+   - Never post `@copilot review`; use reviewer-request APIs only to avoid triggering coding-agent PR creation.
+   - Do not stop at "PR opened"; continue polling and resolving reviews/checks unless the user explicitly asks to stop.
+10. In non-loop draft mode:
+   - If the request is only PR packaging, you may return with findings and mitigation plan from the immediate review.
+   - If the request includes merge readiness, continue until the required pre-merge review/recheck runs on the final head and all actionable findings are resolved or explicitly rebutted.
 
 ## Completion Gate (Required)
 
@@ -53,8 +56,11 @@ A PR task is not complete until one of these is true:
 3. In draft mode:
    - PR package and verification evidence are complete.
    - No process blockers remain unresolved.
+   - If merge-ready is requested, execute required pre-merge review/recheck step from Step 8.
 4. Before merge in all modes:
-   - Run a second full review pass on current head.
+   - Run the pre-merge requirement from workflow step 8 above:
+     - full review on current head when findings/risk-high, or
+     - checklist recheck when clean and low-risk.
    - Ensure actionable findings are resolved or explicitly rebutted.
    - Then report merge block clear.
 5. User explicitly asks to stop before merge-ready.

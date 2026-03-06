@@ -62,14 +62,17 @@ Avoid ad hoc status labels and avoid stacking more than one `status:*` label on 
 
 ## PR mode matrix
 
-- Draft mode (default): PR package + verification evidence required; every PR still runs an immediate full review pass after opening, with actionable issues tracked.
-- AI-review-loop mode: merge-ready loop, comment resolution, and AI reviewer metrics required, plus immediate post-open and pre-merge review passes.
+- Draft mode (default): PR package + verification evidence required; every PR runs an immediate full review pass after opening. A second pre-merge full pass is required only when risk is high or post-open review found findings; low-risk clean PRs use a checklist pre-merge recheck.
+- AI-review-loop mode: merge-ready loop, comment resolution, and AI reviewer metrics required, plus immediate post-open pass and risk-aware pre-merge pass/recheck requirements.
 
 ## PR review gate (all modes)
 
 - All PRs require a full review pass immediately after opening.
-- Before merge, run another full review pass on the latest head and clear all actionable findings.
-- PR merge is blocked if unresolved actionable findings exist and no explicit technical rebuttal exists.
+- Before merge, run another full review pass on the latest head when:
+  - any actionable finding came from post-open review, or
+  - the issue/PR is marked `risk/high`.
+- If post-open review had no actionable findings and risk is low, a pre-merge checklist recheck is required.
+- PR merge is blocked if unresolved actionable findings exist without an explicit technical rebuttal.
 
 ## Skills artifact table
 
@@ -145,7 +148,7 @@ Parallel execution: execute issues {{1,2,3}} with dependency-aware sequencing, o
 
 After each PR is opened:
 - run an immediate full review pass on that PR
-- before merge, run a full review pass on the latest head and resolve/rebut all actionable feedback
+- before merge, run another full review pass on latest head if post-open review has findings or risk is high; otherwise run a checklist recheck
 ```
 
 ## GitHub event workflow review (recommended)

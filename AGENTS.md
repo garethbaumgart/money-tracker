@@ -45,11 +45,12 @@ Before opening a pull request (draft mode):
 
 Before claiming merge-ready completion:
 
-1. Run a full review pass on the current PR head immediately before merge.
-2. Ensure required checks and PR comments are cleared per repo policy.
-3. Address all actionable findings before merge.
-4. If `ai-review-loop` is declared, use the full `$github-pr` completion contract (including AI reviewer quiet-window checks).
-5. If AI review loop is not available in the environment, provide explicit evidence of review closure and the PR's required verification only.
+1. If the post-open review produced actionable findings or the issue is high risk, run a second full review pass on the latest PR head before merge.
+2. If the post-open review had no actionable findings and risk is low, run a pre-merge checklist recheck on current PR head.
+3. Ensure required checks and PR comments are cleared per repo policy.
+4. Address all actionable findings (or provide explicit technical rebuttals) before merge.
+5. If `ai-review-loop` is declared, use the full `$github-pr` completion contract (including AI reviewer quiet-window checks).
+6. If AI review loop is not available in the environment, provide explicit evidence of review closure and the PR's required verification only.
 
 PRs must include verification evidence and reference the issue they resolve.
 

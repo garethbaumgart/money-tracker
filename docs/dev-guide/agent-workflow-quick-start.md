@@ -117,6 +117,8 @@ Prepare PR package for issue {{#}} with test evidence and risk summary.
 
 Required checks before merge:
 - run a full review immediately after PR creation
+- if findings are identified, run a second full pre-merge review on latest head
+- if no findings and risk is low, run a pre-merge checklist recheck
 - issue status labels (`status:*`, `lane:*`) match current state
 - AC evidence present
 - required checks/checksuite pass
