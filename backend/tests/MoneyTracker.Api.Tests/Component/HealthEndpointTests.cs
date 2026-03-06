@@ -1,5 +1,7 @@
 using System.Net;
+using System.Linq;
 using System.Net.Http.Json;
+using MoneyTracker.Api.Observability;
 
 namespace MoneyTracker.Api.Tests.Component;
 
@@ -22,5 +24,38 @@ public sealed class HealthEndpointTests : IClassFixture<MoneyTrackerApiFactory>
         Assert.NotNull(payload);
         Assert.Single(payload!);
         Assert.Equal("ok", payload["status"]);
+    }
+
+    [Fact]
+    [Trait("Category", "Component")]
+    public async Task GetHealth_PropagatesProvidedCorrelationHeader()
+    {
+        using var client = _factory.CreateClient();
+        var request = new HttpRequestMessage(HttpMethod.Get, "/health");
+        request.Headers.Add(CorrelationHeaders.CorrelationIdHeader, "abc-123");
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.TryGetValues(
+            CorrelationHeaders.CorrelationIdHeader,
+            out var headerValues));
+        Assert.Equal("abc-123", headerValues.Single());
+    }
+
+    [Fact]
+    [Trait("Category", "Component")]
+    public async Task GetHealth_GeneratesCorrelationHeaderWhenMissing()
+    {
+        using var client = _factory.CreateClient();
+        using var response = await client.GetAsync("/health");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.TryGetValues(
+            CorrelationHeaders.CorrelationIdHeader,
+            out var headerValues));
+        Assert.Single(headerValues);
+        var correlationId = headerValues.Single();
+        Assert.False(string.IsNullOrWhiteSpace(correlationId));
     }
 }

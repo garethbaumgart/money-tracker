@@ -2,6 +2,7 @@ using MoneyTracker.Api.Configuration;
 using MoneyTracker.Api.Contracts;
 using MoneyTracker.Api.Diagnostics;
 using MoneyTracker.Modules.Households.Presentation;
+using MoneyTracker.Api.Observability;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,7 @@ builder.Services.AddHouseholdsModule();
 
 var app = builder.Build();
 
+app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseExceptionHandler();
 
 app.MapGet("/", static () => Results.Ok(new { message = "MoneyTracker API" }));

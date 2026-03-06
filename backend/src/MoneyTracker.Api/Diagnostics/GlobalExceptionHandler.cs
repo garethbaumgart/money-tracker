@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using MoneyTracker.Api.Observability;
+using System.Diagnostics;
 
 namespace MoneyTracker.Api.Diagnostics;
 
@@ -14,30 +16,41 @@ internal sealed class GlobalExceptionHandler(
         {
             logger.LogInformation(
                 exception,
-                "Request was canceled while processing {Method} {Path}",
+                "Request was canceled while processing {Method} {Path} correlationId={CorrelationId} traceId={TraceId} errorCode={ErrorCode}",
                 httpContext.Request.Method,
-                httpContext.Request.Path);
+                httpContext.Request.Path,
+                CorrelationHeaders.GetCorrelationId(httpContext),
+                Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier,
+                ApiErrorCodes.OperationCanceled);
 
             return true;
         }
 
         logger.LogError(
             exception,
-            "Unhandled exception while processing {Method} {Path}",
+            "Unhandled exception while processing {Method} {Path} correlationId={CorrelationId} traceId={TraceId} errorCode={ErrorCode}",
             httpContext.Request.Method,
-            httpContext.Request.Path);
+            httpContext.Request.Path,
+            CorrelationHeaders.GetCorrelationId(httpContext),
+            Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier,
+            ApiErrorCodes.InternalServerError);
 
         if (httpContext.Response.HasStarted)
         {
             logger.LogWarning(
-                "Unable to write ProblemDetails because the response has already started for {Method} {Path}",
+                "Unable to write ProblemDetails because the response has already started for {Method} {Path} correlationId={CorrelationId} traceId={TraceId} errorCode={ErrorCode}",
                 httpContext.Request.Method,
-                httpContext.Request.Path);
+                httpContext.Request.Path,
+                CorrelationHeaders.GetCorrelationId(httpContext),
+                Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier,
+                ApiErrorCodes.InternalServerError);
             return false;
         }
 
         var problemDetails = UnhandledExceptionProblemDetailsFactory.Create(httpContext);
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        httpContext.Response.Headers[CorrelationHeaders.CorrelationIdHeader] =
+            CorrelationHeaders.GetCorrelationId(httpContext);
 
         await problemDetailsService.WriteAsync(new ProblemDetailsContext
         {

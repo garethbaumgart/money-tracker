@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using MoneyTracker.Api.Observability;
 
 namespace MoneyTracker.Api.Diagnostics;
 
@@ -7,6 +8,8 @@ internal static class UnhandledExceptionProblemDetailsFactory
 {
     public static ProblemDetails Create(HttpContext httpContext)
     {
+        var correlationId = CorrelationHeaders.GetCorrelationId(httpContext);
+
         var problemDetails = new ProblemDetails
         {
             Type = "https://www.rfc-editor.org/rfc/rfc9110#section-15.6.1",
@@ -18,6 +21,7 @@ internal static class UnhandledExceptionProblemDetailsFactory
 
         problemDetails.Extensions["code"] = ApiErrorCodes.InternalServerError;
         problemDetails.Extensions["traceId"] = Activity.Current?.TraceId.ToString() ?? httpContext.TraceIdentifier;
+        problemDetails.Extensions["correlationId"] = correlationId;
 
         return problemDetails;
     }
