@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using MoneyTracker.Api.Diagnostics;
+using MoneyTracker.Api.Observability;
 
 namespace MoneyTracker.Api.Tests.Unit;
 
@@ -24,11 +25,13 @@ public sealed class UnhandledExceptionProblemDetailsFactoryTests
             "The server encountered an unexpected error while processing the request.",
             problemDetails.Detail);
         Assert.Equal("/transactions", problemDetails.Instance);
-        Assert.Equal(new[] { "code", "traceId" }, problemDetails.Extensions.Keys.OrderBy(key => key));
+        Assert.Equal(new[] { "code", "correlationId", "traceId" }, problemDetails.Extensions.Keys.OrderBy(key => key));
         Assert.True(problemDetails.Extensions.TryGetValue("code", out var code));
         Assert.True(problemDetails.Extensions.TryGetValue("traceId", out var traceId));
+        Assert.True(problemDetails.Extensions.TryGetValue("correlationId", out var correlationId));
         Assert.Equal("internal_server_error", code);
         Assert.Equal(expectedTraceId, traceId);
+        Assert.Equal(httpContext.TraceIdentifier, correlationId);
     }
 
     [Fact]
@@ -37,7 +40,7 @@ public sealed class UnhandledExceptionProblemDetailsFactoryTests
     {
         var httpContext = new DefaultHttpContext();
         httpContext.TraceIdentifier = "trace-unit-456";
-        httpContext.Request.Path = "/accounts";
+        httpContext.Items[CorrelationHeaders.CorrelationIdItemKey] = "corr-456";
         using var activity = new Activity("unit-test");
         activity.Start();
 
@@ -45,5 +48,6 @@ public sealed class UnhandledExceptionProblemDetailsFactoryTests
 
         Assert.True(problemDetails.Extensions.TryGetValue("traceId", out var traceId));
         Assert.Equal(activity.TraceId.ToString(), traceId);
+        Assert.Equal("corr-456", problemDetails.Extensions["correlationId"]);
     }
 }

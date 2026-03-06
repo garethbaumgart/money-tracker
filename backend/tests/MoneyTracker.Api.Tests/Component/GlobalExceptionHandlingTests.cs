@@ -1,5 +1,7 @@
 using System.Net;
+using System.Net.Http;
 using System.Text.Json.Nodes;
+using MoneyTracker.Api.Observability;
 
 namespace MoneyTracker.Api.Tests.Component;
 
@@ -28,5 +30,26 @@ public sealed class GlobalExceptionHandlingTests : IClassFixture<MoneyTrackerApi
         Assert.False(string.IsNullOrWhiteSpace(json["type"]?.GetValue<string>()));
         Assert.False(string.IsNullOrWhiteSpace(json["detail"]?.GetValue<string>()));
         Assert.False(string.IsNullOrWhiteSpace(json["traceId"]?.GetValue<string>()));
+        Assert.False(string.IsNullOrWhiteSpace(json["correlationId"]?.GetValue<string>()));
+    }
+
+    [Fact]
+    [Trait("Category", "Component")]
+    public async Task UnhandledException_UsesProvidedCorrelationHeaderForProblemDetailsAndResponseHeader()
+    {
+        using var client = _factory.CreateClient();
+        var request = new HttpRequestMessage(HttpMethod.Get, "/__test/throw");
+        request.Headers.Add(CorrelationHeaders.CorrelationIdHeader, "abc-123");
+
+        using var response = await client.SendAsync(request);
+
+        var json = JsonNode.Parse(await response.Content.ReadAsStringAsync())?.AsObject();
+        Assert.NotNull(json);
+        Assert.Equal("abc-123", json["correlationId"]?.GetValue<string>());
+
+        Assert.True(response.Headers.TryGetValues(
+            CorrelationHeaders.CorrelationIdHeader,
+            out var responseCorrelationValues));
+        Assert.Equal("abc-123", responseCorrelationValues.Single());
     }
 }

@@ -2,6 +2,7 @@ using MoneyTracker.Api.Configuration;
 using MoneyTracker.Api.Contracts;
 using MoneyTracker.Api.Diagnostics;
 using MoneyTracker.Modules.Households.Presentation;
+using MoneyTracker.Api.Observability;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,7 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
