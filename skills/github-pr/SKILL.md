@@ -20,7 +20,8 @@ Focus on behavior, risk, verification evidence, and deterministic comment resolu
 6. Open or update PR.
 7. Run review loop until merge readiness criteria are met.
 8. After each push in the review loop, explicitly trigger Copilot re-review for the new PR head.
-9. Do not stop at "PR opened"; continue polling and resolving reviews/checks unless the user explicitly asks to stop.
+9. Never post `@copilot review`; use reviewer-request APIs only to avoid triggering coding-agent PR creation.
+10. Do not stop at "PR opened"; continue polling and resolving reviews/checks unless the user explicitly asks to stop.
 
 ## Completion Gate (Required)
 
@@ -74,7 +75,7 @@ Rules:
 - If no such comments exist for current head, set value to `null` (this counts as present, not omitted) and treat the AI quiet-window condition as satisfied for this metric.
 
 4. `copilot_rerequested_on_head`
-- Set `true` only when a Copilot re-review trigger action is recorded for the current `headRefOid` (for example, reviewer-request API call accepted on current head, or `@copilot review` comment posted after the push that produced current `headRefOid`).
+- Set `true` only when a Copilot reviewer-request action is recorded for the current `headRefOid` (for example, reviewer-request API call accepted on current head).
 - Set `false` if no explicit trigger can be proven for current head.
 
 ### Freshness Rules (Repoll Required)
@@ -166,9 +167,10 @@ Use the `Round Completion Heuristic` (from `references/review-loop-commands.md`)
 7. If rejecting a comment, provide specific evidence: incorrect assumption, constraint conflict, duplicate, or already addressed.
 8. Push updates, post round summary, and request re-review.
 9. Explicitly trigger Copilot re-review on each pushed head using command patterns in `references/review-loop-commands.md`.
-10. Verify whether Copilot produced a review signal for current `headRefOid`; if not, keep polling through the quiet window and report the exact state.
-11. Sleep `POLL_SECONDS` seconds and re-poll.
-12. Repeat until run completion gate is satisfied.
+10. Do not trigger Copilot using PR/issue comment mentions.
+11. Verify whether Copilot produced a review signal for current `headRefOid`; if not, keep polling through the quiet window and report the exact state.
+12. Sleep `POLL_SECONDS` seconds and re-poll.
+13. Repeat until run completion gate is satisfied.
 
 Multiple rounds per PR are normal and expected.
 
