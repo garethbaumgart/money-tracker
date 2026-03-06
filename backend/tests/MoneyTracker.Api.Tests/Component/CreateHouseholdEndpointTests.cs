@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json.Nodes;
 
 namespace MoneyTracker.Api.Tests.Component;
@@ -69,5 +70,22 @@ public sealed class CreateHouseholdEndpointTests : IClassFixture<MoneyTrackerApi
         var payload = JsonNode.Parse(await conflictResponse.Content.ReadAsStringAsync())?.AsObject();
         Assert.NotNull(payload);
         Assert.Equal("household_name_conflict", payload["code"]?.GetValue<string>());
+    }
+
+    [Fact]
+    [Trait("Category", "Component")]
+    public async Task PostHouseholds_ReturnsBadRequest_WhenBodyIsEmpty()
+    {
+        using var client = _factory.CreateClient();
+        using var emptyBodyContent = new StringContent(string.Empty, Encoding.UTF8, "application/json");
+
+        using var response = await client.PostAsync("/households", emptyBodyContent);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+
+        var payload = JsonNode.Parse(await response.Content.ReadAsStringAsync())?.AsObject();
+        Assert.NotNull(payload);
+        Assert.Equal("validation_error", payload["code"]?.GetValue<string>());
     }
 }

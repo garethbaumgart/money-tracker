@@ -10,14 +10,18 @@ public sealed class CreateHouseholdHandlerTests
     public async Task HandleAsync_PersistsHousehold_WhenNameIsUnique()
     {
         var repository = new FakeHouseholdRepository(existsByName: false);
-        var handler = new CreateHouseholdHandler(repository, new FakeTimeProvider(DateTimeOffset.Parse("2026-02-03T04:05:06Z")));
+        var expectedCreatedAtUtc = DateTimeOffset.Parse("2026-02-03T04:05:06Z");
+        var handler = new CreateHouseholdHandler(repository, new FakeTimeProvider(expectedCreatedAtUtc));
 
         var result = await handler.HandleAsync(new CreateHouseholdCommand("Primary Home"), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Household);
         Assert.Equal("Primary Home", result.Household!.Name);
+        Assert.Equal(expectedCreatedAtUtc, result.Household.CreatedAtUtc);
+        Assert.Equal(1, repository.ExistsCalls);
         Assert.Equal(1, repository.AddCalls);
+        Assert.Equal(expectedCreatedAtUtc, repository.LastAddedHousehold?.CreatedAtUtc);
     }
 
     [Fact]
@@ -54,6 +58,7 @@ internal sealed class FakeHouseholdRepository(bool existsByName) : IHouseholdRep
 {
     public int ExistsCalls { get; private set; }
     public int AddCalls { get; private set; }
+    public Household? LastAddedHousehold { get; private set; }
 
     public Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken)
     {
@@ -64,6 +69,7 @@ internal sealed class FakeHouseholdRepository(bool existsByName) : IHouseholdRep
     public Task AddAsync(Household household, CancellationToken cancellationToken)
     {
         AddCalls++;
+        LastAddedHousehold = household;
         return Task.CompletedTask;
     }
 }

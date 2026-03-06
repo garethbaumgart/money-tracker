@@ -36,4 +36,24 @@ public sealed class HouseholdTests
 
         Assert.Equal(HouseholdErrors.ValidationError, exception.Code);
     }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void Create_AcceptsNameAtMaxLengthBoundary()
+    {
+        var boundaryLengthName = new string('a', Household.MaxNameLength);
+
+        var household = Household.Create(boundaryLengthName, DateTimeOffset.UtcNow);
+
+        Assert.Equal(boundaryLengthName, household.Name);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void NormalizeName_ReturnsEmpty_ForNull()
+    {
+        var normalized = Household.NormalizeName(null);
+
+        Assert.Equal(string.Empty, normalized);
+    }
 }

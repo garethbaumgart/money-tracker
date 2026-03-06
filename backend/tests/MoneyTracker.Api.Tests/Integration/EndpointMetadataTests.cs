@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using MoneyTracker.Modules.Households.Presentation;
 
 namespace MoneyTracker.Api.Tests.Integration;
 
@@ -23,10 +24,17 @@ public sealed class EndpointMetadataTests
         });
 
         var acceptsMetadata = householdsEndpoint.Metadata.GetOrderedMetadata<IAcceptsMetadata>();
-        Assert.Contains(acceptsMetadata, metadata => metadata.ContentTypes.Contains("application/json", StringComparer.Ordinal));
+        Assert.Contains(acceptsMetadata, metadata =>
+            metadata.ContentTypes.Contains("application/json", StringComparer.Ordinal)
+            && metadata.RequestType == typeof(CreateHouseholdRequest));
+
+        var endpointNameMetadata = householdsEndpoint.Metadata.GetMetadata<IEndpointNameMetadata>();
+        Assert.Equal("CreateHousehold", endpointNameMetadata?.EndpointName);
 
         var producesMetadata = householdsEndpoint.Metadata.GetOrderedMetadata<IProducesResponseTypeMetadata>();
-        Assert.Contains(producesMetadata, metadata => metadata.StatusCode == StatusCodes.Status201Created);
+        Assert.Contains(producesMetadata, metadata =>
+            metadata.StatusCode == StatusCodes.Status201Created
+            && metadata.Type == typeof(CreateHouseholdResponse));
         Assert.Contains(producesMetadata, metadata => metadata.StatusCode == StatusCodes.Status400BadRequest);
         Assert.Contains(producesMetadata, metadata => metadata.StatusCode == StatusCodes.Status409Conflict);
     }

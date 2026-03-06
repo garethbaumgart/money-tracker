@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using MoneyTracker.Modules.Households.Application.CreateHousehold;
 using MoneyTracker.Modules.Households.Domain;
+using System.Text.Json;
 
 namespace MoneyTracker.Modules.Households.Presentation;
 
@@ -23,7 +24,24 @@ public static class CreateHouseholdEndpoint
     {
         Delegate createHouseholdHandler = async (HttpContext httpContext) =>
         {
-            var request = await httpContext.Request.ReadFromJsonAsync<CreateHouseholdRequest>(cancellationToken: httpContext.RequestAborted);
+            CreateHouseholdRequest? request;
+            try
+            {
+                request = await httpContext.Request.ReadFromJsonAsync<CreateHouseholdRequest>(cancellationToken: httpContext.RequestAborted);
+            }
+            catch (JsonException)
+            {
+                var malformedPayloadResult = TypedResults.Problem(CreateProblemDetails(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "Validation failed.",
+                    detail: "The request payload is invalid.",
+                    code: HouseholdErrors.ValidationError,
+                    instance: httpContext.Request.Path));
+
+                await malformedPayloadResult.ExecuteAsync(httpContext);
+                return;
+            }
+
             var handler = httpContext.RequestServices.GetRequiredService<CreateHouseholdHandler>();
             IResult httpResult;
 
