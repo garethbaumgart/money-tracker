@@ -2,7 +2,7 @@ using MoneyTracker.Modules.Households.Domain;
 
 namespace MoneyTracker.Modules.Households.Application.InviteHouseholdMember;
 
-public sealed class InviteHouseholdMemberHandler(IHouseholdRepository repository)
+public sealed class InviteHouseholdMemberHandler(IHouseholdRepository repository, TimeProvider timeProvider)
 {
     public async Task<InviteHouseholdMemberResult> HandleAsync(
         InviteHouseholdMemberCommand command,
@@ -26,7 +26,7 @@ public sealed class InviteHouseholdMemberHandler(IHouseholdRepository repository
         }
 
         var invitationToken = Guid.NewGuid().ToString("N");
-        var expiresAtUtc = DateTimeOffset.UtcNow.AddDays(7);
+        var expiresAtUtc = timeProvider.GetUtcNow().AddDays(7);
         var invitation = new HouseholdInvitation(
             invitationToken,
             household.Id,
@@ -42,3 +42,4 @@ public sealed class InviteHouseholdMemberHandler(IHouseholdRepository repository
 
         return InviteHouseholdMemberResult.Success(invitationToken, expiresAtUtc);
     }
+}

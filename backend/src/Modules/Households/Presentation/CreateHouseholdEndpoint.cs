@@ -79,7 +79,7 @@ public static class CreateHouseholdEndpoint
             return;
         }
 
-        var authUser = authResult.Value.AuthenticatedUser;
+        var authUser = authResult.AuthenticatedUser;
         var (isValidRequest, request, parseProblem) = await ReadJsonRequestAsync<CreateHouseholdRequest>(httpContext);
         if (!isValidRequest)
         {
@@ -118,7 +118,7 @@ public static class CreateHouseholdEndpoint
             return;
         }
 
-        var authUser = authResult.Value.AuthenticatedUser;
+        var authUser = authResult.AuthenticatedUser;
         var (isValidRequest, request, parseProblem) = await ReadJsonRequestAsync<InviteHouseholdMemberRequest>(httpContext);
         if (!isValidRequest)
         {
@@ -167,7 +167,7 @@ public static class CreateHouseholdEndpoint
             return;
         }
 
-        var authUser = authResult.Value.AuthenticatedUser;
+        var authUser = authResult.AuthenticatedUser;
         var handler = httpContext.RequestServices.GetRequiredService<AcceptHouseholdInvitationHandler>();
         var result = await handler.HandleAsync(
             new AcceptHouseholdInvitationCommand(invitationToken, authUser.UserId, authUser.Email),
