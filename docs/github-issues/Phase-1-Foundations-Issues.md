@@ -605,5 +605,5 @@ Use this file to create GitHub issues for Phase 1 execution.
 ## Labels to Use
 1. `phase:1-foundations`
 2. `type:epic` or `type:feature`
-3. `area:backend` / `area:mobile` / `area:platform`
-4. `priority:p0` or `priority:p1`
+3. `lane:backend` / `lane:mobile` / `lane:platform` / `lane:cross-cutting`
+4. `status:triage` / `status:ready` / `status:in-progress` / `status:review` / `status:done`

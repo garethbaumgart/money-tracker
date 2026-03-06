@@ -60,29 +60,6 @@ jobs:
 
             const STATUS_NAMES = STATUS_LABELS.map((label) => label.name);
             const LANE_NAMES = LANE_LABELS.map((label) => label.name);
-            const LEGACY_AREA_TO_LANE = {
-              'area:backend': 'lane:backend',
-              'area:mobile': 'lane:mobile',
-              'area:platform': 'lane:platform',
-            };
-            const LEGACY_STATUS_TO_STATUS = {
-              'stage:refining': 'status:triage',
-              'stage:refined': 'status:refined',
-              'stage:planning': 'status:ready',
-              'stage:planned': 'status:ready',
-              'stage:in-progress': 'status:in-progress',
-              'stage:in-review': 'status:review',
-              'stage:done': 'status:done',
-            };
-            const LEGACY_STATUS_NAMES = [
-              'stage:done',
-              'stage:in-review',
-              'stage:in-progress',
-              'stage:planned',
-              'stage:planning',
-              'stage:refined',
-              'stage:refining',
-            ];
 
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -134,16 +111,6 @@ jobs:
               return existingLabels[0] ?? null;
             }
 
-            function deriveLaneFromLegacy(labels) {
-              for (const [legacyLabel, laneLabel] of Object.entries(LEGACY_AREA_TO_LANE)) {
-                if (labels.includes(legacyLabel)) {
-                  return laneLabel;
-                }
-              }
-
-              return null;
-            }
-
             function resolveLaneFromLabels(labels) {
               const explicitLaneLabels = labels.filter((label) => LANE_NAMES.includes(label));
               const explicitLane = pickExistingByOrder(explicitLaneLabels, LANE_NAMES);
@@ -151,22 +118,7 @@ jobs:
                 return explicitLane;
               }
 
-              const legacyLane = deriveLaneFromLegacy(labels);
-              if (legacyLane) {
-                return legacyLane;
-              }
-
               return 'lane:untriaged';
-            }
-
-            function deriveStatusFromLegacy(labels) {
-              for (const legacyLabel of LEGACY_STATUS_NAMES) {
-                if (labels.includes(legacyLabel)) {
-                  return LEGACY_STATUS_TO_STATUS[legacyLabel];
-                }
-              }
-
-              return null;
             }
 
             function normalizeDimension(labels, allowedLabels, fallbackLabel, preferredLabel) {
@@ -197,27 +149,22 @@ jobs:
               const preferredLane = options.preferredLane ?? null;
 
               let labels = uniq(existingLabels);
-              const legacyStatus = deriveStatusFromLegacy(labels);
               const existingStatus = pickExistingByOrder(labels.filter((label) => STATUS_NAMES.includes(label)), STATUS_NAMES);
-              const preferredStatusWithLegacy = preferredStatus ?? existingStatus ?? legacyStatus;
-
-              const labelsWithoutLegacyStatus = labels.filter((label) => !label.startsWith('stage:'));
+              const preferredStatusWithExisting = preferredStatus ?? existingStatus;
 
               const normalizedStatus = normalizeDimension(
-                labelsWithoutLegacyStatus,
+                labels,
                 STATUS_NAMES,
                 'status:triage',
-                preferredStatusWithLegacy,
+                preferredStatusWithExisting,
               );
               labels = normalizedStatus.labels;
 
-              const hasLaneLabel = labels.some((label) => LANE_NAMES.includes(label));
-              const inferredLaneFromLegacy = !preferredLane && !hasLaneLabel ? deriveLaneFromLegacy(labels) : null;
               const normalizedLane = normalizeDimension(
                 labels,
                 LANE_NAMES,
                 'lane:untriaged',
-                preferredLane || inferredLaneFromLegacy,
+                preferredLane,
               );
               labels = normalizedLane.labels;
 
