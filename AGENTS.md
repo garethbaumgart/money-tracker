@@ -20,6 +20,9 @@ UX exploration and design option generation
 Issue clarification or specification drafting  
 → `$github-issue-refiner`
 
+Parallel issue execution with isolated worktrees and PRs  
+→ `$execute-issues-parallel`
+
 ## Worker Startup Rules
 
 When beginning a task, workers must first read:
@@ -50,6 +53,7 @@ PRs must include verification evidence and reference the issue they resolve.
 - `ux-mockup-explorer`: Generate raw HTML UX option packs (A-E) and decision artifacts for UX-heavy issues before Flutter implementation. (file: `skills/ux-mockup-explorer/SKILL.md`)
 - `flutter-ux-theming`: Apply project Flutter UX/theming standards using Material 3, semantic tokens, ThemeExtension, and component themes. Use for UI feature build/refactor/review tasks. (file: `skills/flutter-ux-theming/SKILL.md`)
 - `backend-ddd-vertical-slice`: Implement backend/API features using pragmatic DDD + vertical slices with clear domain/application/infrastructure/presentation boundaries. (file: `skills/backend-ddd-vertical-slice/SKILL.md`)
+- `execute-issues-parallel`: Execute multiple GitHub issues with one worktree and one PR per issue, dependency-aware sequencing, and lane-specific skill routing. (file: `skills/execute-issues-parallel/SKILL.md`)
 - `skill-creator`: Guide for creating or updating Codex skills. Use when creating new project skills. (file: `~/.codex/skills/.system/skill-creator/SKILL.md`)
 - `skill-installer`: Install Codex skills from curated or GitHub sources into Codex home. (file: `~/.codex/skills/.system/skill-installer/SKILL.md`)
 
@@ -58,6 +62,7 @@ PRs must include verification evidence and reference the issue they resolve.
 - For UX-heavy issue refinement, use `github-issue-refiner` plus `ux-mockup-explorer` and require selected option evidence before implementation.
 - For any Flutter UI or theming task, default to `flutter-ux-theming` unless the user explicitly asks for a different approach.
 - For any backend/API implementation or refactor task, default to `backend-ddd-vertical-slice` unless the user explicitly asks for a different approach.
+- For multi-issue execution requests (for example, "Execute issues 5,6,7"), default to `execute-issues-parallel`.
 - If multiple skills apply, use the minimal set and apply them in sequence.
 - For implementation + PR tasks, prefer explicit completion prompts such as: `Implement issue #<n>, open PR, then continue review rounds until required checks pass and actionable comments are resolved (or I say stop).`
 - Read only the needed sections/files from each skill to keep context lean.
