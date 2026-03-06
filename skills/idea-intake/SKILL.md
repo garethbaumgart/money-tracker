@@ -1,6 +1,6 @@
 ---
 name: idea-intake
-description: Turn raw product ideas into a clear, implementation-ready issue package by capturing intent, scope, acceptance criteria, dependencies, and execution mode. Use when user has an idea and asks for issue planning.
+description: Turn raw product ideas into a clear, implementation-ready issue package by capturing intent, scope, acceptance criteria, dependencies, and execution mode. Use when a user has an idea and asks for issue planning.
 ---
 
 # Idea Intake

@@ -116,7 +116,7 @@ Prepare PR package for issue {{#}} with test evidence and risk summary.
 ```
 
 Required checks before merge:
-- issue status labels (`status/*`, `lane/*`) match current state
+- issue status labels (`status:*`, `lane:*`) match current state
 - AC evidence present
 - required checks/checksuite pass
 - open blocking comments resolved
@@ -153,5 +153,5 @@ Keep one ownership label:
 Use this checklist when changing automations, labels, or PR rules:
 - workflow triggers reviewed (`on:` blocks)
 - permissions/secrets remain minimal
-- event-driven transitions still map to `status/*` and `lane/*`
+- event-driven transitions still map to `status:*` and `lane:*`
 - failure/timeout behavior and fallback documented

@@ -7,7 +7,7 @@
 - `Primary skills:` one or more `$skill-name`
 - `Merge-ready mode:` draft | ai-review-loop
 
-If you are onboarding a new engineer, start with [agent workflow quick start](docs/dev-guide/agent-workflow-quick-start.md) first.
+If you are onboarding a new engineer, start with [agent workflow quick start](./agent-workflow-quick-start.md) first.
 
 Before implementation:
 
@@ -44,7 +44,7 @@ Use a small, consistent label set for issue state, ownership, and risk:
 - `status:blocked` → waiting on dependency/decision
 - `status:done` → completed and merged
 
-- `lane/backend` / `lane:mobile` / `lane:platform`
+- `lane:backend` / `lane:mobile` / `lane:platform`
 - `lane:cross-cutting` when one issue touches multiple lanes
 - `lane:untriaged` while automation infers lane
 - `merge/draft` / `merge/ai-review-loop`
