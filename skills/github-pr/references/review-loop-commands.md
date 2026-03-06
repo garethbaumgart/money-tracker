@@ -51,7 +51,7 @@ gh api --paginate "repos/$OWNER_REPO/issues/$PR_NUMBER/comments?per_page=100" \
 
 ## Trigger Copilot Re-Review After Each Push
 
-Try requesting Copilot as a reviewer first. If that is unsupported in the repository, fall back to mention-trigger:
+Request Copilot as a reviewer only. Do not fall back to PR comment mentions such as `@copilot review` because that can trigger coding-agent behavior in some repositories.
 
 ```bash
 triggered="false"
@@ -62,7 +62,7 @@ if gh api --method POST "repos/$OWNER_REPO/pulls/$PR_NUMBER/requested_reviewers"
 fi
 
 if [ "$triggered" != "true" ]; then
-  gh pr comment "$PR_NUMBER" --repo "$OWNER_REPO" --body "@copilot review"
+  echo "Copilot reviewer request unsupported; skipping Copilot re-review trigger for this head."
 fi
 ```
 
@@ -138,7 +138,7 @@ while true; do
   gh api --paginate "repos/$OWNER_REPO/issues/$PR_NUMBER/comments?per_page=100"
 
   # 3) If actionable comments exist:
-  #    - react + fix/rebut + push + reply + trigger Copilot re-review
+  #    - react + fix/rebut + push + reply + trigger Copilot re-review (reviewer-request API only)
   #    - quiet_count=0
   # 4) Else if pending checks or pending Copilot signal on current head exist:
   #    - quiet_count=0
