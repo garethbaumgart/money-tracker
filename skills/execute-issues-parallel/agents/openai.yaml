@@ -1,0 +1,4 @@
+interface:
+  display_name: "Execute Issues Parallel"
+  short_description: "Run multiple GitHub issues in safe parallel lanes"
+  default_prompt: "Use $execute-issues-parallel to execute issues #5,#6,#7 in parallel with separate worktrees and PRs."
