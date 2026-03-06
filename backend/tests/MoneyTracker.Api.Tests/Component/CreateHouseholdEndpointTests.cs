@@ -16,9 +16,35 @@ public sealed class CreateHouseholdEndpointTests : IClassFixture<MoneyTrackerApi
 
     [Fact]
     [Trait("Category", "Component")]
-    public async Task PostHouseholds_ReturnsCreatedResponseAndLocation()
+    public async Task PostHouseholds_RequiresAuthentication()
     {
         using var client = _factory.CreateClient();
+        var request = new { name = $"Family-{Guid.NewGuid():N}" };
+
+        using var response = await client.PostAsJsonAsync("/households", request);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+
+        var payload = JsonNode.Parse(await response.Content.ReadAsStringAsync())?.AsObject();
+        Assert.NotNull(payload);
+        var code = payload["code"]?.GetValue<string>();
+        Assert.NotNull(code);
+        Assert.Contains(code, new[]
+        {
+            "auth_access_token_missing",
+            "auth_access_token_invalid"
+        });
+    }
+
+    [Fact]
+    [Trait("Category", "Component")]
+    public async Task PostHouseholds_ReturnsCreatedResponseAndLocation_WhenAuthenticated()
+    {
+        using var client = _factory.CreateClient();
+        var accessToken = await AuthTestHelpers.GetAccessTokenAsync(client, $"{Guid.NewGuid():N}@example.com");
+        AuthTestHelpers.SetBearer(client, accessToken);
+
         var request = new { name = $"Family-{Guid.NewGuid():N}" };
 
         using var response = await client.PostAsJsonAsync("/households", request);
@@ -41,6 +67,8 @@ public sealed class CreateHouseholdEndpointTests : IClassFixture<MoneyTrackerApi
     public async Task PostHouseholds_ReturnsBadRequest_WhenNameInvalid()
     {
         using var client = _factory.CreateClient();
+        var accessToken = await AuthTestHelpers.GetAccessTokenAsync(client, $"{Guid.NewGuid():N}@example.com");
+        AuthTestHelpers.SetBearer(client, accessToken);
 
         using var response = await client.PostAsJsonAsync("/households", new { name = "   " });
 
@@ -58,6 +86,9 @@ public sealed class CreateHouseholdEndpointTests : IClassFixture<MoneyTrackerApi
     {
         using var client = _factory.CreateClient();
         var baseName = $"Shared-{Guid.NewGuid():N}";
+        var ownerEmail = $"{Guid.NewGuid():N}@example.com";
+        var accessToken = await AuthTestHelpers.GetAccessTokenAsync(client, ownerEmail);
+        AuthTestHelpers.SetBearer(client, accessToken);
 
         using var firstResponse = await client.PostAsJsonAsync("/households", new { name = baseName });
         Assert.Equal(HttpStatusCode.Created, firstResponse.StatusCode);
@@ -77,6 +108,9 @@ public sealed class CreateHouseholdEndpointTests : IClassFixture<MoneyTrackerApi
     public async Task PostHouseholds_ReturnsBadRequest_WhenBodyIsEmpty()
     {
         using var client = _factory.CreateClient();
+        var accessToken = await AuthTestHelpers.GetAccessTokenAsync(client, $"{Guid.NewGuid():N}@example.com");
+        AuthTestHelpers.SetBearer(client, accessToken);
+
         using var emptyBodyContent = new StringContent(string.Empty, Encoding.UTF8, "application/json");
 
         using var response = await client.PostAsync("/households", emptyBodyContent);

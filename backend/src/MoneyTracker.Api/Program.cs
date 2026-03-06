@@ -1,6 +1,7 @@
 using MoneyTracker.Api.Configuration;
 using MoneyTracker.Api.Contracts;
 using MoneyTracker.Api.Diagnostics;
+using MoneyTracker.Modules.Auth.Presentation;
 using MoneyTracker.Modules.Households.Presentation;
 using MoneyTracker.Api.Observability;
 
@@ -10,6 +11,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddValidatedConfiguration(builder.Configuration);
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddAuthModule();
 builder.Services.AddHouseholdsModule();
 builder.Services.AddOpenApi();
 
@@ -25,6 +27,7 @@ if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
 
 app.MapGet("/", static () => Results.Ok(new { message = "MoneyTracker API" }));
 app.MapGet("/health", static () => Results.Ok(new HealthResponse("ok")));
+app.MapAuthEndpoints();
 app.MapHouseholdEndpoints();
 
 if (app.Environment.IsEnvironment("Testing"))

@@ -10,7 +10,7 @@ public sealed class CreateHouseholdHandler(IHouseholdRepository repository, Time
 
         try
         {
-            household = Household.Create(command.Name, timeProvider.GetUtcNow());
+            household = Household.Create(command.Name, command.OwnerUserId, timeProvider.GetUtcNow());
         }
         catch (HouseholdDomainException exception) when (exception.Code == HouseholdErrors.ValidationError)
         {

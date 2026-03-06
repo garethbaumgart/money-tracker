@@ -1,3 +1,3 @@
 namespace MoneyTracker.Modules.Households.Application.CreateHousehold;
 
-public sealed record CreateHouseholdCommand(string Name);
+public sealed record CreateHouseholdCommand(string Name, Guid OwnerUserId);

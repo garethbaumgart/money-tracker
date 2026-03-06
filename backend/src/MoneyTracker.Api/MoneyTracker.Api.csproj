@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Modules\Households\MoneyTracker.Modules.Households.csproj" />
+    <ProjectReference Include="..\Modules\Auth\MoneyTracker.Modules.Auth.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
   </ItemGroup>
 
