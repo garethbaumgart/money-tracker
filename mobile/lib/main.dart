@@ -1,11 +1,13 @@
 import 'package:flutter/widgets.dart';
 import 'package:money_tracker/app/app.dart';
+import 'package:money_tracker/app/config/app_config.dart';
 import 'package:money_tracker/app/theme/app_theme_controller.dart';
 import 'package:money_tracker/app/theme/app_theme_mode.dart';
 import 'package:money_tracker/shared_kernel/preferences/theme_mode_preferences_gateway.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final appConfig = AppConfig.fromEnvironment();
 
   final preferencesGateway = SharedPreferencesThemeModePreferencesGateway();
   var initialMode = AppThemeMode.system;
@@ -19,5 +21,5 @@ Future<void> main() async {
     preferencesGateway: preferencesGateway,
   );
 
-  runApp(MoneyTrackerApp(themeController: themeController));
+  runApp(MoneyTrackerApp(themeController: themeController, appConfig: appConfig));
 }

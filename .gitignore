@@ -11,6 +11,8 @@ Thumbs.db
 # Environment
 .env
 .env.*
+!.env.example
+!mobile/.env.example
 
 # Node
 node_modules/
