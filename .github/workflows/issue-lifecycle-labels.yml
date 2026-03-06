@@ -36,18 +36,18 @@ jobs:
   enforce-lifecycle:
     runs-on: ubuntu-latest
     steps:
-      - name: Apply lane and stage rules
+      - name: Apply lane and status rules
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # actions/github-script v8
         with:
           script: |
-            const STAGE_LABELS = [
-              { name: 'stage:done', color: '5319E7', description: 'Merged and complete' },
-              { name: 'stage:refining', color: 'D4C5F9', description: 'Issue requirements are being refined' },
-              { name: 'stage:refined', color: 'BFD4F2', description: 'Refinement complete and ready for planning' },
-              { name: 'stage:planning', color: 'C2E0C6', description: 'Implementation plan is being created' },
-              { name: 'stage:planned', color: '0E8A16', description: 'Planned and ready for implementation' },
-              { name: 'stage:in-progress', color: 'FBCA04', description: 'Implementation work is actively in progress' },
-              { name: 'stage:in-review', color: '1D76DB', description: 'Implementation is under pull request review' },
+            const STATUS_LABELS = [
+              { name: 'status:triage', color: 'BFD4F2', description: 'Issue triage state' },
+              { name: 'status:refined', color: 'D4C5F9', description: 'Requirements refined' },
+              { name: 'status:ready', color: '0E8A16', description: 'Ready for implementation' },
+              { name: 'status:in-progress', color: 'FBCA04', description: 'Implementation is in progress' },
+              { name: 'status:review', color: '1D76DB', description: 'In review before merge' },
+              { name: 'status:blocked', color: 'D93F0B', description: 'Blocked by dependency or decision' },
+              { name: 'status:done', color: '5319E7', description: 'Merged and complete' },
             ];
 
             const LANE_LABELS = [
@@ -58,7 +58,7 @@ jobs:
               { name: 'lane:untriaged', color: 'BFD4F2', description: 'Lane assignment not completed yet' },
             ];
 
-            const STAGE_NAMES = STAGE_LABELS.map((label) => label.name);
+            const STATUS_NAMES = STATUS_LABELS.map((label) => label.name);
             const LANE_NAMES = LANE_LABELS.map((label) => label.name);
             const LEGACY_AREA_TO_LANE = {
               'area:backend': 'lane:backend',
@@ -165,13 +165,13 @@ jobs:
             }
 
             function buildNormalizedIssueLabels(existingLabels, options = {}) {
-              const preferredStage = options.preferredStage ?? null;
+              const preferredStatus = options.preferredStatus ?? null;
               const preferredLane = options.preferredLane ?? null;
 
               let labels = uniq(existingLabels);
 
-              const normalizedStage = normalizeDimension(labels, STAGE_NAMES, 'stage:refining', preferredStage);
-              labels = normalizedStage.labels;
+              const normalizedStatus = normalizeDimension(labels, STATUS_NAMES, 'status:triage', preferredStatus);
+              labels = normalizedStatus.labels;
 
               const hasLaneLabel = labels.some((label) => LANE_NAMES.includes(label));
               const inferredLaneFromLegacy = !preferredLane && !hasLaneLabel ? deriveLaneFromLegacy(labels) : null;
@@ -185,7 +185,7 @@ jobs:
 
               return {
                 labels,
-                stage: normalizedStage.chosenLabel,
+                status: normalizedStatus.chosenLabel,
                 lane: normalizedLane.chosenLabel,
               };
             }
@@ -224,7 +224,7 @@ jobs:
             }
 
             async function ensureLifecycleLabels() {
-              for (const definition of [...STAGE_LABELS, ...LANE_LABELS]) {
+              for (const definition of [...STATUS_LABELS, ...LANE_LABELS]) {
                 await ensureLabel(definition);
               }
             }
@@ -489,25 +489,25 @@ jobs:
               }
             }
 
-            function stageFromPullRequestEvent(action, pullRequest, checksGreen) {
+            function statusFromPullRequestEvent(action, pullRequest, checksGreen) {
               if (action === 'closed' && pullRequest.merged) {
-                return 'stage:done';
+                return 'status:done';
               }
 
               if (action === 'converted_to_draft') {
-                return 'stage:in-progress';
+                return 'status:in-progress';
               }
 
               if (action === 'ready_for_review') {
-                return checksGreen ? 'stage:in-review' : 'stage:in-progress';
+                return checksGreen ? 'status:review' : 'status:in-progress';
               }
 
               if (['opened', 'reopened', 'edited', 'synchronize'].includes(action)) {
                 if (pullRequest.draft) {
-                  return 'stage:in-progress';
+                  return 'status:in-progress';
                 }
 
-                return checksGreen ? 'stage:in-review' : 'stage:in-progress';
+                return checksGreen ? 'status:review' : 'status:in-progress';
               }
 
               return null;
@@ -515,7 +515,7 @@ jobs:
 
             async function applyPullRequestLinkedIssueRules(
               pullRequest,
-              preferredStage,
+              preferredStatus,
               detectedPrLane,
               noLinkedIssuesMessage,
             ) {
@@ -543,14 +543,14 @@ jobs:
                     }
                   }
 
-                  const preferredStageForIssue = currentLane === 'lane:untriaged' && !detectedPrLane
+                  const preferredStatusForIssue = currentLane === 'lane:untriaged' && !detectedPrLane
                     ? null
-                    : preferredStage;
+                    : preferredStatus;
 
                   await applyIssueLabelRules(
                     issueNumber,
                     {
-                      preferredStage: preferredStageForIssue,
+                      preferredStatus: preferredStatusForIssue,
                       preferredLane,
                     },
                     labelsBefore,
@@ -567,13 +567,13 @@ jobs:
               const action = context.payload.action;
               const eventLabel = context.payload.label?.name ?? null;
 
-              let preferredStage = null;
+              let preferredStatus = null;
               if (action === 'opened' || action === 'reopened') {
-                preferredStage = 'stage:refining';
+                preferredStatus = 'status:triage';
               } else if (action === 'closed') {
-                preferredStage = 'stage:done';
-              } else if (action === 'labeled' && eventLabel && STAGE_NAMES.includes(eventLabel)) {
-                preferredStage = eventLabel;
+                preferredStatus = 'status:done';
+              } else if (action === 'labeled' && eventLabel && STATUS_NAMES.includes(eventLabel)) {
+                preferredStatus = eventLabel;
               }
 
               let preferredLane = null;
@@ -582,7 +582,7 @@ jobs:
               }
 
               await applyIssueLabelRules(issueNumber, {
-                preferredStage,
+                preferredStatus,
                 preferredLane,
               });
             }
@@ -592,12 +592,12 @@ jobs:
               const action = context.payload.action;
 
               const checksGreen = await areChecksGreenForPr(pullRequest.head.sha);
-              const preferredStage = stageFromPullRequestEvent(action, pullRequest, checksGreen);
+              const preferredStatus = statusFromPullRequestEvent(action, pullRequest, checksGreen);
               const detectedPrLane = await detectPrLane(pullRequest.number);
 
               await applyPullRequestLinkedIssueRules(
                 pullRequest,
-                preferredStage,
+                preferredStatus,
                 detectedPrLane,
                 'No linked issues detected from pull request keywords.',
               );
@@ -624,7 +624,7 @@ jobs:
               for (const issueNumber of linkedIssueNumbers) {
                 try {
                   await applyIssueLabelRules(issueNumber, {
-                    preferredStage: 'stage:in-progress',
+                    preferredStatus: 'status:in-progress',
                   });
                 } catch (error) {
                   core.warning(`Unable to process review transition for issue #${issueNumber}: ${error.message}`);
@@ -692,14 +692,14 @@ jobs:
 
                   const checksGreen = await areChecksGreenForPr(pullRequest.head.sha);
                   if (!checksGreen) {
-                    core.info(`Checks are not fully green for PR #${pullRequest.number}; skipping stage transition.`);
+                    core.info(`Checks are not fully green for PR #${pullRequest.number}; skipping status transition.`);
                     continue;
                   }
 
                   const detectedPrLane = await detectPrLane(pullRequest.number);
                   await applyPullRequestLinkedIssueRules(
                     pullRequest,
-                    'stage:in-review',
+                    'status:review',
                     detectedPrLane,
                     `No linked issues detected for check suite transition on PR #${pullRequest.number}.`,
                   );

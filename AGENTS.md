@@ -6,6 +6,7 @@ A skill is a set of local instructions stored in a `SKILL.md` file.
 Workflow and skill routing is centralized in:
 
 - [workflow-catalog](docs/dev-guide/workflow-catalog.md)
+- [agent workflow quick start](docs/dev-guide/agent-workflow-quick-start.md)
 
 ## Worker Startup Rules
 
@@ -26,7 +27,7 @@ Use [workflow catalog](docs/dev-guide/workflow-catalog.md) as the canonical sour
 Before implementation, emit a compact task declaration in the session:
 
 - `Lane:` backend | mobile | platform
-- `Task type:` implementation | issue-refinement | ux-design | parallel-issues | pr-only
+- `Task type:` idea-intake | issue-refinement | implementation | ux-design | parallel-issues | pr-only
 - `Primary skills:` one or more `$skill-name`
 - `Merge-ready mode:` draft | ai-review-loop
 
