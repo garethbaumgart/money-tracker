@@ -36,13 +36,13 @@ Before implementation, if your scope touches automations, labels, event hooks, o
 
 Use a small, consistent label set for issue state, ownership, and risk:
 
-- `status/triage` → raw idea/triage
-- `status/refined` → clarified enough for execution plan
-- `status/ready` → approved and ready for implementation
-- `status/in-progress` → actively being implemented
-- `status/review` → needs review before merge
-- `status/blocked` → waiting on dependency/decision
-- `status/done` → completed and merged
+- `status:triage` → raw idea/triage
+- `status:refined` → clarified enough for execution plan
+- `status:ready` → approved and ready for implementation
+- `status:in-progress` → actively being implemented
+- `status:review` → needs review before merge
+- `status:blocked` → waiting on dependency/decision
+- `status:done` → completed and merged
 
 - `lane/backend` / `lane:mobile` / `lane:platform`
 - `lane:cross-cutting` when one issue touches multiple lanes
@@ -51,7 +51,7 @@ Use a small, consistent label set for issue state, ownership, and risk:
 - `risk/low` / `risk/medium` / `risk/high`
 - `type/feature` / `type/bug` / `type/tech-debt` / `type/ux`
 
-Avoid ad hoc status labels and avoid stacking more than one `status/*` label on any issue.
+Avoid ad hoc status labels and avoid stacking more than one `status:*` label on any issue.
 
 ## Lane guardrails
 

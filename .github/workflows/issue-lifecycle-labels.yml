@@ -65,6 +65,16 @@ jobs:
               'area:mobile': 'lane:mobile',
               'area:platform': 'lane:platform',
             };
+            const LEGACY_STATUS_TO_STATUS = {
+              'stage:refining': 'status:triage',
+              'stage:refined': 'status:refined',
+              'stage:planning': 'status:ready',
+              'stage:planned': 'status:ready',
+              'stage:in-progress': 'status:in-progress',
+              'stage:in-review': 'status:review',
+              'stage:done': 'status:done',
+            };
+            const LEGACY_STATUS_NAMES = Object.keys(LEGACY_STATUS_TO_STATUS);
 
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -141,6 +151,16 @@ jobs:
               return 'lane:untriaged';
             }
 
+            function deriveStatusFromLegacy(labels) {
+              for (const legacyLabel of LEGACY_STATUS_NAMES) {
+                if (labels.includes(legacyLabel)) {
+                  return LEGACY_STATUS_TO_STATUS[legacyLabel];
+                }
+              }
+
+              return null;
+            }
+
             function normalizeDimension(labels, allowedLabels, fallbackLabel, preferredLabel) {
               const currentDimensionLabels = labels.filter((label) => allowedLabels.includes(label));
 
@@ -169,8 +189,17 @@ jobs:
               const preferredLane = options.preferredLane ?? null;
 
               let labels = uniq(existingLabels);
+              const legacyStatus = deriveStatusFromLegacy(labels);
+              const preferredStatusWithLegacy = preferredStatus ?? LEGACY_STATUS_TO_STATUS[legacyStatus];
 
-              const normalizedStatus = normalizeDimension(labels, STATUS_NAMES, 'status:triage', preferredStatus);
+              const labelsWithoutLegacyStatus = labels.filter((label) => !LEGACY_STATUS_NAMES.includes(label));
+
+              const normalizedStatus = normalizeDimension(
+                labelsWithoutLegacyStatus,
+                STATUS_NAMES,
+                'status:triage',
+                preferredStatusWithLegacy,
+              );
               labels = normalizedStatus.labels;
 
               const hasLaneLabel = labels.some((label) => LANE_NAMES.includes(label));

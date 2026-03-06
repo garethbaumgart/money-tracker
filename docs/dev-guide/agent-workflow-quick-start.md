@@ -7,7 +7,7 @@ This guide is for engineers using the Codex agent workflow to turn a rough idea 
 Every session starts with a short declaration:
 
 ```text
-Lane: backend | mobile | platform | mixed
+Lane: backend | mobile | platform
 Task type: idea-intake
 Primary skills: $idea-intake
 Merge-ready mode: draft
