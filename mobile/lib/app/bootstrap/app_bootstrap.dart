@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:money_tracker/app/app.dart';
 import 'package:money_tracker/app/config/app_config.dart';
