@@ -3,9 +3,10 @@ A skill is a set of local instructions stored in a `SKILL.md` file.
 
 ## Skill Routing
 
-Workflow and skill routing is centralized in:
+Workflow and skill routing are centralized in:
 
 - [workflow-catalog](docs/dev-guide/workflow-catalog.md)
+- [agent workflow quick start](docs/dev-guide/agent-workflow-quick-start.md)
 
 ## Worker Startup Rules
 
@@ -26,7 +27,7 @@ Use [workflow catalog](docs/dev-guide/workflow-catalog.md) as the canonical sour
 Before implementation, emit a compact task declaration in the session:
 
 - `Lane:` backend | mobile | platform
-- `Task type:` implementation | issue-refinement | ux-design | parallel-issues | pr-only
+- `Task type:` idea-intake | issue-refinement | implementation | ux-design | parallel-issues | pr-only
 - `Primary skills:` one or more `$skill-name`
 - `Merge-ready mode:` draft | ai-review-loop
 
@@ -39,12 +40,17 @@ Before opening a pull request (draft mode):
 1. Ensure tests pass
 2. Ensure acceptance criteria are satisfied
 3. Use the `$github-pr` skill to generate the PR description
+4. Open the PR
+5. Immediately run a full PR review pass on the created PR before considering implementation done.
 
-Before claiming merge-ready completion (only in `ai-review-loop` mode):
+Before claiming merge-ready completion:
 
-1. Ensure required checks and PR comments are cleared per repo policy
-2. If `ai-review-loop` is declared, use the full `$github-pr` completion contract (including AI reviewer quiet-window checks)
-3. If AI review loop is not available in the environment, provide explicit evidence of the PR's required verification only
+1. If the post-open review produced actionable findings or the issue is high risk, run a second full review pass on the latest PR head before merge.
+2. If the post-open review had no actionable findings and risk is low, run a pre-merge checklist recheck on current PR head.
+3. Ensure required checks and PR comments are cleared per repo policy.
+4. Address all actionable findings (or provide explicit technical rebuttals) before merge.
+5. If `ai-review-loop` is declared, use the full `$github-pr` completion contract (including AI reviewer quiet-window checks).
+6. If AI review loop is not available in the environment, provide explicit evidence of review closure and the PR's required verification only.
 
 PRs must include verification evidence and reference the issue they resolve.
 
