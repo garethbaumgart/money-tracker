@@ -18,6 +18,7 @@ concurrency:
 # - backend-quality
 # - mobile-quality
 # - security-baseline
+# - openapi-contract-check
 # required-checks:end
 
 jobs:
@@ -170,6 +171,33 @@ jobs:
           name: security-baseline-artifacts
           path: .artifacts/security-baseline
           if-no-files-found: warn
+
+  openapi-contract-check:
+    name: openapi-contract-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          global-json-file: global.json
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install --yes jq
+
+      - name: Ensure export script is executable
+        run: chmod +x backend/scripts/export-openapi.sh
+
+      - name: Run OpenAPI export and drift check
+        run: |
+          ./backend/scripts/export-openapi.sh
+          if ! git diff --exit-code backend/openapi/openapi.v1.json; then
+            echo "OpenAPI contract drift detected. Re-run ./backend/scripts/export-openapi.sh and commit the updated artifact."
+            exit 1
+          fi
 
   required-checks-doc-parity:
     name: required-checks-doc-parity
