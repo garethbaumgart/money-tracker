@@ -27,9 +27,9 @@ For each issue worker:
 1. Declare lane before implementation.
 2. Read `docs/dev-guide/index.md`.
 3. Read lane guide:
-- Backend: `docs/dev-guide/backend.md`
-- Mobile: `docs/dev-guide/mobile.md`
-- Platform: `docs/dev-guide/platform.md`
+   - Backend: `docs/dev-guide/backend.md`
+   - Mobile: `docs/dev-guide/mobile.md`
+   - Platform: `docs/dev-guide/platform.md`
 4. Stay within lane unless the issue explicitly requires cross-lane edits.
 
 ## Skill Routing
@@ -48,9 +48,9 @@ Before creating workers:
 2. Parse dependency cues from issue sections such as `Dependencies`, `Depends on`, and `Sequencing notes`.
 3. Build a dependency graph across requested and external issues.
 4. Mark each issue as:
-- `ready`: all dependencies already completed.
-- `in-set-blocked`: depends on another requested issue.
-- `externally-blocked`: depends on an issue outside the request that is not done.
+   - `ready`: all dependencies already completed.
+   - `in-set-blocked`: depends on another requested issue.
+   - `externally-blocked`: depends on an issue outside the request that is not done.
 
 Supported dependency format for automatic graphing: same-repo numeric issue references only (for example `#12`).
 Treat non-standard references (cross-repo refs, plain links, or text without a numeric issue id) as manual dependencies and classify the issue as `externally-blocked` unless the dependency can be confirmed closed.
