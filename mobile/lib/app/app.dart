@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:money_tracker/app/config/app_config.dart';
 import 'package:money_tracker/shared_kernel/preferences/theme_mode_preferences_gateway.dart';
 
 import 'shell/money_tracker_shell.dart';
@@ -11,10 +12,12 @@ class MoneyTrackerApp extends StatefulWidget {
     super.key,
     this.themeController,
     this.themeMode = ThemeMode.system,
+    this.appConfig,
   });
 
   final AppThemeController? themeController;
   final ThemeMode themeMode;
+  final AppConfig? appConfig;
 
   @override
   State<MoneyTrackerApp> createState() => _MoneyTrackerAppState();

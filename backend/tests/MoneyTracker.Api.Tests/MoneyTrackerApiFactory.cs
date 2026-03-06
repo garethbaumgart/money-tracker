@@ -26,13 +26,18 @@ public sealed class MoneyTrackerApiFactory : WebApplicationFactory<Program>
     {
         builder.UseEnvironment(_environmentName);
 
-        if (_configurationOverrides is null)
-        {
-            return;
-        }
-
         builder.ConfigureAppConfiguration((_, configBuilder) =>
         {
+            configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Api:Environment"] = _environmentName
+            });
+
+            if (_configurationOverrides is null)
+            {
+                return;
+            }
+
             configBuilder.AddInMemoryCollection(_configurationOverrides);
         });
     }

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace MoneyTracker.Api.Tests.Integration;
 
@@ -28,13 +29,44 @@ public sealed class HostConfigurationTests
     {
         var configurationOverrides = new Dictionary<string, string?>
         {
-            ["Api:Environment"] = "Integration"
+            ["Api:ServiceName"] = "MoneyTracker.Api.Override",
+            ["Api:Environment"] = "Production"
         };
 
         using var factory = new MoneyTrackerApiFactory("Production", configurationOverrides);
         using var scope = factory.Services.CreateScope();
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
-        Assert.Equal("Integration", configuration["Api:Environment"]);
+        Assert.Equal("MoneyTracker.Api.Override", configuration["Api:ServiceName"]);
+        Assert.Equal("Production", configuration["Api:Environment"]);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public void Host_FailsFast_WhenApiServiceNameMissing()
+    {
+        var configurationOverrides = new Dictionary<string, string?>
+        {
+            ["Api:ServiceName"] = string.Empty
+        };
+
+        using var factory = new MoneyTrackerApiFactory("Production", configurationOverrides);
+        var exception = Assert.Throws<OptionsValidationException>(() => factory.CreateClient());
+        Assert.Contains("Api:ServiceName is required.", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public void Host_FailsFast_WhenDatabaseConnectionStringMissingInStaging()
+    {
+        var configurationOverrides = new Dictionary<string, string?>
+        {
+            ["Api:Environment"] = "Staging",
+            ["Database:ConnectionString"] = string.Empty
+        };
+
+        using var factory = new MoneyTrackerApiFactory("Staging", configurationOverrides);
+        var exception = Assert.Throws<OptionsValidationException>(() => factory.CreateClient());
+        Assert.Contains("Database:ConnectionString is required for Staging and Production environments.", exception.Message, StringComparison.Ordinal);
     }
 }
