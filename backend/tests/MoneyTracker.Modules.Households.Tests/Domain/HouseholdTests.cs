@@ -8,9 +8,10 @@ public sealed class HouseholdTests
     [Trait("Category", "Unit")]
     public void Create_TrimsNameAndSetsStableFields()
     {
+        var ownerUserId = Guid.NewGuid();
         var now = DateTimeOffset.Parse("2026-01-02T03:04:05Z");
 
-        var household = Household.Create("  Family Budget  ", now);
+        var household = Household.Create("  Family Budget  ", ownerUserId, now);
 
         Assert.Equal("Family Budget", household.Name);
         Assert.Equal(now, household.CreatedAtUtc);
@@ -21,7 +22,7 @@ public sealed class HouseholdTests
     [Trait("Category", "Unit")]
     public void Create_ThrowsValidationError_WhenNameIsBlank()
     {
-        var exception = Assert.Throws<HouseholdDomainException>(() => Household.Create("   ", DateTimeOffset.UtcNow));
+        var exception = Assert.Throws<HouseholdDomainException>(() => Household.Create("   ", Guid.NewGuid(), DateTimeOffset.UtcNow));
 
         Assert.Equal(HouseholdErrors.ValidationError, exception.Code);
     }
@@ -32,7 +33,7 @@ public sealed class HouseholdTests
     {
         var longName = new string('a', Household.MaxNameLength + 1);
 
-        var exception = Assert.Throws<HouseholdDomainException>(() => Household.Create(longName, DateTimeOffset.UtcNow));
+        var exception = Assert.Throws<HouseholdDomainException>(() => Household.Create(longName, Guid.NewGuid(), DateTimeOffset.UtcNow));
 
         Assert.Equal(HouseholdErrors.ValidationError, exception.Code);
     }
@@ -43,7 +44,7 @@ public sealed class HouseholdTests
     {
         var boundaryLengthName = new string('a', Household.MaxNameLength);
 
-        var household = Household.Create(boundaryLengthName, DateTimeOffset.UtcNow);
+        var household = Household.Create(boundaryLengthName, Guid.NewGuid(), DateTimeOffset.UtcNow);
 
         Assert.Equal(boundaryLengthName, household.Name);
     }

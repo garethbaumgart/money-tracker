@@ -6,16 +6,25 @@ public sealed class Household
 
     public HouseholdId Id { get; }
     public string Name { get; }
+    public Guid OwnerUserId { get; }
     public DateTimeOffset CreatedAtUtc { get; }
+    private readonly List<HouseholdMember> _members;
 
-    private Household(HouseholdId id, string name, DateTimeOffset createdAtUtc)
+    private Household(
+        HouseholdId id,
+        string name,
+        DateTimeOffset createdAtUtc,
+        Guid ownerUserId,
+        IEnumerable<HouseholdMember>? initialMembers = null)
     {
         Id = id;
         Name = name;
+        OwnerUserId = ownerUserId;
         CreatedAtUtc = createdAtUtc;
+        _members = initialMembers?.ToList() ?? [];
     }
 
-    public static Household Create(string name, DateTimeOffset nowUtc)
+    public static Household Create(string name, Guid ownerUserId, DateTimeOffset nowUtc)
     {
         var normalizedName = NormalizeName(name);
         if (normalizedName.Length == 0)
@@ -32,7 +41,35 @@ public sealed class Household
                 $"Household name must be {MaxNameLength} characters or fewer.");
         }
 
-        return new Household(HouseholdId.New(), normalizedName, nowUtc);
+        return new Household(
+            HouseholdId.New(),
+            normalizedName,
+            nowUtc,
+            ownerUserId,
+            new[] { new HouseholdMember(ownerUserId, HouseholdRole.Owner) });
+    }
+
+    public IReadOnlyCollection<HouseholdMember> Members => _members.AsReadOnly();
+
+    public bool IsOwner(Guid userId)
+    {
+        return OwnerUserId == userId;
+    }
+
+    public bool IsMember(Guid userId)
+    {
+        return _members.Any(member => member.UserId == userId);
+    }
+
+    public bool TryAddMember(Guid userId, string role)
+    {
+        if (_members.Any(member => member.UserId == userId))
+        {
+            return false;
+        }
+
+        _members.Add(new HouseholdMember(userId, role));
+        return true;
     }
 
     public static string NormalizeName(string? name)

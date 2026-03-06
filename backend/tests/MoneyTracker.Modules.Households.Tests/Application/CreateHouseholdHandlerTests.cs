@@ -5,6 +5,8 @@ namespace MoneyTracker.Modules.Households.Tests.Application;
 
 public sealed class CreateHouseholdHandlerTests
 {
+    private static readonly Guid OwnerUserId = Guid.NewGuid();
+
     [Fact]
     [Trait("Category", "Unit")]
     public async Task HandleAsync_PersistsHousehold_WhenNameIsUnique()
@@ -13,12 +15,15 @@ public sealed class CreateHouseholdHandlerTests
         var expectedCreatedAtUtc = DateTimeOffset.Parse("2026-02-03T04:05:06Z");
         var handler = new CreateHouseholdHandler(repository, new FakeTimeProvider(expectedCreatedAtUtc));
 
-        var result = await handler.HandleAsync(new CreateHouseholdCommand("Primary Home"), CancellationToken.None);
+        var result = await handler.HandleAsync(new CreateHouseholdCommand("Primary Home", OwnerUserId), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Household);
         Assert.Equal("Primary Home", result.Household!.Name);
         Assert.Equal(expectedCreatedAtUtc, result.Household.CreatedAtUtc);
+        Assert.Equal(OwnerUserId, result.Household.OwnerUserId);
+        Assert.Equal(OwnerUserId, result.Household.Members.Single().UserId);
+        Assert.Equal(HouseholdRole.Owner, result.Household.Members.Single().Role);
         Assert.Equal(1, repository.AddIfNotExistsCalls);
         Assert.Equal(expectedCreatedAtUtc, repository.LastAddedHousehold?.CreatedAtUtc);
     }
@@ -30,7 +35,7 @@ public sealed class CreateHouseholdHandlerTests
         var repository = new FakeHouseholdRepository(addSucceeds: true, existingName: " Shared ");
         var handler = new CreateHouseholdHandler(repository, TimeProvider.System);
 
-        var result = await handler.HandleAsync(new CreateHouseholdCommand("sHaReD"), CancellationToken.None);
+        var result = await handler.HandleAsync(new CreateHouseholdCommand("sHaReD", OwnerUserId), CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(HouseholdErrors.HouseholdNameConflict, result.ErrorCode);
@@ -44,7 +49,7 @@ public sealed class CreateHouseholdHandlerTests
         var repository = new FakeHouseholdRepository(addSucceeds: true);
         var handler = new CreateHouseholdHandler(repository, TimeProvider.System);
 
-        var result = await handler.HandleAsync(new CreateHouseholdCommand("   "), CancellationToken.None);
+        var result = await handler.HandleAsync(new CreateHouseholdCommand("   ", OwnerUserId), CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(HouseholdErrors.ValidationError, result.ErrorCode);
@@ -77,6 +82,40 @@ internal sealed class FakeHouseholdRepository(bool addSucceeds, string? existing
         }
 
         return Task.FromResult(addSucceeds);
+    }
+
+    public Task<Household?> GetByIdAsync(HouseholdId householdId, CancellationToken cancellationToken)
+    {
+        return Task.FromResult<Household?>(null);
+    }
+
+    public Task<bool> IsMemberAsync(HouseholdId householdId, Guid userId, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(false);
+    }
+
+    public Task<bool> AddMemberAsync(HouseholdId householdId, Guid userId, string role, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(false);
+    }
+
+    public Task<bool> AddInvitationAsync(HouseholdInvitation invitation, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(false);
+    }
+
+    public Task<HouseholdInvitation?> GetInvitationAsync(string invitationToken, CancellationToken cancellationToken)
+    {
+        return Task.FromResult<HouseholdInvitation?>(null);
+    }
+
+    public Task<bool> MarkInvitationUsedAsync(
+        string invitationToken,
+        Guid acceptingUserId,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken)
+    {
+        return Task.FromResult(false);
     }
 }
 
