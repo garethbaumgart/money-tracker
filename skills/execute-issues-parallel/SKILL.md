@@ -52,6 +52,9 @@ Before creating workers:
 - `in-set-blocked`: depends on another requested issue.
 - `externally-blocked`: depends on an issue outside the request that is not done.
 
+Supported dependency format for automatic graphing: same-repo numeric issue references only (for example `#12`).
+Treat non-standard references (cross-repo refs, plain links, or text without a numeric issue id) as manual dependencies and classify the issue as `externally-blocked` unless the dependency can be confirmed closed.
+
 ## Dependency Response Contract
 
 If any blocked dependency exists, always report dependencies and present these options:
@@ -61,6 +64,7 @@ If any blocked dependency exists, always report dependencies and present these o
 3. `Custom order`: user supplies order; execute serially where dependency requires it.
 
 Default when user says "Execute issues x,y,z" without preference: choose option 1.
+Under option 1, execute all `ready` issues in the current wave and skip `externally-blocked` issues (do not poll/wait automatically); include skipped issues in the final blocked summary with the exact dependency that prevented execution.
 
 ## Worktree and Branch Naming
 
