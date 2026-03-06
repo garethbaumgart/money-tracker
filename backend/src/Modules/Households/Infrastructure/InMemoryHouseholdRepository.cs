@@ -7,21 +7,11 @@ public sealed class InMemoryHouseholdRepository : IHouseholdRepository
     private readonly object _sync = new();
     private readonly Dictionary<string, Household> _households = new(StringComparer.OrdinalIgnoreCase);
 
-    public Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken)
+    public Task<bool> AddIfNotExistsAsync(Household household, CancellationToken cancellationToken)
     {
         lock (_sync)
         {
-            return Task.FromResult(_households.ContainsKey(name));
+            return Task.FromResult(_households.TryAdd(household.Name, household));
         }
-    }
-
-    public Task AddAsync(Household household, CancellationToken cancellationToken)
-    {
-        lock (_sync)
-        {
-            _households[household.Name] = household;
-        }
-
-        return Task.CompletedTask;
     }
 }

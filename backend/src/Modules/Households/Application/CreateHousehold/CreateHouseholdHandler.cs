@@ -17,13 +17,11 @@ public sealed class CreateHouseholdHandler(IHouseholdRepository repository, Time
             return CreateHouseholdResult.Validation(exception.Message);
         }
 
-        var exists = await repository.ExistsByNameAsync(household.Name, cancellationToken);
-        if (exists)
+        var added = await repository.AddIfNotExistsAsync(household, cancellationToken);
+        if (!added)
         {
             return CreateHouseholdResult.Conflict();
         }
-
-        await repository.AddAsync(household, cancellationToken);
 
         return CreateHouseholdResult.Success(household);
     }

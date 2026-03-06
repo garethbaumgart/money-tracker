@@ -6,10 +6,10 @@ namespace MoneyTracker.Modules.Households.Tests.Application;
 public sealed class CreateHouseholdHandlerTests
 {
     [Fact]
-    [Trait("Category", "Integration")]
+    [Trait("Category", "Unit")]
     public async Task HandleAsync_PersistsHousehold_WhenNameIsUnique()
     {
-        var repository = new FakeHouseholdRepository(existsByName: false);
+        var repository = new FakeHouseholdRepository(addSucceeds: true);
         var expectedCreatedAtUtc = DateTimeOffset.Parse("2026-02-03T04:05:06Z");
         var handler = new CreateHouseholdHandler(repository, new FakeTimeProvider(expectedCreatedAtUtc));
 
@@ -19,58 +19,53 @@ public sealed class CreateHouseholdHandlerTests
         Assert.NotNull(result.Household);
         Assert.Equal("Primary Home", result.Household!.Name);
         Assert.Equal(expectedCreatedAtUtc, result.Household.CreatedAtUtc);
-        Assert.Equal(1, repository.ExistsCalls);
-        Assert.Equal(1, repository.AddCalls);
+        Assert.Equal(1, repository.AddIfNotExistsCalls);
         Assert.Equal(expectedCreatedAtUtc, repository.LastAddedHousehold?.CreatedAtUtc);
     }
 
     [Fact]
-    [Trait("Category", "Integration")]
+    [Trait("Category", "Unit")]
     public async Task HandleAsync_ReturnsConflict_WhenNameAlreadyExistsCaseInsensitive()
     {
-        var repository = new FakeHouseholdRepository(existsByName: true);
+        var repository = new FakeHouseholdRepository(addSucceeds: false);
         var handler = new CreateHouseholdHandler(repository, TimeProvider.System);
 
         var result = await handler.HandleAsync(new CreateHouseholdCommand("shared"), CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(HouseholdErrors.HouseholdNameConflict, result.ErrorCode);
-        Assert.Equal(0, repository.AddCalls);
+        Assert.Equal(1, repository.AddIfNotExistsCalls);
     }
 
     [Fact]
-    [Trait("Category", "Integration")]
+    [Trait("Category", "Unit")]
     public async Task HandleAsync_ReturnsValidationError_WhenNameInvalid()
     {
-        var repository = new FakeHouseholdRepository(existsByName: false);
+        var repository = new FakeHouseholdRepository(addSucceeds: true);
         var handler = new CreateHouseholdHandler(repository, TimeProvider.System);
 
         var result = await handler.HandleAsync(new CreateHouseholdCommand("   "), CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(HouseholdErrors.ValidationError, result.ErrorCode);
-        Assert.Equal(0, repository.ExistsCalls);
-        Assert.Equal(0, repository.AddCalls);
+        Assert.Equal(0, repository.AddIfNotExistsCalls);
     }
 }
 
-internal sealed class FakeHouseholdRepository(bool existsByName) : IHouseholdRepository
+internal sealed class FakeHouseholdRepository(bool addSucceeds) : IHouseholdRepository
 {
-    public int ExistsCalls { get; private set; }
-    public int AddCalls { get; private set; }
+    public int AddIfNotExistsCalls { get; private set; }
     public Household? LastAddedHousehold { get; private set; }
 
-    public Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken)
+    public Task<bool> AddIfNotExistsAsync(Household household, CancellationToken cancellationToken)
     {
-        ExistsCalls++;
-        return Task.FromResult(existsByName);
-    }
+        AddIfNotExistsCalls++;
+        if (addSucceeds)
+        {
+            LastAddedHousehold = household;
+        }
 
-    public Task AddAsync(Household household, CancellationToken cancellationToken)
-    {
-        AddCalls++;
-        LastAddedHousehold = household;
-        return Task.CompletedTask;
+        return Task.FromResult(addSucceeds);
     }
 }
 

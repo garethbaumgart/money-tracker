@@ -18,9 +18,10 @@ public sealed class EndpointMetadataTests
         var householdsEndpoint = endpointDataSource.Endpoints.Single(endpoint =>
         {
             var methods = endpoint.Metadata.GetMetadata<HttpMethodMetadata>();
+            var routeEndpoint = endpoint as RouteEndpoint;
             return methods is not null
                 && methods.HttpMethods.Contains("POST", StringComparer.Ordinal)
-                && string.Equals(endpoint.DisplayName, "HTTP: POST /households", StringComparison.Ordinal);
+                && string.Equals(routeEndpoint?.RoutePattern.RawText, "/households", StringComparison.Ordinal);
         });
 
         var acceptsMetadata = householdsEndpoint.Metadata.GetOrderedMetadata<IAcceptsMetadata>();
