@@ -32,9 +32,18 @@ Before implementation, if your scope touches automations, labels, event hooks, o
 - Skill creation/update → `$skill-creator` (system path)
 - Skill installation → `$skill-installer` (system path)
 
-## Label strategy (simplified)
+## Label strategy (canonical)
 
-Use a small, consistent label set for issue state, ownership, and risk:
+Use a small, consistent label set for GitHub issues:
+
+- `phase:*` for roadmap grouping
+- `type:*` for issue kind
+- `lane:*` for ownership/execution boundary
+- `status:*` for lifecycle state
+
+Do not use labels for merge mode, priority, or risk.
+
+- `merge-ready mode` is session metadata declared at task startup, not a GitHub label.
 
 - `status:triage` → raw idea/triage
 - `status:refined` → clarified enough for execution plan
@@ -47,9 +56,7 @@ Use a small, consistent label set for issue state, ownership, and risk:
 - `lane:backend` / `lane:mobile` / `lane:platform`
 - `lane:cross-cutting` when one issue touches multiple lanes
 - `lane:untriaged` while automation infers lane
-- `merge/draft` / `merge/ai-review-loop`
-- `risk/low` / `risk/medium` / `risk/high`
-- `type/feature` / `type/bug` / `type/tech-debt` / `type/ux`
+- `type:epic` / `type:feature`
 
 Avoid ad hoc status labels and avoid stacking more than one `status:*` label on any issue.
 
@@ -62,16 +69,16 @@ Avoid ad hoc status labels and avoid stacking more than one `status:*` label on 
 
 ## PR mode matrix
 
-- Draft mode (default): PR package + verification evidence required; every PR runs an immediate full review pass after opening. A second pre-merge full pass is required only when risk is high or post-open review found findings; low-risk clean PRs use a checklist pre-merge recheck.
-- AI-review-loop mode: merge-ready loop, comment resolution, and AI reviewer metrics required, plus immediate post-open pass and risk-aware pre-merge pass/recheck requirements.
+- Draft mode (default): A PR package and verification evidence are required; every PR runs an immediate full review pass after opening. A second pre-merge full pass is required only when the change is broad/high-concern or post-open review found findings; narrow clean PRs use a checklist pre-merge recheck.
+- AI-review-loop mode: A merge-ready loop, comment resolution, and AI reviewer metrics are required, plus an immediate post-open pass and the same high-concern pre-merge pass/recheck requirements.
 
 ## PR review gate (all modes)
 
 - All PRs require a full review pass immediately after opening.
 - Before merge, run another full review pass on the latest head when:
   - any actionable finding came from post-open review, or
-  - the issue/PR is marked `risk/high`.
-- If post-open review had no actionable findings and risk is low, a pre-merge checklist recheck is required.
+  - the change is broad, cross-cutting, or otherwise high-concern.
+- If post-open review had no actionable findings and the change is narrow and low-concern, a pre-merge checklist recheck is required.
 - PR merge is blocked if unresolved actionable findings exist without an explicit technical rebuttal.
 
 ## Skills artifact table
@@ -148,7 +155,7 @@ Parallel execution: execute issues {{1,2,3}} with dependency-aware sequencing, o
 
 After each PR is opened:
 - run an immediate full review pass on that PR
-- before merge, run another full review pass on latest head if post-open review has findings or risk is high; otherwise run a checklist recheck
+- before merge, run another full review pass on latest head if post-open review has findings or the change is broad/high-concern; otherwise run a checklist recheck
 ```
 
 ## GitHub event workflow review (recommended)
