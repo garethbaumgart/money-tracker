@@ -3,9 +3,12 @@
     <Project Path="src/MoneyTracker.Api/MoneyTracker.Api.csproj" />
     <Project Path="src/Modules/Households/MoneyTracker.Modules.Households.csproj" />
     <Project Path="src/Modules/Auth/MoneyTracker.Modules.Auth.csproj" />
+    <Project Path="src/Modules/BillReminders/MoneyTracker.Modules.BillReminders.csproj" />
+    <Project Path="src/Modules/Notifications/MoneyTracker.Modules.Notifications.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/MoneyTracker.Api.Tests/MoneyTracker.Api.Tests.csproj" />
     <Project Path="tests/MoneyTracker.Modules.Households.Tests/MoneyTracker.Modules.Households.Tests.csproj" />
+    <Project Path="tests/MoneyTracker.Modules.BillReminders.Tests/MoneyTracker.Modules.BillReminders.Tests.csproj" />
   </Folder>
 </Solution>
