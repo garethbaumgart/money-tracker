@@ -46,12 +46,13 @@ class _MoneyTrackerShellState extends State<MoneyTrackerShell> {
     super.initState();
     _dashboardController = DashboardController();
     _insightsController = InsightsController();
+    _remindersController = RemindersController();
     assert(() {
       _dashboardController.seedSample();
       _insightsController.seedSample();
+      _remindersController.seedSample();
       return true;
     }());
-    _remindersController = RemindersController()..seedSample();
   }
 
   @override
