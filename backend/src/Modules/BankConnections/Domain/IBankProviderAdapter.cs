@@ -19,6 +19,11 @@ public interface IBankProviderAdapter
     Task<GetAccountsResult> GetAccountsAsync(
         string externalConnectionId,
         CancellationToken cancellationToken);
+
+    Task<GetTransactionsResult> GetTransactionsAsync(
+        string externalConnectionId,
+        DateTimeOffset sinceUtc,
+        CancellationToken cancellationToken);
 }
 
 public sealed record CreateUserResult(bool IsSuccess, string? ExternalUserId, string? ErrorCode, string? ErrorMessage);
@@ -49,3 +54,15 @@ public sealed record BankAccountInfo(
     string Name,
     string? AccountNumber,
     string? Type);
+
+public sealed record GetTransactionsResult(
+    bool IsSuccess,
+    IReadOnlyCollection<ProviderTransaction>? Transactions,
+    string? ErrorCode,
+    string? ErrorMessage);
+
+public sealed record ProviderTransaction(
+    string ExternalTransactionId,
+    decimal Amount,
+    DateTimeOffset PostedAtUtc,
+    string? Description);

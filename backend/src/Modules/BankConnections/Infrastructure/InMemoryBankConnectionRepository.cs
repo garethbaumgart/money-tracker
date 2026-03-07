@@ -79,4 +79,23 @@ public sealed class InMemoryBankConnectionRepository : IBankConnectionRepository
             return Task.FromResult<IReadOnlyCollection<BankConnection>>(list.ToArray());
         }
     }
+
+    public Task<IReadOnlyCollection<BankConnection>> GetActiveConnectionsAsync(
+        CancellationToken cancellationToken)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return Task.FromCanceled<IReadOnlyCollection<BankConnection>>(cancellationToken);
+        }
+
+        lock (_sync)
+        {
+            var active = _connectionsByHousehold.Values
+                .SelectMany(list => list)
+                .Where(c => c.Status == BankConnectionStatus.Active)
+                .ToArray();
+
+            return Task.FromResult<IReadOnlyCollection<BankConnection>>(active);
+        }
+    }
 }

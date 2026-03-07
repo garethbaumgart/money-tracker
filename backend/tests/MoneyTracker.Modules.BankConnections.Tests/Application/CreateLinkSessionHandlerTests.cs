@@ -157,6 +157,11 @@ internal sealed class StubBankProviderAdapter : IBankProviderAdapter
     {
         return Task.FromResult(new GetAccountsResult(true, Array.Empty<BankAccountInfo>(), null, null));
     }
+
+    public Task<GetTransactionsResult> GetTransactionsAsync(string externalConnectionId, DateTimeOffset sinceUtc, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(new GetTransactionsResult(true, Array.Empty<ProviderTransaction>(), null, null));
+    }
 }
 
 internal sealed class FailingBankProviderAdapter : IBankProviderAdapter
@@ -179,5 +184,10 @@ internal sealed class FailingBankProviderAdapter : IBankProviderAdapter
     public Task<GetAccountsResult> GetAccountsAsync(string externalConnectionId, CancellationToken cancellationToken)
     {
         return Task.FromResult(new GetAccountsResult(false, null, BankConnectionErrors.ConnectionProviderError, "Provider unavailable"));
+    }
+
+    public Task<GetTransactionsResult> GetTransactionsAsync(string externalConnectionId, DateTimeOffset sinceUtc, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(new GetTransactionsResult(false, null, BankConnectionErrors.SyncProviderError, "Provider unavailable"));
     }
 }

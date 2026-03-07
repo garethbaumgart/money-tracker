@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -5,6 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 using MoneyTracker.Modules.BankConnections.Application.CreateLinkSession;
 using MoneyTracker.Modules.BankConnections.Application.GetBankConnections;
 using MoneyTracker.Modules.BankConnections.Application.ProcessCallback;
+using MoneyTracker.Modules.BankConnections.Application.ProcessWebhook;
+using MoneyTracker.Modules.BankConnections.Application.SyncTransactions;
+using MoneyTracker.Modules.BankConnections.Application.TriggerManualSync;
 using MoneyTracker.Modules.BankConnections.Domain;
 using MoneyTracker.Modules.SharedKernel.Households;
 using MoneyTracker.Modules.SharedKernel.Presentation;
@@ -17,6 +22,7 @@ public static class BankConnectionEndpoints
     {
         services.AddSingleton<IBankConnectionRepository, Infrastructure.InMemoryBankConnectionRepository>();
         services.AddSingleton<IBankProviderAdapter, Infrastructure.InMemoryBankProviderAdapter>();
+        services.AddSingleton<IWebhookSignatureValidator, Infrastructure.BasiqWebhookSignatureValidator>();
         services.AddSingleton(TimeProvider.System);
         services.AddHttpClient<Infrastructure.BasiqBankProviderAdapter>(client =>
         {
@@ -26,6 +32,10 @@ public static class BankConnectionEndpoints
         services.AddScoped<CreateLinkSessionHandler>();
         services.AddScoped<ProcessCallbackHandler>();
         services.AddScoped<GetBankConnectionsHandler>();
+        services.AddSingleton<SyncTransactionsHandler>();
+        services.AddScoped<ProcessWebhookHandler>();
+        services.AddScoped<TriggerManualSyncHandler>();
+        services.AddHostedService<Infrastructure.TransactionSyncWorker>();
 
         return services;
     }
@@ -66,6 +76,27 @@ public static class BankConnectionEndpoints
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
+
+        var syncEndpoint = (RouteHandlerBuilder)app.MapPost("/bank/sync", TriggerManualSync);
+        syncEndpoint
+            .WithName("TriggerManualSync")
+            .WithSummary("Trigger manual transaction sync.")
+            .WithDescription("Triggers an immediate sync for a household's active bank connections.")
+            .Accepts<TriggerSyncRequest>("application/json")
+            .Produces<SyncSummaryResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        var webhookEndpoint = (RouteHandlerBuilder)app.MapPost("/webhooks/basiq", ProcessBasiqWebhook);
+        webhookEndpoint
+            .WithName("ProcessBasiqWebhook")
+            .WithSummary("Receive Basiq webhook.")
+            .WithDescription("Validates webhook signature and triggers transaction sync.")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
 
         return app;
     }
@@ -299,6 +330,122 @@ public static class BankConnectionEndpoints
         await TypedResults.Ok(response).ExecuteAsync(httpContext);
     }
 
+    private static async Task TriggerManualSync(HttpContext httpContext)
+    {
+        var authResult = await EndpointHelpers.ResolveAuthenticatedUser(httpContext);
+        if (!authResult.Success)
+        {
+            await authResult.Problem!.ExecuteAsync(httpContext);
+            return;
+        }
+
+        var (isValidRequest, request, parseProblem) =
+            await EndpointHelpers.ReadJsonRequestAsync<TriggerSyncRequest>(httpContext, BankConnectionErrors.ValidationError);
+        if (!isValidRequest || request is null)
+        {
+            if (parseProblem is not null)
+            {
+                await parseProblem.ExecuteAsync(httpContext);
+            }
+            else
+            {
+                await EndpointHelpers.WriteProblemAsync(
+                    httpContext,
+                    StatusCodes.Status400BadRequest,
+                    "Validation failed.",
+                    "The request payload is required.",
+                    BankConnectionErrors.ValidationError,
+                    BankConnectionErrors.ValidationError);
+            }
+            return;
+        }
+
+        var handler = httpContext.RequestServices.GetRequiredService<TriggerManualSyncHandler>();
+        var result = await handler.HandleAsync(
+            new TriggerManualSyncCommand(
+                request.HouseholdId,
+                authResult.AuthenticatedUser!.UserId),
+            httpContext.RequestAborted);
+
+        if (!result.IsSuccess)
+        {
+            var statusCode = result.ErrorCode switch
+            {
+                BankConnectionErrors.ConnectionHouseholdNotFound => StatusCodes.Status404NotFound,
+                BankConnectionErrors.ConnectionAccessDenied => StatusCodes.Status403Forbidden,
+                _ => StatusCodes.Status400BadRequest
+            };
+
+            await EndpointHelpers.WriteProblemAsync(
+                httpContext,
+                statusCode,
+                statusCode == StatusCodes.Status403Forbidden ? "Access denied." : "Validation failed.",
+                result.ErrorMessage ?? "Request rejected.",
+                result.ErrorCode,
+                BankConnectionErrors.ValidationError);
+            return;
+        }
+
+        var response = new SyncSummaryResponse(
+            result.SyncedCount,
+            result.SkippedCount,
+            result.FailedConnections);
+        await TypedResults.Ok(response).ExecuteAsync(httpContext);
+    }
+
+    private static async Task ProcessBasiqWebhook(HttpContext httpContext)
+    {
+        // Read raw body for signature validation
+        httpContext.Request.EnableBuffering();
+        using var reader = new StreamReader(httpContext.Request.Body, leaveOpen: true);
+        var rawBody = await reader.ReadToEndAsync(httpContext.RequestAborted);
+        httpContext.Request.Body.Position = 0;
+
+        var signature = httpContext.Request.Headers["X-Basiq-Signature"].FirstOrDefault() ?? string.Empty;
+
+        // Try to parse the body for event metadata
+        string? eventType = null;
+        string? connectionId = null;
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(rawBody))
+            {
+                var payload = JsonSerializer.Deserialize<WebhookPayload>(rawBody);
+                eventType = payload?.EventType;
+                connectionId = payload?.ConnectionId;
+            }
+        }
+        catch (JsonException)
+        {
+            // Ignore parse errors — signature validation will still run
+        }
+
+        var handler = httpContext.RequestServices.GetRequiredService<ProcessWebhookHandler>();
+        var result = await handler.HandleAsync(
+            new ProcessWebhookCommand(signature, rawBody, eventType, connectionId),
+            httpContext.RequestAborted);
+
+        if (!result.IsSuccess)
+        {
+            var statusCode = result.ErrorCode switch
+            {
+                BankConnectionErrors.WebhookInvalidSignature => StatusCodes.Status401Unauthorized,
+                _ => StatusCodes.Status400BadRequest
+            };
+
+            await EndpointHelpers.WriteProblemAsync(
+                httpContext,
+                statusCode,
+                statusCode == StatusCodes.Status401Unauthorized ? "Unauthorized." : "Validation failed.",
+                result.ErrorMessage ?? "Request rejected.",
+                result.ErrorCode,
+                BankConnectionErrors.ValidationError);
+            return;
+        }
+
+        httpContext.Response.StatusCode = StatusCodes.Status204NoContent;
+    }
+
     private static bool TryGetGuidQuery(HttpContext httpContext, string key, out Guid value)
     {
         value = Guid.Empty;
@@ -334,3 +481,19 @@ public sealed record BankConnectionSummaryResponse(
     DateTimeOffset UpdatedAtUtc);
 
 public sealed record BankConnectionsResponse(BankConnectionSummaryResponse[] Connections);
+
+public sealed record TriggerSyncRequest(Guid HouseholdId);
+
+public sealed record SyncSummaryResponse(
+    int SyncedCount,
+    int SkippedCount,
+    int FailedConnections);
+
+internal sealed record WebhookPayload
+{
+    [JsonPropertyName("eventType")]
+    public string? EventType { get; init; }
+
+    [JsonPropertyName("connectionId")]
+    public string? ConnectionId { get; init; }
+}

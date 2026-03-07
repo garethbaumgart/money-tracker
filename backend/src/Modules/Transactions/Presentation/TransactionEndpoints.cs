@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using MoneyTracker.Modules.Auth.Application.GetAuthenticatedUser;
 using MoneyTracker.Modules.Auth.Domain;
+using MoneyTracker.Modules.SharedKernel.Transactions;
 using MoneyTracker.Modules.Transactions.Application.CreateTransaction;
 using MoneyTracker.Modules.Transactions.Application.GetTransactions;
 using MoneyTracker.Modules.Transactions.Domain;
@@ -16,7 +17,9 @@ public static class TransactionEndpoints
 {
     public static IServiceCollection AddTransactionsModule(this IServiceCollection services)
     {
-        services.AddSingleton<ITransactionRepository, Infrastructure.InMemoryTransactionRepository>();
+        services.AddSingleton<Infrastructure.InMemoryTransactionRepository>();
+        services.AddSingleton<ITransactionRepository>(sp => sp.GetRequiredService<Infrastructure.InMemoryTransactionRepository>());
+        services.AddSingleton<ITransactionSyncRepository>(sp => sp.GetRequiredService<Infrastructure.InMemoryTransactionRepository>());
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<CreateTransactionHandler>();
         services.AddScoped<GetTransactionsHandler>();
@@ -190,7 +193,10 @@ public static class TransactionEndpoints
                     transaction.Description,
                     transaction.CategoryId,
                     transaction.CategoryName,
-                    transaction.CreatedAtUtc))
+                    transaction.CreatedAtUtc,
+                    transaction.Source,
+                    transaction.ExternalTransactionId,
+                    transaction.BankConnectionId))
                 .ToArray());
         await TypedResults.Ok(response).ExecuteAsync(httpContext);
     }
@@ -372,7 +378,10 @@ public sealed record TransactionSummaryResponse(
     string? Description,
     Guid? CategoryId,
     string? CategoryName,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc,
+    string Source,
+    string? ExternalTransactionId,
+    Guid? BankConnectionId);
 
 public sealed record TransactionsResponse(TransactionSummaryResponse[] Transactions);
 

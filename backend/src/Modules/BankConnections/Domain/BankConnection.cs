@@ -14,6 +14,7 @@ public sealed class BankConnection
     public string? ErrorMessage { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; }
     public DateTimeOffset UpdatedAtUtc { get; private set; }
+    public SyncState SyncState { get; } = new();
 
     private BankConnection(
         BankConnectionId id,
@@ -106,6 +107,18 @@ public sealed class BankConnection
 
         Status = BankConnectionStatus.Revoked;
         UpdatedAtUtc = nowUtc;
+    }
+
+    public void RecordSyncSuccess(DateTimeOffset utcNow)
+    {
+        SyncState.RecordSuccess(utcNow);
+        UpdatedAtUtc = utcNow;
+    }
+
+    public void RecordSyncFailure(DateTimeOffset utcNow)
+    {
+        SyncState.RecordFailure(utcNow);
+        UpdatedAtUtc = utcNow;
     }
 
     private void EnsureTransitionAllowed(BankConnectionStatus target)

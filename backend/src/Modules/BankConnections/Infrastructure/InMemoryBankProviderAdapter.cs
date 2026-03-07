@@ -59,4 +59,33 @@ public sealed class InMemoryBankProviderAdapter : IBankProviderAdapter
         return Task.FromResult(new GetAccountsResult(
             true, Array.Empty<BankAccountInfo>(), null, null));
     }
+
+    public Task<GetTransactionsResult> GetTransactionsAsync(
+        string externalConnectionId,
+        DateTimeOffset sinceUtc,
+        CancellationToken cancellationToken)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return Task.FromCanceled<GetTransactionsResult>(cancellationToken);
+        }
+
+        // In-memory adapter returns stub transactions for testing
+        var transactions = new[]
+        {
+            new ProviderTransaction(
+                $"txn-{Guid.NewGuid():N}",
+                25.50m,
+                sinceUtc.AddHours(1),
+                "Grocery Store Purchase"),
+            new ProviderTransaction(
+                $"txn-{Guid.NewGuid():N}",
+                12.00m,
+                sinceUtc.AddHours(2),
+                "Coffee Shop")
+        };
+
+        return Task.FromResult(new GetTransactionsResult(
+            true, transactions, null, null));
+    }
 }
