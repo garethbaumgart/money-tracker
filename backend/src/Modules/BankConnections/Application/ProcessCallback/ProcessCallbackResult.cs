@@ -46,12 +46,4 @@ public sealed class ProcessCallbackResult
             BankConnectionErrors.ConnectionNotFound,
             "No pending connection found for this session.");
     }
-
-    public static ProcessCallbackResult ProviderError(string? errorCode, string? errorMessage)
-    {
-        return new ProcessCallbackResult(
-            connection: null,
-            errorCode ?? BankConnectionErrors.ConnectionProviderError,
-            errorMessage ?? "Bank provider returned an error.");
-    }
 }

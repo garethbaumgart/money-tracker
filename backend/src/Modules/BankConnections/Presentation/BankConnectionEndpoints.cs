@@ -1,15 +1,13 @@
-using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
-using MoneyTracker.Modules.Auth.Application.GetAuthenticatedUser;
-using MoneyTracker.Modules.Auth.Domain;
 using MoneyTracker.Modules.BankConnections.Application.CreateLinkSession;
 using MoneyTracker.Modules.BankConnections.Application.GetBankConnections;
 using MoneyTracker.Modules.BankConnections.Application.ProcessCallback;
 using MoneyTracker.Modules.BankConnections.Domain;
+using MoneyTracker.Modules.SharedKernel.Households;
+using MoneyTracker.Modules.SharedKernel.Presentation;
 
 namespace MoneyTracker.Modules.BankConnections.Presentation;
 
@@ -54,6 +52,8 @@ public static class BankConnectionEndpoints
             .Accepts<ProcessCallbackRequest>("application/json")
             .Produces<BankConnectionResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         var getConnectionsEndpoint = (RouteHandlerBuilder)app.MapGet("/bank/connections", GetBankConnections);
@@ -72,7 +72,7 @@ public static class BankConnectionEndpoints
 
     private static async Task CreateLinkSession(HttpContext httpContext)
     {
-        var authResult = await ResolveAuthenticatedUser(httpContext);
+        var authResult = await EndpointHelpers.ResolveAuthenticatedUser(httpContext);
         if (!authResult.Success)
         {
             await authResult.Problem!.ExecuteAsync(httpContext);
@@ -80,7 +80,7 @@ public static class BankConnectionEndpoints
         }
 
         var (isValidRequest, request, parseProblem) =
-            await ReadJsonRequestAsync<CreateLinkSessionRequest>(httpContext);
+            await EndpointHelpers.ReadJsonRequestAsync<CreateLinkSessionRequest>(httpContext, BankConnectionErrors.ValidationError);
         if (!isValidRequest || request is null)
         {
             if (parseProblem is not null)
@@ -89,7 +89,7 @@ public static class BankConnectionEndpoints
             }
             else
             {
-                await WriteProblemAsync(
+                await EndpointHelpers.WriteProblemAsync(
                     httpContext,
                     StatusCodes.Status400BadRequest,
                     "Validation failed.",
@@ -116,7 +116,7 @@ public static class BankConnectionEndpoints
                 _ => StatusCodes.Status400BadRequest
             };
 
-            await WriteProblemAsync(
+            await EndpointHelpers.WriteProblemAsync(
                 httpContext,
                 statusCode,
                 statusCode == StatusCodes.Status403Forbidden ? "Access denied." : "Validation failed.",
@@ -132,8 +132,15 @@ public static class BankConnectionEndpoints
 
     private static async Task ProcessCallback(HttpContext httpContext)
     {
+        var authResult = await EndpointHelpers.ResolveAuthenticatedUser(httpContext);
+        if (!authResult.Success)
+        {
+            await authResult.Problem!.ExecuteAsync(httpContext);
+            return;
+        }
+
         var (isValidRequest, request, parseProblem) =
-            await ReadJsonRequestAsync<ProcessCallbackRequest>(httpContext);
+            await EndpointHelpers.ReadJsonRequestAsync<ProcessCallbackRequest>(httpContext, BankConnectionErrors.ValidationError);
         if (!isValidRequest || request is null)
         {
             if (parseProblem is not null)
@@ -142,7 +149,7 @@ public static class BankConnectionEndpoints
             }
             else
             {
-                await WriteProblemAsync(
+                await EndpointHelpers.WriteProblemAsync(
                     httpContext,
                     StatusCodes.Status400BadRequest,
                     "Validation failed.",
@@ -168,7 +175,7 @@ public static class BankConnectionEndpoints
                 _ => StatusCodes.Status400BadRequest
             };
 
-            await WriteProblemAsync(
+            await EndpointHelpers.WriteProblemAsync(
                 httpContext,
                 statusCode,
                 "Validation failed.",
@@ -179,6 +186,34 @@ public static class BankConnectionEndpoints
         }
 
         var connection = result.Connection!;
+
+        // Verify the authenticated user has access to the connection's household
+        var householdAccess = httpContext.RequestServices.GetRequiredService<IHouseholdAccessService>();
+        var accessResult = await householdAccess.CheckMemberAsync(
+            connection.HouseholdId,
+            authResult.AuthenticatedUser!.UserId,
+            httpContext.RequestAborted);
+
+        if (!accessResult.IsMember)
+        {
+            var statusCode = accessResult.HouseholdExists
+                ? StatusCodes.Status403Forbidden
+                : StatusCodes.Status404NotFound;
+
+            await EndpointHelpers.WriteProblemAsync(
+                httpContext,
+                statusCode,
+                statusCode == StatusCodes.Status403Forbidden ? "Access denied." : "Not found.",
+                statusCode == StatusCodes.Status403Forbidden
+                    ? "You do not have access to this household."
+                    : "The household was not found.",
+                statusCode == StatusCodes.Status403Forbidden
+                    ? BankConnectionErrors.ConnectionAccessDenied
+                    : BankConnectionErrors.ConnectionHouseholdNotFound,
+                BankConnectionErrors.ValidationError);
+            return;
+        }
+
         var response = new BankConnectionResponse(
             connection.Id.Value,
             connection.HouseholdId,
@@ -191,7 +226,7 @@ public static class BankConnectionEndpoints
 
         if (result.IsFailedConnection)
         {
-            await WriteProblemAsync(
+            await EndpointHelpers.WriteProblemAsync(
                 httpContext,
                 StatusCodes.Status400BadRequest,
                 "Connection failed.",
@@ -206,7 +241,7 @@ public static class BankConnectionEndpoints
 
     private static async Task GetBankConnections(HttpContext httpContext)
     {
-        var authResult = await ResolveAuthenticatedUser(httpContext);
+        var authResult = await EndpointHelpers.ResolveAuthenticatedUser(httpContext);
         if (!authResult.Success)
         {
             await authResult.Problem!.ExecuteAsync(httpContext);
@@ -215,7 +250,7 @@ public static class BankConnectionEndpoints
 
         if (!TryGetGuidQuery(httpContext, "householdId", out var householdId))
         {
-            await WriteProblemAsync(
+            await EndpointHelpers.WriteProblemAsync(
                 httpContext,
                 StatusCodes.Status400BadRequest,
                 "Validation failed.",
@@ -239,7 +274,7 @@ public static class BankConnectionEndpoints
                 _ => StatusCodes.Status400BadRequest
             };
 
-            await WriteProblemAsync(
+            await EndpointHelpers.WriteProblemAsync(
                 httpContext,
                 statusCode,
                 statusCode == StatusCodes.Status403Forbidden ? "Access denied." : "Validation failed.",
@@ -264,141 +299,11 @@ public static class BankConnectionEndpoints
         await TypedResults.Ok(response).ExecuteAsync(httpContext);
     }
 
-    private static async Task<(bool Success, AuthenticatedUser? AuthenticatedUser, IResult? Problem)> ResolveAuthenticatedUser(HttpContext httpContext)
-    {
-        var token = ExtractBearerToken(httpContext.Request.Headers.Authorization.ToString());
-        var handler = httpContext.RequestServices.GetRequiredService<GetAuthenticatedUserHandler>();
-        var authResult = await handler.HandleAsync(new GetAuthenticatedUserQuery(token), httpContext.RequestAborted);
-
-        if (!authResult.IsSuccess)
-        {
-            var problem = BuildProblemResult(
-                StatusCodes.Status401Unauthorized,
-                "Authentication required.",
-                authResult.ErrorMessage ?? "Authentication required.",
-                authResult.ErrorCode ?? AuthErrors.AccessTokenInvalid,
-                httpContext.Request.Path);
-
-            return (false, null, problem);
-        }
-
-        return (true, new AuthenticatedUser(authResult.UserId, authResult.Email), null);
-    }
-
-    private static string? ExtractBearerToken(string? authorizationHeader)
-    {
-        if (string.IsNullOrWhiteSpace(authorizationHeader))
-        {
-            return null;
-        }
-
-        if (!authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-        {
-            return null;
-        }
-
-        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
-        return string.IsNullOrWhiteSpace(token) ? null : token;
-    }
-
-    private static async Task<(bool IsValid, TRequest? Request, IResult? Error)> ReadJsonRequestAsync<TRequest>(HttpContext httpContext)
-        where TRequest : class
-    {
-        var contentType = httpContext.Request.ContentType;
-        if (string.IsNullOrWhiteSpace(contentType) || !IsJsonContentType(contentType))
-        {
-            return (false, default, BuildProblemResult(
-                StatusCodes.Status400BadRequest,
-                "Validation failed.",
-                "The request payload is required to be JSON.",
-                BankConnectionErrors.ValidationError,
-                httpContext.Request.Path));
-        }
-
-        try
-        {
-            var request = await httpContext.Request.ReadFromJsonAsync<TRequest>(cancellationToken: httpContext.RequestAborted);
-            if (request is null)
-            {
-                return (false, default, BuildProblemResult(
-                    StatusCodes.Status400BadRequest,
-                    "Validation failed.",
-                    "The request payload is invalid.",
-                    BankConnectionErrors.ValidationError,
-                    httpContext.Request.Path));
-            }
-
-            return (true, request, null);
-        }
-        catch (JsonException)
-        {
-            return (false, default, BuildProblemResult(
-                StatusCodes.Status400BadRequest,
-                "Validation failed.",
-                "The request payload is invalid.",
-                BankConnectionErrors.ValidationError,
-                httpContext.Request.Path));
-        }
-        catch (NotSupportedException)
-        {
-            return (false, default, BuildProblemResult(
-                StatusCodes.Status400BadRequest,
-                "Validation failed.",
-                "The request payload is invalid.",
-                BankConnectionErrors.ValidationError,
-                httpContext.Request.Path));
-        }
-        catch (BadHttpRequestException)
-        {
-            return (false, default, BuildProblemResult(
-                StatusCodes.Status400BadRequest,
-                "Validation failed.",
-                "The request payload is invalid.",
-                BankConnectionErrors.ValidationError,
-                httpContext.Request.Path));
-        }
-    }
-
-    private static bool IsJsonContentType(string contentType)
-    {
-        var mediaType = contentType.Split(';')[0].Trim();
-        return mediaType.Equals("application/json", StringComparison.OrdinalIgnoreCase);
-    }
-
     private static bool TryGetGuidQuery(HttpContext httpContext, string key, out Guid value)
     {
         value = Guid.Empty;
         var raw = httpContext.Request.Query[key].FirstOrDefault();
         return raw is not null && Guid.TryParse(raw, out value);
-    }
-
-    private static IResult BuildProblemResult(int statusCode, string title, string detail, string code, string instance)
-    {
-        var problem = new ProblemDetails
-        {
-            Status = statusCode,
-            Title = title,
-            Detail = detail,
-            Instance = instance
-        };
-        problem.Extensions["code"] = code;
-        return TypedResults.Problem(problem);
-    }
-
-    private static async Task WriteProblemAsync(
-        HttpContext httpContext,
-        int statusCode,
-        string title,
-        string detail,
-        string? code,
-        string fallbackCode)
-    {
-        await BuildProblemResult(
-            statusCode,
-            title,
-            detail,
-            code ?? fallbackCode,
-            httpContext.Request.Path).ExecuteAsync(httpContext);
     }
 }
 
@@ -429,5 +334,3 @@ public sealed record BankConnectionSummaryResponse(
     DateTimeOffset UpdatedAtUtc);
 
 public sealed record BankConnectionsResponse(BankConnectionSummaryResponse[] Connections);
-
-internal sealed record AuthenticatedUser(Guid UserId, string Email);

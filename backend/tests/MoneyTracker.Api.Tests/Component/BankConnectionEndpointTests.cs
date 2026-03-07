@@ -68,32 +68,34 @@ public sealed class BankConnectionEndpointTests : IClassFixture<MoneyTrackerApiF
             new { householdId });
         Assert.Equal(HttpStatusCode.OK, linkResponse.StatusCode);
 
-        // The in-memory stub adapter uses predictable session IDs, so we need to
-        // find the consent session ID from the connection that was created.
-        // Since we're using a real service with in-memory adapter, let's process the callback.
-        // The stub adapter returns connections for any consent session ID.
         var linkPayload = JsonNode.Parse(await linkResponse.Content.ReadAsStringAsync())?.AsObject();
         Assert.NotNull(linkPayload);
 
-        // We need to retrieve the consent session ID. With the stub adapter,
-        // we can retrieve it by getting connections and finding the pending one.
-        using var connectionsResponse = await client.GetAsync($"/bank/connections?householdId={householdId}");
-        Assert.Equal(HttpStatusCode.OK, connectionsResponse.StatusCode);
-        var connectionsPayload = JsonNode.Parse(await connectionsResponse.Content.ReadAsStringAsync())?.AsObject();
-        Assert.NotNull(connectionsPayload);
+        // Extract the consent session ID from the consent URL returned by the in-memory adapter.
+        // The stub adapter returns URLs in the form https://consent.example.com/{sessionId}.
+        var consentUrl = linkPayload["consentUrl"]!.GetValue<string>();
+        var consentSessionId = consentUrl.Split('/').Last();
 
-        // The connection should be Pending
-        var connections = connectionsPayload["connections"]!.AsArray();
-        Assert.Single(connections);
-        Assert.Equal("Pending", connections[0]!["status"]?.GetValue<string>());
+        // Call POST /bank/callback with the consent session ID
+        using var callbackResponse = await client.PostAsJsonAsync(
+            "/bank/callback",
+            new { consentSessionId });
+        Assert.Equal(HttpStatusCode.OK, callbackResponse.StatusCode);
+
+        var callbackPayload = JsonNode.Parse(await callbackResponse.Content.ReadAsStringAsync())?.AsObject();
+        Assert.NotNull(callbackPayload);
+        Assert.Equal("Active", callbackPayload["status"]?.GetValue<string>());
+        Assert.Equal(householdId.ToString(), callbackPayload["householdId"]?.GetValue<string>());
     }
 
     [Fact]
     [Trait("Category", "Component")]
-    public async Task PostCallback_WithInvalidSession_Returns400WithTypedError()
+    public async Task PostCallback_WithInvalidSession_Returns404WithTypedError()
     {
-        // P3-1-COMP-03: POST /bank/callback with invalid session returns 400 with typed error
+        // P3-1-COMP-03: POST /bank/callback with invalid session returns 404 with typed error
         using var client = _factory.CreateClient();
+        var accessToken = await AuthTestHelpers.GetAccessTokenAsync(client, $"{Guid.NewGuid():N}@example.com");
+        AuthTestHelpers.SetBearer(client, accessToken);
 
         using var callbackResponse = await client.PostAsJsonAsync(
             "/bank/callback",
@@ -167,9 +169,24 @@ public sealed class BankConnectionEndpointTests : IClassFixture<MoneyTrackerApiF
 
     [Fact]
     [Trait("Category", "Component")]
+    public async Task PostCallback_WithoutAuth_Returns401()
+    {
+        using var client = _factory.CreateClient();
+
+        using var callbackResponse = await client.PostAsJsonAsync(
+            "/bank/callback",
+            new { consentSessionId = "some-session-id" });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, callbackResponse.StatusCode);
+    }
+
+    [Fact]
+    [Trait("Category", "Component")]
     public async Task PostCallback_WithEmptyBody_Returns400()
     {
         using var client = _factory.CreateClient();
+        var accessToken = await AuthTestHelpers.GetAccessTokenAsync(client, $"{Guid.NewGuid():N}@example.com");
+        AuthTestHelpers.SetBearer(client, accessToken);
 
         using var emptyBodyContent = new StringContent(string.Empty, Encoding.UTF8, "application/json");
         using var response = await client.PostAsync("/bank/callback", emptyBodyContent);
