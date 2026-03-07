@@ -4,9 +4,12 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using MoneyTracker.Modules.Subscriptions.Application.CheckFeatureAccess;
+using MoneyTracker.Modules.Subscriptions.Application.GetEntitlements;
 using MoneyTracker.Modules.Subscriptions.Application.GetSubscription;
 using MoneyTracker.Modules.Subscriptions.Application.ProcessWebhook;
 using MoneyTracker.Modules.Subscriptions.Domain;
+using MoneyTracker.Modules.SharedKernel.Households;
 using MoneyTracker.Modules.SharedKernel.Presentation;
 
 namespace MoneyTracker.Modules.Subscriptions.Presentation;
@@ -21,6 +24,14 @@ public static class SubscriptionEndpoints
         services.AddScoped<ProcessRevenueCatWebhookHandler>();
         services.AddScoped<GetSubscriptionHandler>();
 
+        services.AddSingleton<Infrastructure.SubscriptionEntitlementService>();
+        services.AddSingleton<Domain.ISubscriptionEntitlementService>(sp =>
+            sp.GetRequiredService<Infrastructure.SubscriptionEntitlementService>());
+        services.AddSingleton<SharedKernel.Subscriptions.ISubscriptionEntitlementService>(sp =>
+            sp.GetRequiredService<Infrastructure.SubscriptionEntitlementService>());
+        services.AddScoped<GetEntitlementsHandler>();
+        services.AddScoped<CheckFeatureAccessHandler>();
+
         return services;
     }
 
@@ -34,6 +45,17 @@ public static class SubscriptionEndpoints
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        var entitlementsEndpoint = (RouteHandlerBuilder)app.MapGet("/subscriptions/entitlements", GetEntitlements);
+        entitlementsEndpoint
+            .WithName("GetEntitlements")
+            .WithSummary("Get entitlements for a household.")
+            .WithDescription("Returns the subscription tier and enabled feature keys for the specified household.")
+            .Produces<EntitlementsResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return app;
     }
@@ -130,6 +152,66 @@ public static class SubscriptionEndpoints
 
         httpContext.Response.StatusCode = StatusCodes.Status204NoContent;
     }
+
+    private static async Task GetEntitlements(HttpContext httpContext)
+    {
+        var authResult = await EndpointHelpers.ResolveAuthenticatedUser(httpContext);
+        if (!authResult.Success)
+        {
+            await authResult.Problem!.ExecuteAsync(httpContext);
+            return;
+        }
+
+        if (!TryGetGuidQuery(httpContext, "householdId", out var householdId))
+        {
+            await EndpointHelpers.WriteProblemAsync(
+                httpContext,
+                StatusCodes.Status400BadRequest,
+                "Validation failed.",
+                "householdId query parameter is required.",
+                SubscriptionErrors.ValidationError,
+                SubscriptionErrors.ValidationError);
+            return;
+        }
+
+        var handler = httpContext.RequestServices.GetRequiredService<GetEntitlementsHandler>();
+        var result = await handler.HandleAsync(
+            new GetEntitlementsQuery(householdId, authResult.AuthenticatedUser!.UserId),
+            httpContext.RequestAborted);
+
+        if (!result.IsSuccess)
+        {
+            var statusCode = result.ErrorCode switch
+            {
+                SubscriptionErrors.HouseholdNotFound => StatusCodes.Status404NotFound,
+                SubscriptionErrors.AccessDenied => StatusCodes.Status403Forbidden,
+                _ => StatusCodes.Status400BadRequest
+            };
+
+            await EndpointHelpers.WriteProblemAsync(
+                httpContext,
+                statusCode,
+                statusCode == StatusCodes.Status403Forbidden ? "Access denied." : "Validation failed.",
+                result.ErrorMessage ?? "Request rejected.",
+                result.ErrorCode,
+                SubscriptionErrors.ValidationError);
+            return;
+        }
+
+        var response = new EntitlementsResponse(
+            result.Tier!,
+            result.FeatureKeys!,
+            result.TrialExpiresAtUtc,
+            result.CurrentPeriodEndUtc);
+        await TypedResults.Ok(response).ExecuteAsync(httpContext);
+    }
+
+    private static bool TryGetGuidQuery(HttpContext httpContext, string key, out Guid value)
+    {
+        value = Guid.Empty;
+        var raw = httpContext.Request.Query[key].FirstOrDefault();
+        return raw is not null && Guid.TryParse(raw, out value);
+    }
 }
 
 internal sealed record RevenueCatWebhookPayload
@@ -164,3 +246,9 @@ internal sealed record RevenueCatEvent
     [JsonPropertyName("cancellation_date_ms")]
     public long? CancellationDateMs { get; init; }
 }
+
+public sealed record EntitlementsResponse(
+    string Tier,
+    string[] FeatureKeys,
+    DateTimeOffset? TrialExpiresAtUtc,
+    DateTimeOffset? CurrentPeriodEndUtc);
