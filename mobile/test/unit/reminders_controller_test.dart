@@ -36,19 +36,19 @@ void main() {
     final controller = RemindersController();
     addTearDown(controller.dispose);
 
-    final now = DateTime.now();
+    final baseline = DateTime(2026, 1, 1);
     final laterReminder = ReminderEntry(
       id: 'r1',
       title: 'Later',
       amount: 10.0,
-      dueDate: now.add(const Duration(days: 30)),
+      dueDate: baseline.add(const Duration(days: 30)),
       cadence: 'Monthly',
     );
     final earlierReminder = ReminderEntry(
       id: 'r2',
       title: 'Earlier',
       amount: 20.0,
-      dueDate: now.add(const Duration(days: 5)),
+      dueDate: baseline.add(const Duration(days: 5)),
       cadence: 'Weekly',
     );
 
