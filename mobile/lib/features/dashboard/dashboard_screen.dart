@@ -334,7 +334,7 @@ class _TransactionRow extends StatelessWidget {
                 transaction.description ?? 'Household expense',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
-              SizedBox(height: tokens.space0_5),
+              SizedBox(height: tokens.space1),
               Text(
                 subtitle,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(

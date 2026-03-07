@@ -262,6 +262,7 @@ class _SettingsView extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _HomeDashboard extends StatelessWidget {
   const _HomeDashboard();
 
