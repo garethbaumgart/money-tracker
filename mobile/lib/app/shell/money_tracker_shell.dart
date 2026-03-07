@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:money_tracker/features/dashboard/dashboard_controller.dart';
 import 'package:money_tracker/features/dashboard/dashboard_screen.dart';
+import 'package:money_tracker/features/insights/application/insights_controller.dart';
+import 'package:money_tracker/features/insights/presentation/insights_dashboard_screen.dart';
 import 'package:money_tracker/features/reminders/reminders_controller.dart';
 import 'package:money_tracker/features/reminders/reminders_screen.dart';
 
@@ -27,6 +29,7 @@ class MoneyTrackerShell extends StatefulWidget {
 class _MoneyTrackerShellState extends State<MoneyTrackerShell> {
   static const _destinations = <_ShellDestination>[
     _ShellDestination.home,
+    _ShellDestination.insights,
     _ShellDestination.budgets,
     _ShellDestination.activity,
     _ShellDestination.household,
@@ -35,14 +38,17 @@ class _MoneyTrackerShellState extends State<MoneyTrackerShell> {
 
   var _selectedIndex = 0;
   late final DashboardController _dashboardController;
+  late final InsightsController _insightsController;
   late final RemindersController _remindersController;
 
   @override
   void initState() {
     super.initState();
     _dashboardController = DashboardController();
+    _insightsController = InsightsController();
     assert(() {
       _dashboardController.seedSample();
+      _insightsController.seedSample();
       return true;
     }());
     _remindersController = RemindersController()..seedSample();
@@ -51,6 +57,7 @@ class _MoneyTrackerShellState extends State<MoneyTrackerShell> {
   @override
   void dispose() {
     _dashboardController.dispose();
+    _insightsController.dispose();
     _remindersController.dispose();
     super.dispose();
   }
@@ -117,6 +124,7 @@ class _MoneyTrackerShellState extends State<MoneyTrackerShell> {
                       child: _ShellBody(
                         destination: _destinations[_selectedIndex],
                         dashboardController: _dashboardController,
+                        insightsController: _insightsController,
                       ),
                     ),
                   ],
@@ -124,6 +132,7 @@ class _MoneyTrackerShellState extends State<MoneyTrackerShell> {
               : _ShellBody(
                   destination: _destinations[_selectedIndex],
                   dashboardController: _dashboardController,
+                  insightsController: _insightsController,
                 ),
           bottomNavigationBar: isExpandedShell
               ? null
@@ -150,15 +159,20 @@ class _ShellBody extends StatelessWidget {
   const _ShellBody({
     required this.destination,
     required this.dashboardController,
+    required this.insightsController,
   });
 
   final _ShellDestination destination;
   final DashboardController dashboardController;
+  final InsightsController insightsController;
 
   @override
   Widget build(BuildContext context) {
     if (destination == _ShellDestination.home) {
       return DashboardScreen(controller: dashboardController);
+    }
+    if (destination == _ShellDestination.insights) {
+      return InsightsDashboardScreen(controller: insightsController);
     }
     if (destination == _ShellDestination.settings) {
       return const _SettingsView();
@@ -921,6 +935,11 @@ class _Metric {
 
 enum _ShellDestination {
   home(label: 'Home', icon: Icons.home_outlined, selectedIcon: Icons.home),
+  insights(
+    label: 'Insights',
+    icon: Icons.insights_outlined,
+    selectedIcon: Icons.insights,
+  ),
   budgets(
     label: 'Budgets',
     icon: Icons.savings_outlined,

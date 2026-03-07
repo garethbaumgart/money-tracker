@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\SharedKernel\MoneyTracker.Modules.SharedKernel.csproj" />
+    <ProjectReference Include="..\Transactions\MoneyTracker.Modules.Transactions.csproj" />
+    <ProjectReference Include="..\Budgets\MoneyTracker.Modules.Budgets.csproj" />
+    <ProjectReference Include="..\BillReminders\MoneyTracker.Modules.BillReminders.csproj" />
+  </ItemGroup>
+
+</Project>
