@@ -143,4 +143,54 @@ public static class EndpointHelpers
         var mediaType = contentType.Split(';')[0].Trim();
         return mediaType.Equals("application/json", StringComparison.OrdinalIgnoreCase);
     }
+
+    /// <summary>
+    /// Validates a string input by trimming whitespace, enforcing max length,
+    /// and rejecting ASCII control characters.
+    /// Returns null if the input is valid; otherwise returns an error message.
+    /// </summary>
+    public static string? ValidateStringInput(string? input, int maxLength, string paramName)
+    {
+        if (maxLength <= 0)
+        {
+            maxLength = 500;
+        }
+
+        if (input is null)
+        {
+            return null;
+        }
+
+        var trimmed = input.Trim();
+
+        if (trimmed.Length > maxLength)
+        {
+            return $"{paramName} exceeds maximum length of {maxLength} characters.";
+        }
+
+        var controlCharError = RejectControlCharacters(trimmed);
+        if (controlCharError is not null)
+        {
+            return $"{paramName} contains invalid control characters.";
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Rejects ASCII control characters (0x00-0x1F) excluding tab (\t), newline (\n), and carriage return (\r).
+    /// Returns null if valid; otherwise returns an error message.
+    /// </summary>
+    public static string? RejectControlCharacters(string input)
+    {
+        foreach (var c in input)
+        {
+            if (c < 0x20 && c != '\t' && c != '\n' && c != '\r')
+            {
+                return "Input contains invalid control characters.";
+            }
+        }
+
+        return null;
+    }
 }

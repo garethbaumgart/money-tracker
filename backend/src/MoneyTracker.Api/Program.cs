@@ -12,6 +12,7 @@ using MoneyTracker.Modules.Subscriptions.Presentation;
 using MoneyTracker.Modules.Analytics.Presentation;
 using MoneyTracker.Modules.Insights.Presentation;
 using MoneyTracker.Api.Observability;
+using MoneyTracker.Api.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +35,9 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+app.UseMiddleware<SecurityHeadersMiddleware>();
+app.UseMiddleware<PayloadSizeLimitMiddleware>();
+app.UseMiddleware<RateLimitingMiddleware>();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<RequestTimingMiddleware>();
 app.UseExceptionHandler();

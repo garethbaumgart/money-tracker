@@ -23,5 +23,6 @@
     <Project Path="tests/MoneyTracker.Modules.Subscriptions.Tests/MoneyTracker.Modules.Subscriptions.Tests.csproj" />
     <Project Path="tests/MoneyTracker.Modules.Analytics.Tests/MoneyTracker.Modules.Analytics.Tests.csproj" />
     <Project Path="tests/MoneyTracker.Modules.Insights.Tests/MoneyTracker.Modules.Insights.Tests.csproj" />
+    <Project Path="tests/MoneyTracker.Modules.Auth.Tests/MoneyTracker.Modules.Auth.Tests.csproj" />
   </Folder>
 </Solution>

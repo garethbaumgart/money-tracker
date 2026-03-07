@@ -8,6 +8,7 @@ using MoneyTracker.Modules.Auth.Application.GetAuthenticatedUser;
 using MoneyTracker.Modules.Auth.Domain;
 using MoneyTracker.Modules.Notifications.Application.RegisterDeviceToken;
 using MoneyTracker.Modules.Notifications.Domain;
+using MoneyTracker.Modules.SharedKernel.Privacy;
 
 namespace MoneyTracker.Modules.Notifications.Presentation;
 
@@ -19,6 +20,8 @@ public static class NotificationEndpoints
         services.AddSingleton<INotificationSender, Infrastructure.InMemoryNotificationSender>();
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<RegisterDeviceTokenHandler>();
+        services.AddSingleton<IUserDataExportParticipant, Infrastructure.NotificationDataExportParticipant>();
+        services.AddSingleton<IUserDeletionParticipant, Infrastructure.NotificationDataExportParticipant>();
 
         return services;
     }

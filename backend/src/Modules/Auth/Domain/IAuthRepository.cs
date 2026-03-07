@@ -21,4 +21,8 @@ public interface IAuthRepository
         CancellationToken cancellationToken);
 
     Task RemoveSessionByRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken);
+
+    Task<AuthUser?> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken);
+
+    Task MarkUserDeletedAsync(Guid userId, DateTimeOffset scheduledPurgeAtUtc, CancellationToken cancellationToken);
 }

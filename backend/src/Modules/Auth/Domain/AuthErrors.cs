@@ -13,6 +13,8 @@ public static class AuthErrors
     public const string AccessTokenExpired = "auth_access_token_expired";
     public const string RefreshTokenInvalid = "auth_refresh_token_invalid";
     public const string RefreshTokenExpired = "auth_refresh_token_expired";
+    public const string DataExportForbidden = "auth_data_export_forbidden";
+    public const string DeleteForbidden = "auth_delete_forbidden";
 }
 
 public static class AuthPolicy
