@@ -52,4 +52,7 @@ public sealed record TransactionSummary(
     string? Description,
     Guid? CategoryId,
     string? CategoryName,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc,
+    string Source,
+    string? ExternalTransactionId,
+    Guid? BankConnectionId);

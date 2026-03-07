@@ -47,7 +47,10 @@ public sealed class GetTransactionsHandler(
                 transaction.CategoryId.HasValue && categoryLookup.TryGetValue(transaction.CategoryId.Value, out var name)
                     ? name
                     : null,
-                transaction.CreatedAtUtc))
+                transaction.CreatedAtUtc,
+                transaction.Source.ToString(),
+                transaction.ExternalTransactionId,
+                transaction.BankConnectionId))
             .ToArray();
 
         return GetTransactionsResult.Success(summaries);

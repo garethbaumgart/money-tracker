@@ -10,6 +10,9 @@ public sealed class Transaction
     public string? Description { get; }
     public Guid? CategoryId { get; }
     public DateTimeOffset CreatedAtUtc { get; }
+    public TransactionSource Source { get; }
+    public string? ExternalTransactionId { get; }
+    public Guid? BankConnectionId { get; }
 
     private Transaction(
         TransactionId id,
@@ -19,7 +22,10 @@ public sealed class Transaction
         DateTimeOffset occurredAtUtc,
         string? description,
         Guid? categoryId,
-        DateTimeOffset createdAtUtc)
+        DateTimeOffset createdAtUtc,
+        TransactionSource source,
+        string? externalTransactionId,
+        Guid? bankConnectionId)
     {
         Id = id;
         HouseholdId = householdId;
@@ -29,6 +35,9 @@ public sealed class Transaction
         Description = description;
         CategoryId = categoryId;
         CreatedAtUtc = createdAtUtc;
+        Source = source;
+        ExternalTransactionId = externalTransactionId;
+        BankConnectionId = bankConnectionId;
     }
 
     public static Transaction Create(
@@ -52,7 +61,42 @@ public sealed class Transaction
             utcOccurredAt,
             NormalizeDescription(description),
             categoryId,
-            nowUtc);
+            nowUtc,
+            TransactionSource.Manual,
+            externalTransactionId: null,
+            bankConnectionId: null);
+    }
+
+    public static Transaction CreateSynced(
+        Guid householdId,
+        Guid bankConnectionId,
+        string externalTransactionId,
+        decimal amount,
+        DateTimeOffset occurredAtUtc,
+        string? description,
+        DateTimeOffset nowUtc)
+    {
+        if (string.IsNullOrWhiteSpace(externalTransactionId))
+        {
+            throw new TransactionDomainException(
+                TransactionErrors.ValidationError,
+                "External transaction ID is required for synced transactions.");
+        }
+
+        ValidateAmount(amount);
+
+        return new Transaction(
+            TransactionId.New(),
+            householdId,
+            createdByUserId: Guid.Empty,
+            amount,
+            occurredAtUtc.ToUniversalTime(),
+            NormalizeDescription(description),
+            categoryId: null,
+            nowUtc,
+            TransactionSource.Synced,
+            externalTransactionId,
+            bankConnectionId);
     }
 
     private static void ValidateAmount(decimal amount)

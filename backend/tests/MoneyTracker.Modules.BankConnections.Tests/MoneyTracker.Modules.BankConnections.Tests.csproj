@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Modules\BankConnections\MoneyTracker.Modules.BankConnections.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Transactions\MoneyTracker.Modules.Transactions.csproj" />
   </ItemGroup>
 
   <ItemGroup>

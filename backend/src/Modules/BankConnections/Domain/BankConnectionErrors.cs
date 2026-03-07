@@ -10,4 +10,8 @@ public static class BankConnectionErrors
     public const string ConnectionProviderError = "bank_connection_provider_error";
     public const string ConnectionCallbackInvalid = "bank_connection_callback_invalid";
     public const string ConnectionSessionExpired = "bank_connection_session_expired";
+    public const string SyncProviderError = "bank_sync_provider_error";
+    public const string SyncNoActiveConnections = "bank_sync_no_active_connections";
+    public const string WebhookInvalidSignature = "bank_webhook_invalid_signature";
+    public const string WebhookInvalidPayload = "bank_webhook_invalid_payload";
 }

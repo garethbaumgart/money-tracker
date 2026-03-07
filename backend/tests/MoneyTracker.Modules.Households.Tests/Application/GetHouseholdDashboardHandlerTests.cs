@@ -298,6 +298,11 @@ internal sealed class EmptyTransactionRepository : ITransactionRepository
         return Task.CompletedTask;
     }
 
+    public Task AddRangeAsync(IReadOnlyCollection<Transaction> transactions, CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
+
     public Task<IReadOnlyCollection<Transaction>> GetByHouseholdAsync(
         Guid householdId,
         DateTimeOffset? fromUtc,
@@ -305,6 +310,11 @@ internal sealed class EmptyTransactionRepository : ITransactionRepository
         CancellationToken cancellationToken)
     {
         return Task.FromResult<IReadOnlyCollection<Transaction>>(Array.Empty<Transaction>());
+    }
+
+    public Task<bool> ExistsByExternalIdAsync(Guid bankConnectionId, string externalTransactionId, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(false);
     }
 }
 
@@ -317,6 +327,11 @@ internal sealed class FakeTransactionRepository(IReadOnlyCollection<Transaction>
         return Task.CompletedTask;
     }
 
+    public Task AddRangeAsync(IReadOnlyCollection<Transaction> transactions, CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
+
     public Task<IReadOnlyCollection<Transaction>> GetByHouseholdAsync(
         Guid householdId,
         DateTimeOffset? fromUtc,
@@ -324,6 +339,11 @@ internal sealed class FakeTransactionRepository(IReadOnlyCollection<Transaction>
         CancellationToken cancellationToken)
     {
         return Task.FromResult(_transactions);
+    }
+
+    public Task<bool> ExistsByExternalIdAsync(Guid bankConnectionId, string externalTransactionId, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(false);
     }
 }
 

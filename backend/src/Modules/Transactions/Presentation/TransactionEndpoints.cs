@@ -190,7 +190,10 @@ public static class TransactionEndpoints
                     transaction.Description,
                     transaction.CategoryId,
                     transaction.CategoryName,
-                    transaction.CreatedAtUtc))
+                    transaction.CreatedAtUtc,
+                    transaction.Source,
+                    transaction.ExternalTransactionId,
+                    transaction.BankConnectionId))
                 .ToArray());
         await TypedResults.Ok(response).ExecuteAsync(httpContext);
     }
@@ -372,7 +375,10 @@ public sealed record TransactionSummaryResponse(
     string? Description,
     Guid? CategoryId,
     string? CategoryName,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc,
+    string Source,
+    string? ExternalTransactionId,
+    Guid? BankConnectionId);
 
 public sealed record TransactionsResponse(TransactionSummaryResponse[] Transactions);
 

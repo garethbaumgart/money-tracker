@@ -255,6 +255,69 @@ public sealed class BasiqBankProviderAdapter : IBankProviderAdapter
         }
     }
 
+    public async Task<GetTransactionsResult> GetTransactionsAsync(
+        string externalConnectionId,
+        DateTimeOffset sinceUtc,
+        CancellationToken cancellationToken)
+    {
+        var correlationId = Guid.NewGuid().ToString("N");
+        _logger.LogInformation(
+            "Fetching Basiq transactions for connectionId={ConnectionId} since={SinceUtc} correlationId={CorrelationId}",
+            externalConnectionId,
+            sinceUtc,
+            correlationId);
+
+        try
+        {
+            var sinceParam = sinceUtc.ToString("yyyy-MM-dd");
+            var response = await ExecuteWithRetryAsync(
+                () =>
+                {
+                    var request = new HttpRequestMessage(HttpMethod.Get,
+                        $"/users/me/transactions?filter=connection.id.eq('{externalConnectionId}'),transaction.postDate.gt('{sinceParam}')");
+                    request.Headers.Add("X-Correlation-Id", correlationId);
+                    return request;
+                },
+                cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogWarning(
+                    "Basiq GetTransactions failed status={StatusCode} correlationId={CorrelationId} body={Body}",
+                    response.StatusCode,
+                    correlationId,
+                    errorBody);
+                return new GetTransactionsResult(false, null, BankConnectionErrors.SyncProviderError, $"Basiq API returned {(int)response.StatusCode}.");
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<BasiqTransactionsResponse>(cancellationToken: cancellationToken);
+            var transactions = result?.Data?
+                .Where(t => !string.IsNullOrWhiteSpace(t.Id))
+                .Select(t => new ProviderTransaction(
+                    t.Id!,
+                    decimal.TryParse(t.Amount, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var amount) ? Math.Abs(amount) : 0m,
+                    DateTimeOffset.TryParse(t.PostDate, out var posted) ? posted : sinceUtc,
+                    t.Description))
+                .Where(t => t.Amount > 0)
+                .ToArray() ?? [];
+
+            _logger.LogInformation(
+                "Basiq transactions retrieved count={Count} correlationId={CorrelationId}",
+                transactions.Length,
+                correlationId);
+            return new GetTransactionsResult(true, transactions, null, null);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogError(
+                ex,
+                "Basiq GetTransactions exception correlationId={CorrelationId}",
+                correlationId);
+            return new GetTransactionsResult(false, null, BankConnectionErrors.SyncProviderError, ex.Message);
+        }
+    }
+
     internal async Task<HttpResponseMessage> ExecuteWithRetryAsync(
         Func<HttpRequestMessage> requestFactory,
         CancellationToken cancellationToken)
@@ -384,4 +447,25 @@ internal sealed record BasiqAccountClass
 {
     [JsonPropertyName("type")]
     public string? Type { get; init; }
+}
+
+internal sealed record BasiqTransactionsResponse
+{
+    [JsonPropertyName("data")]
+    public BasiqTransactionData[]? Data { get; init; }
+}
+
+internal sealed record BasiqTransactionData
+{
+    [JsonPropertyName("id")]
+    public string? Id { get; init; }
+
+    [JsonPropertyName("amount")]
+    public string? Amount { get; init; }
+
+    [JsonPropertyName("postDate")]
+    public string? PostDate { get; init; }
+
+    [JsonPropertyName("description")]
+    public string? Description { get; init; }
 }

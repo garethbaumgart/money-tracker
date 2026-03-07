@@ -8,4 +8,6 @@ public interface IBankConnectionRepository
     Task<IReadOnlyCollection<BankConnection>> GetByHouseholdAsync(
         Guid householdId,
         CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<BankConnection>> GetActiveConnectionsAsync(
+        CancellationToken cancellationToken);
 }

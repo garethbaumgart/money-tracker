@@ -241,4 +241,9 @@ internal sealed class StubBankProviderAdapterForFlow : IBankProviderAdapter
     {
         return Task.FromResult(new GetAccountsResult(true, Array.Empty<BankAccountInfo>(), null, null));
     }
+
+    public Task<GetTransactionsResult> GetTransactionsAsync(string externalConnectionId, DateTimeOffset sinceUtc, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(new GetTransactionsResult(true, Array.Empty<ProviderTransaction>(), null, null));
+    }
 }
