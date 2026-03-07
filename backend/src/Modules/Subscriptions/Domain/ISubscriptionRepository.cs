@@ -8,4 +8,5 @@ public interface ISubscriptionRepository
     Task<Subscription?> GetByHouseholdIdAsync(Guid householdId, CancellationToken cancellationToken);
     Task<Subscription?> GetByRevenueCatAppUserIdAsync(string appUserId, CancellationToken cancellationToken);
     Task<IReadOnlyList<Subscription>> GetExpiredTrialsAsync(DateTimeOffset asOfUtc, CancellationToken cancellationToken);
+    Task<IReadOnlyList<Subscription>> GetAllAsync(CancellationToken cancellationToken);
 }
