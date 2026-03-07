@@ -77,8 +77,3 @@ public sealed class BudgetSnapshotTests : IClassFixture<MoneyTrackerApiFactory>
         Assert.Equal(380m, snapshotPayload["totalRemaining"]!.GetValue<decimal>());
     }
 }
-
-internal sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
-{
-    public override DateTimeOffset GetUtcNow() => utcNow;
-}

@@ -1,4 +1,4 @@
-using MoneyTracker.Modules.Budgets.Domain;
+using MoneyTracker.Modules.Households.Domain;
 
 namespace MoneyTracker.Modules.Households.Application.GetHouseholdDashboard;
 
@@ -31,7 +31,7 @@ public sealed class GetHouseholdDashboardResult
     {
         return new GetHouseholdDashboardResult(
             dashboard: null,
-            BudgetErrors.BudgetAccessDenied,
+            HouseholdErrors.HouseholdAccessDenied,
             "User is not a member of this household.");
     }
 
@@ -39,7 +39,7 @@ public sealed class GetHouseholdDashboardResult
     {
         return new GetHouseholdDashboardResult(
             dashboard: null,
-            BudgetErrors.BudgetHouseholdNotFound,
+            HouseholdErrors.HouseholdNotFound,
             "Household not found.");
     }
 }

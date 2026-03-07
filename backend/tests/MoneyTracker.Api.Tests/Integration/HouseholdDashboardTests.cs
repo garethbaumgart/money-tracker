@@ -111,8 +111,13 @@ public sealed class HouseholdDashboardTests : IClassFixture<MoneyTrackerApiFacto
     {
         using var response = await client.GetAsync($"/households/{householdId}/dashboard");
         response.EnsureSuccessStatusCode();
-        var payload = JsonNode.Parse(await response.Content.ReadAsStringAsync())?.AsObject();
-        Assert.NotNull(payload);
-        return payload!;
+        var raw = await response.Content.ReadAsStringAsync();
+        var payload = JsonNode.Parse(raw)?.AsObject();
+        if (payload is null)
+        {
+            throw new InvalidOperationException($"Dashboard response was not valid JSON. Payload: {raw}");
+        }
+
+        return payload;
     }
 }

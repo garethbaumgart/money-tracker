@@ -214,6 +214,7 @@ class DashboardController extends ChangeNotifier {
   DashboardState get state => _state;
 
   Future<void> refresh() async {
+    // TODO: Replace with API-backed refresh once the shared dashboard endpoint is wired.
     _state = _state.copyWith(
       lastUpdatedAt: DateTime.now(),
       refreshCount: _state.refreshCount + 1,

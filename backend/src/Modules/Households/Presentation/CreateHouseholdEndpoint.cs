@@ -2,10 +2,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
-using MoneyTracker.Modules.Auth.Application.GetAuthenticatedUser;
-using MoneyTracker.Modules.Auth.Domain;
 using MoneyTracker.Modules.Households.Application.AcceptHouseholdInvitation;
 using MoneyTracker.Modules.Households.Application.CreateHousehold;
 using MoneyTracker.Modules.Households.Application.GetCurrentBudgetSnapshot;
@@ -68,7 +65,7 @@ public static class CreateHouseholdEndpoint
 
     private static async Task CreateHousehold(HttpContext httpContext)
     {
-        var authResult = await ResolveAuthenticatedUser(httpContext);
+        var authResult = await HouseholdEndpointHelpers.ResolveAuthenticatedUser(httpContext);
         if (!authResult.Success)
         {
             await authResult.Problem!.ExecuteAsync(httpContext);
@@ -91,7 +88,7 @@ public static class CreateHouseholdEndpoint
             }
             else
             {
-                await WriteProblemAsync(
+                await HouseholdEndpointHelpers.WriteProblemAsync(
                     httpContext,
                     StatusCodes.Status400BadRequest,
                     "Validation failed.",
@@ -116,7 +113,7 @@ public static class CreateHouseholdEndpoint
                 _ => StatusCodes.Status400BadRequest
             };
 
-            await WriteProblemAsync(
+            await HouseholdEndpointHelpers.WriteProblemAsync(
                 httpContext,
                 statusCode,
                 "Validation failed.",
@@ -133,7 +130,7 @@ public static class CreateHouseholdEndpoint
 
     private static async Task InviteHouseholdMember(HttpContext httpContext, Guid householdId)
     {
-        var authResult = await ResolveAuthenticatedUser(httpContext);
+        var authResult = await HouseholdEndpointHelpers.ResolveAuthenticatedUser(httpContext);
         if (!authResult.Success)
         {
             await authResult.Problem!.ExecuteAsync(httpContext);
@@ -156,7 +153,7 @@ public static class CreateHouseholdEndpoint
             }
             else
             {
-                await WriteProblemAsync(
+                await HouseholdEndpointHelpers.WriteProblemAsync(
                     httpContext,
                     StatusCodes.Status400BadRequest,
                     "Validation failed.",
@@ -184,7 +181,7 @@ public static class CreateHouseholdEndpoint
                 _ => StatusCodes.Status400BadRequest
             };
 
-            await WriteProblemAsync(
+            await HouseholdEndpointHelpers.WriteProblemAsync(
                 httpContext,
                 statusCode,
                 statusCode == StatusCodes.Status403Forbidden ? "Access denied." : "Validation failed.",
@@ -201,7 +198,7 @@ public static class CreateHouseholdEndpoint
 
     private static async Task AcceptHouseholdInvitation(HttpContext httpContext, string invitationToken)
     {
-        var authResult = await ResolveAuthenticatedUser(httpContext);
+        var authResult = await HouseholdEndpointHelpers.ResolveAuthenticatedUser(httpContext);
         if (!authResult.Success)
         {
             await authResult.Problem!.ExecuteAsync(httpContext);
@@ -236,7 +233,7 @@ public static class CreateHouseholdEndpoint
                 ? "Invitation rejected."
                 : "Invitation could not be accepted.";
 
-            await WriteProblemAsync(
+            await HouseholdEndpointHelpers.WriteProblemAsync(
                 httpContext,
                 statusCode,
                 title,
@@ -251,7 +248,7 @@ public static class CreateHouseholdEndpoint
 
     private static async Task GetHouseholdMembers(HttpContext httpContext, Guid householdId)
     {
-        var authResult = await ResolveAuthenticatedUser(httpContext);
+        var authResult = await HouseholdEndpointHelpers.ResolveAuthenticatedUser(httpContext);
         if (!authResult.Success)
         {
             await authResult.Problem!.ExecuteAsync(httpContext);
@@ -278,7 +275,7 @@ public static class CreateHouseholdEndpoint
                 _ => StatusCodes.Status403Forbidden
             };
 
-            await WriteProblemAsync(
+            await HouseholdEndpointHelpers.WriteProblemAsync(
                 httpContext,
                 statusCode,
                 "Request rejected.",
@@ -299,7 +296,7 @@ public static class CreateHouseholdEndpoint
         var contentType = httpContext.Request.ContentType;
         if (string.IsNullOrWhiteSpace(contentType) || !IsJsonContentType(contentType))
         {
-            return (false, default, BuildProblemResult(
+            return (false, default, HouseholdEndpointHelpers.BuildProblemResult(
                 StatusCodes.Status400BadRequest,
                 "Validation failed.",
                 "The request payload is required to be JSON.",
@@ -312,7 +309,7 @@ public static class CreateHouseholdEndpoint
             var request = await httpContext.Request.ReadFromJsonAsync<TRequest>(cancellationToken: httpContext.RequestAborted);
             if (request is null)
             {
-                return (false, default, BuildProblemResult(
+                return (false, default, HouseholdEndpointHelpers.BuildProblemResult(
                     StatusCodes.Status400BadRequest,
                     "Validation failed.",
                     "The request payload is invalid.",
@@ -324,7 +321,7 @@ public static class CreateHouseholdEndpoint
         }
         catch (JsonException)
         {
-            return (false, default, BuildProblemResult(
+            return (false, default, HouseholdEndpointHelpers.BuildProblemResult(
                 StatusCodes.Status400BadRequest,
                 "Validation failed.",
                 "The request payload is invalid.",
@@ -333,7 +330,7 @@ public static class CreateHouseholdEndpoint
         }
         catch (NotSupportedException)
         {
-            return (false, default, BuildProblemResult(
+            return (false, default, HouseholdEndpointHelpers.BuildProblemResult(
                 StatusCodes.Status400BadRequest,
                 "Validation failed.",
                 "The request payload is invalid.",
@@ -342,7 +339,7 @@ public static class CreateHouseholdEndpoint
         }
         catch (BadHttpRequestException)
         {
-            return (false, default, BuildProblemResult(
+            return (false, default, HouseholdEndpointHelpers.BuildProblemResult(
                 StatusCodes.Status400BadRequest,
                 "Validation failed.",
                 "The request payload is invalid.",
@@ -351,76 +348,10 @@ public static class CreateHouseholdEndpoint
         }
     }
 
-    private static async Task<(bool Success, AuthenticatedUser? AuthenticatedUser, IResult? Problem)> ResolveAuthenticatedUser(HttpContext httpContext)
-    {
-        var token = ExtractBearerToken(httpContext.Request.Headers.Authorization.ToString());
-        var handler = httpContext.RequestServices.GetRequiredService<GetAuthenticatedUserHandler>();
-        var authResult = await handler.HandleAsync(new GetAuthenticatedUserQuery(token), httpContext.RequestAborted);
-
-        if (!authResult.IsSuccess)
-        {
-            var problem = BuildProblemResult(
-                StatusCodes.Status401Unauthorized,
-                "Authentication required.",
-                authResult.ErrorMessage ?? "Authentication required.",
-                authResult.ErrorCode ?? AuthErrors.AccessTokenInvalid,
-                httpContext.Request.Path);
-
-            return (false, null, problem);
-        }
-
-        return (true, new AuthenticatedUser(authResult.UserId, authResult.Email), null);
-    }
-
     private static bool IsJsonContentType(string contentType)
     {
         var mediaType = contentType.Split(';')[0].Trim();
         return mediaType.Equals("application/json", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string? ExtractBearerToken(string? authorizationHeader)
-    {
-        if (string.IsNullOrWhiteSpace(authorizationHeader))
-        {
-            return null;
-        }
-
-        if (!authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-        {
-            return null;
-        }
-
-        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
-        return string.IsNullOrWhiteSpace(token) ? null : token;
-    }
-
-    private static IResult BuildProblemResult(int statusCode, string title, string detail, string code, string instance)
-    {
-        var problem = new ProblemDetails
-        {
-            Status = statusCode,
-            Title = title,
-            Detail = detail,
-            Instance = instance
-        };
-        problem.Extensions["code"] = code;
-        return TypedResults.Problem(problem);
-    }
-
-    private static async Task WriteProblemAsync(
-        HttpContext httpContext,
-        int statusCode,
-        string title,
-        string detail,
-        string? code,
-        string fallbackCode)
-    {
-        await BuildProblemResult(
-            statusCode,
-            title,
-            detail,
-            code ?? fallbackCode,
-            httpContext.Request.Path).ExecuteAsync(httpContext);
     }
 }
 
@@ -435,5 +366,3 @@ public sealed record InviteHouseholdMemberResponse(string InvitationToken, DateT
 public sealed record HouseholdMemberResponse(Guid UserId, string Role);
 
 public sealed record GetHouseholdMembersResponse(HouseholdMemberResponse[] Members);
-
-internal sealed record AuthenticatedUser(Guid UserId, string Email);

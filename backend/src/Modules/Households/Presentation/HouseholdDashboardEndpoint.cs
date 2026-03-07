@@ -1,12 +1,9 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
-using MoneyTracker.Modules.Auth.Application.GetAuthenticatedUser;
-using MoneyTracker.Modules.Auth.Domain;
-using MoneyTracker.Modules.Budgets.Domain;
 using MoneyTracker.Modules.Households.Application.GetHouseholdDashboard;
+using MoneyTracker.Modules.Households.Domain;
 
 namespace MoneyTracker.Modules.Households.Presentation;
 
@@ -29,7 +26,7 @@ public static class HouseholdDashboardEndpoint
 
     private static async Task GetHouseholdDashboard(HttpContext httpContext, Guid householdId)
     {
-        var authResult = await ResolveAuthenticatedUser(httpContext);
+        var authResult = await HouseholdEndpointHelpers.ResolveAuthenticatedUser(httpContext);
         if (!authResult.Success)
         {
             await authResult.Problem!.ExecuteAsync(httpContext);
@@ -45,18 +42,18 @@ public static class HouseholdDashboardEndpoint
         {
             var statusCode = result.ErrorCode switch
             {
-                BudgetErrors.BudgetHouseholdNotFound => StatusCodes.Status404NotFound,
-                BudgetErrors.BudgetAccessDenied => StatusCodes.Status403Forbidden,
+                HouseholdErrors.HouseholdNotFound => StatusCodes.Status404NotFound,
+                HouseholdErrors.HouseholdAccessDenied => StatusCodes.Status403Forbidden,
                 _ => StatusCodes.Status400BadRequest
             };
 
-            await WriteProblemAsync(
+            await HouseholdEndpointHelpers.WriteProblemAsync(
                 httpContext,
                 statusCode,
                 statusCode == StatusCodes.Status403Forbidden ? "Access denied." : "Validation failed.",
                 result.ErrorMessage ?? "Request rejected.",
                 result.ErrorCode,
-                BudgetErrors.ValidationError);
+                HouseholdErrors.ValidationError);
             return;
         }
 
@@ -90,71 +87,6 @@ public static class HouseholdDashboardEndpoint
         await TypedResults.Ok(response).ExecuteAsync(httpContext);
     }
 
-    private static async Task<(bool Success, AuthenticatedUser? AuthenticatedUser, IResult? Problem)> ResolveAuthenticatedUser(HttpContext httpContext)
-    {
-        var token = ExtractBearerToken(httpContext.Request.Headers.Authorization.ToString());
-        var handler = httpContext.RequestServices.GetRequiredService<GetAuthenticatedUserHandler>();
-        var authResult = await handler.HandleAsync(new GetAuthenticatedUserQuery(token), httpContext.RequestAborted);
-
-        if (!authResult.IsSuccess)
-        {
-            var problem = BuildProblemResult(
-                StatusCodes.Status401Unauthorized,
-                "Authentication required.",
-                authResult.ErrorMessage ?? "Authentication required.",
-                authResult.ErrorCode ?? AuthErrors.AccessTokenInvalid,
-                httpContext.Request.Path);
-
-            return (false, null, problem);
-        }
-
-        return (true, new AuthenticatedUser(authResult.UserId, authResult.Email), null);
-    }
-
-    private static string? ExtractBearerToken(string? authorizationHeader)
-    {
-        if (string.IsNullOrWhiteSpace(authorizationHeader))
-        {
-            return null;
-        }
-
-        if (!authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-        {
-            return null;
-        }
-
-        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
-        return string.IsNullOrWhiteSpace(token) ? null : token;
-    }
-
-    private static IResult BuildProblemResult(int statusCode, string title, string detail, string code, string instance)
-    {
-        var problem = new ProblemDetails
-        {
-            Status = statusCode,
-            Title = title,
-            Detail = detail,
-            Instance = instance
-        };
-        problem.Extensions["code"] = code;
-        return TypedResults.Problem(problem);
-    }
-
-    private static async Task WriteProblemAsync(
-        HttpContext httpContext,
-        int statusCode,
-        string title,
-        string detail,
-        string? code,
-        string fallbackCode)
-    {
-        await BuildProblemResult(
-            statusCode,
-            title,
-            detail,
-            code ?? fallbackCode,
-            httpContext.Request.Path).ExecuteAsync(httpContext);
-    }
 }
 
 public sealed record HouseholdDashboardResponse(
