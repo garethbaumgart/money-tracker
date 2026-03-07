@@ -8,9 +8,11 @@ using MoneyTracker.Modules.Auth.Application.GetAuthenticatedUser;
 using MoneyTracker.Modules.Auth.Domain;
 using MoneyTracker.Modules.Households.Application.AcceptHouseholdInvitation;
 using MoneyTracker.Modules.Households.Application.CreateHousehold;
+using MoneyTracker.Modules.Households.Application.GetCurrentBudgetSnapshot;
 using MoneyTracker.Modules.Households.Application.GetHouseholdMembers;
 using MoneyTracker.Modules.Households.Application.InviteHouseholdMember;
 using MoneyTracker.Modules.Households.Domain;
+using MoneyTracker.Modules.SharedKernel.Households;
 
 namespace MoneyTracker.Modules.Households.Presentation;
 
@@ -19,11 +21,13 @@ public static class CreateHouseholdEndpoint
     public static IServiceCollection AddHouseholdsModule(this IServiceCollection services)
     {
         services.AddSingleton<IHouseholdRepository, Infrastructure.InMemoryHouseholdRepository>();
+        services.AddScoped<IHouseholdAccessService, Infrastructure.HouseholdAccessService>();
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<CreateHouseholdHandler>();
         services.AddScoped<InviteHouseholdMemberHandler>();
         services.AddScoped<AcceptHouseholdInvitationHandler>();
         services.AddScoped<GetHouseholdMembersHandler>();
+        services.AddScoped<GetCurrentBudgetSnapshotHandler>();
 
         return services;
     }
