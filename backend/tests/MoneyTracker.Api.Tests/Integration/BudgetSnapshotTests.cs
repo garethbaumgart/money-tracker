@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MoneyTracker.Api.Tests.Component;
 
 namespace MoneyTracker.Api.Tests.Integration;
@@ -18,7 +20,15 @@ public sealed class BudgetSnapshotTests : IClassFixture<MoneyTrackerApiFactory>
     [Trait("Category", "Integration")]
     public async Task BudgetSnapshot_ReturnsTotalsForCurrentPeriod()
     {
-        using var client = _factory.CreateClient();
+        var fixedNow = DateTimeOffset.Parse("2026-03-01T12:00:00Z");
+        using var client = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<TimeProvider>();
+                services.AddSingleton<TimeProvider>(new FixedTimeProvider(fixedNow));
+            });
+        }).CreateClient();
         var accessToken = await AuthTestHelpers.GetAccessTokenAsync(client, $"{Guid.NewGuid():N}@example.com");
         AuthTestHelpers.SetBearer(client, accessToken);
 
@@ -43,7 +53,7 @@ public sealed class BudgetSnapshotTests : IClassFixture<MoneyTrackerApiFactory>
             new { householdId, categoryId, amount = 500m });
         Assert.Equal(HttpStatusCode.OK, allocationResponse.StatusCode);
 
-        var occurredAtUtc = DateTimeOffset.UtcNow;
+        var occurredAtUtc = fixedNow;
         using var transactionResponse = await client.PostAsJsonAsync(
             "/transactions",
             new
@@ -66,4 +76,9 @@ public sealed class BudgetSnapshotTests : IClassFixture<MoneyTrackerApiFactory>
         Assert.Equal(120m, snapshotPayload["totalSpent"]!.GetValue<decimal>());
         Assert.Equal(380m, snapshotPayload["totalRemaining"]!.GetValue<decimal>());
     }
+}
+
+internal sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+{
+    public override DateTimeOffset GetUtcNow() => utcNow;
 }

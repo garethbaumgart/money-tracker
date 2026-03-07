@@ -140,8 +140,22 @@ public static class TransactionEndpoints
             return;
         }
 
-        var fromUtc = TryGetDateTimeOffsetQuery(httpContext, "fromUtc");
-        var toUtc = TryGetDateTimeOffsetQuery(httpContext, "toUtc");
+        var (fromUtc, fromValid) = TryGetDateTimeOffsetQuery(httpContext, "fromUtc");
+        var (toUtc, toValid) = TryGetDateTimeOffsetQuery(httpContext, "toUtc");
+        if (!fromValid || !toValid)
+        {
+            var message = !fromValid
+                ? "fromUtc query parameter is invalid."
+                : "toUtc query parameter is invalid.";
+            await WriteProblemAsync(
+                httpContext,
+                StatusCodes.Status400BadRequest,
+                "Validation failed.",
+                message,
+                TransactionErrors.ValidationError,
+                TransactionErrors.ValidationError);
+            return;
+        }
 
         var handler = httpContext.RequestServices.GetRequiredService<GetTransactionsHandler>();
         var result = await handler.HandleAsync(
@@ -289,15 +303,20 @@ public static class TransactionEndpoints
         return raw is not null && Guid.TryParse(raw, out value);
     }
 
-    private static DateTimeOffset? TryGetDateTimeOffsetQuery(HttpContext httpContext, string key)
+    private static (DateTimeOffset? Value, bool IsValid) TryGetDateTimeOffsetQuery(HttpContext httpContext, string key)
     {
         var raw = httpContext.Request.Query[key].FirstOrDefault();
         if (raw is null)
         {
-            return null;
+            return (null, true);
         }
 
-        return DateTimeOffset.TryParse(raw, out var value) ? value : null;
+        if (DateTimeOffset.TryParse(raw, out var value))
+        {
+            return (value, true);
+        }
+
+        return (null, false);
     }
 
     private static IResult BuildProblemResult(int statusCode, string title, string detail, string code, string instance)

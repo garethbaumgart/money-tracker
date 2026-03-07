@@ -24,7 +24,8 @@ public sealed class GetBudgetCategoriesResult
 
     public static GetBudgetCategoriesResult Success(IReadOnlyCollection<BudgetCategory> categories)
     {
-        return new GetBudgetCategoriesResult(categories, errorCode: null, errorMessage: null);
+        ArgumentNullException.ThrowIfNull(categories);
+        return new GetBudgetCategoriesResult(categories.ToArray(), errorCode: null, errorMessage: null);
     }
 
     public static GetBudgetCategoriesResult AccessDenied()

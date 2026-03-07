@@ -41,14 +41,15 @@ public sealed class Transaction
         DateTimeOffset nowUtc)
     {
         ValidateAmount(amount);
-        ValidateOccurredAt(occurredAtUtc, nowUtc);
+        var utcOccurredAt = occurredAtUtc.ToUniversalTime();
+        ValidateOccurredAt(utcOccurredAt, nowUtc);
 
         return new Transaction(
             TransactionId.New(),
             householdId,
             createdByUserId,
             amount,
-            occurredAtUtc.ToUniversalTime(),
+            utcOccurredAt,
             NormalizeDescription(description),
             categoryId,
             nowUtc);
@@ -66,10 +67,9 @@ public sealed class Transaction
 
     private static void ValidateOccurredAt(DateTimeOffset occurredAtUtc, DateTimeOffset nowUtc)
     {
-        var utc = occurredAtUtc.ToUniversalTime();
         var min = nowUtc.Add(-TransactionPolicy.MaxPastSkew);
         var max = nowUtc.Add(TransactionPolicy.MaxFutureSkew);
-        if (utc < min || utc > max)
+        if (occurredAtUtc < min || occurredAtUtc > max)
         {
             throw new TransactionDomainException(
                 TransactionErrors.TransactionDateOutOfRange,
