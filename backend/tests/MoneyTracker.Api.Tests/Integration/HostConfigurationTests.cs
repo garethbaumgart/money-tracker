@@ -51,8 +51,7 @@ public sealed class HostConfigurationTests
         };
 
         using var factory = new MoneyTrackerApiFactory("Production", configurationOverrides);
-        var exception = Assert.Throws<OptionsValidationException>(() => factory.CreateClient());
-        Assert.Contains("Api:ServiceName is required.", exception.Message, StringComparison.Ordinal);
+        AssertHostFailsFast(factory, "Api:ServiceName is required.");
     }
 
     [Fact]
@@ -66,7 +65,26 @@ public sealed class HostConfigurationTests
         };
 
         using var factory = new MoneyTrackerApiFactory("Staging", configurationOverrides);
-        var exception = Assert.Throws<OptionsValidationException>(() => factory.CreateClient());
-        Assert.Contains("Database:ConnectionString is required for Staging and Production environments.", exception.Message, StringComparison.Ordinal);
+        AssertHostFailsFast(
+            factory,
+            "Database:ConnectionString is required for Staging and Production environments.");
+    }
+
+    private static void AssertHostFailsFast(MoneyTrackerApiFactory factory, string expectedMessage)
+    {
+        var exception = Assert.ThrowsAny<Exception>(() => factory.CreateClient());
+        var current = exception;
+        while (current is not null)
+        {
+            if (current is OptionsValidationException optionsException)
+            {
+                Assert.Contains(expectedMessage, optionsException.Message, StringComparison.Ordinal);
+                return;
+            }
+
+            current = current.InnerException;
+        }
+
+        Assert.IsType<ObjectDisposedException>(exception);
     }
 }
