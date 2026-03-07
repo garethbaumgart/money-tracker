@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 class ReminderEntry {
   ReminderEntry({
@@ -23,7 +23,17 @@ class ReminderEntry {
   final String? lastDispatchErrorCode;
   final String? lastDispatchErrorMessage;
 
-  bool get isOverdue => dueDate.isBefore(DateTime.now());
+  bool get isOverdue {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final due = DateUtils.dateOnly(dueDate);
+    return due.isBefore(today);
+  }
+
+  bool get isDueToday {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final due = DateUtils.dateOnly(dueDate);
+    return due.isAtSameMomentAs(today);
+  }
 }
 
 class RemindersController extends ChangeNotifier {

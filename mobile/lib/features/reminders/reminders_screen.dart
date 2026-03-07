@@ -160,8 +160,19 @@ class _ReminderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dueLabel = _formatDate(context, reminder.dueDate);
-    final badgeColor = reminder.isOverdue ? tokens.stateDanger : tokens.stateSuccess;
-    final badgeText = reminder.isOverdue ? 'Overdue' : 'Due $dueLabel';
+    final Color badgeColor;
+    final String badgeText;
+
+    if (reminder.isOverdue) {
+      badgeColor = tokens.stateDanger;
+      badgeText = 'Overdue';
+    } else if (reminder.isDueToday) {
+      badgeColor = tokens.stateWarning;
+      badgeText = 'Due today';
+    } else {
+      badgeColor = tokens.stateSuccess;
+      badgeText = 'Due $dueLabel';
+    }
 
     return Card(
       child: Padding(
