@@ -12,7 +12,8 @@ import '../theme/app_theme_controller.dart';
 import '../theme/app_theme_mode.dart';
 import '../theme/app_theme_tokens.dart';
 
-String _todayPlanTitle([DateTime? now]) {
+@visibleForTesting
+String todayPlanTitle([DateTime? now]) {
   const dayNames = [
     'Monday',
     'Tuesday',
@@ -97,7 +98,7 @@ class _MoneyTrackerShellState extends State<MoneyTrackerShell> {
           appBar: AppBar(
             title: Text(
               _selectedIndex == 0
-                  ? _todayPlanTitle()
+                  ? todayPlanTitle()
                   : _destinations[_selectedIndex].label,
             ),
             actions: [
@@ -410,7 +411,7 @@ class _TopSummaryCard extends StatelessWidget {
                 ),
                 SizedBox(height: tokens.space1),
                 Text(
-                  _todayPlanTitle(),
+                  todayPlanTitle(),
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
               ],

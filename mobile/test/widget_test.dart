@@ -2,20 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:money_tracker/app/app.dart';
-
-String _expectedPlanTitle() {
-  const dayNames = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday',
-  ];
-  final day = DateTime.now().weekday; // 1=Monday, 7=Sunday
-  return '${dayNames[day - 1]} plan';
-}
+import 'package:money_tracker/app/shell/money_tracker_shell.dart';
 
 void main() {
   testWidgets('renders app shell with compact navigation', (
@@ -26,7 +13,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final expectedTitle = _expectedPlanTitle();
+    final expectedTitle = todayPlanTitle();
 
     await tester.pumpWidget(const MoneyTrackerApp(themeMode: ThemeMode.light));
     await tester.pumpAndSettle();
@@ -41,5 +28,24 @@ void main() {
     expect(find.text('Shared dashboard'), findsOneWidget);
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.byType(NavigationRail), findsNothing);
+  });
+
+  group('todayPlanTitle', () {
+    test('returns correct day name for each weekday', () {
+      // 2026-03-09 is a Monday, 2026-03-15 is a Sunday
+      const expected = [
+        'Monday plan',
+        'Tuesday plan',
+        'Wednesday plan',
+        'Thursday plan',
+        'Friday plan',
+        'Saturday plan',
+        'Sunday plan',
+      ];
+      for (var i = 0; i < 7; i++) {
+        final date = DateTime(2026, 3, 9 + i);
+        expect(todayPlanTitle(date), expected[i]);
+      }
+    });
   });
 }
