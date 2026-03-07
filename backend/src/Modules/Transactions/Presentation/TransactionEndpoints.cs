@@ -9,6 +9,7 @@ using MoneyTracker.Modules.Auth.Domain;
 using MoneyTracker.Modules.SharedKernel.Transactions;
 using MoneyTracker.Modules.Transactions.Application.CreateTransaction;
 using MoneyTracker.Modules.Transactions.Application.GetTransactions;
+using MoneyTracker.Modules.SharedKernel.Health;
 using MoneyTracker.Modules.SharedKernel.Privacy;
 using MoneyTracker.Modules.Transactions.Domain;
 
@@ -26,6 +27,7 @@ public static class TransactionEndpoints
         services.AddScoped<GetTransactionsHandler>();
         services.AddSingleton<IUserDataExportParticipant, Infrastructure.TransactionDataExportParticipant>();
         services.AddSingleton<IUserDeletionParticipant, Infrastructure.TransactionDataExportParticipant>();
+        services.AddSingleton<IModuleHealthCheck, Infrastructure.TransactionsModuleHealthCheck>();
 
         return services;
     }

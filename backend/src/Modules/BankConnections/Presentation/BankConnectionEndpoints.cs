@@ -17,6 +17,7 @@ using MoneyTracker.Modules.BankConnections.Application.SyncTransactions;
 using MoneyTracker.Modules.BankConnections.Application.TriggerManualSync;
 using MoneyTracker.Modules.BankConnections.Domain;
 using MoneyTracker.Modules.SharedKernel.Households;
+using MoneyTracker.Modules.SharedKernel.Health;
 using MoneyTracker.Modules.SharedKernel.Presentation;
 using MoneyTracker.Modules.SharedKernel.Privacy;
 
@@ -54,6 +55,7 @@ public static class BankConnectionEndpoints
         services.AddHostedService<Infrastructure.ConsentExpiryCheckWorker>();
         services.AddSingleton<IUserDataExportParticipant, Infrastructure.BankConnectionDataExportParticipant>();
         services.AddSingleton<IUserDeletionParticipant, Infrastructure.BankConnectionDataExportParticipant>();
+        services.AddSingleton<IModuleHealthCheck, Infrastructure.BankConnectionsModuleHealthCheck>();
 
         return services;
     }

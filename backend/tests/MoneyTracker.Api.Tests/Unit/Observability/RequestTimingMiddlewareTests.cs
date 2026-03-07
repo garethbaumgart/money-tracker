@@ -22,6 +22,17 @@ public sealed class RequestTimingMiddlewareTests
         },
     };
 
+    private static AlertingOptions DefaultAlertingOptions => new()
+    {
+        ErrorRateThresholdPercent = 5,
+        ErrorRateWindowSeconds = 300,
+    };
+
+    private static ErrorRateMonitor CreateErrorRateMonitor() =>
+        new(new RecordingLogger<ErrorRateMonitor>(),
+            Options.Create(DefaultAlertingOptions),
+            TimeProvider.System);
+
     [Fact]
     [Trait("Category", "Unit")]
     public async Task InvokeAsync_LogsDuration()
@@ -34,7 +45,8 @@ public sealed class RequestTimingMiddlewareTests
             next: _ => Task.CompletedTask,
             logger: logger,
             performanceOptions: options,
-            hostEnvironment: env);
+            hostEnvironment: env,
+            errorRateMonitor: CreateErrorRateMonitor());
 
         var context = new DefaultHttpContext();
         context.Request.Method = "GET";
@@ -73,7 +85,8 @@ public sealed class RequestTimingMiddlewareTests
             next: async _ => { await Task.Delay(10); },
             logger: logger,
             performanceOptions: options,
-            hostEnvironment: env);
+            hostEnvironment: env,
+            errorRateMonitor: CreateErrorRateMonitor());
 
         var context = new DefaultHttpContext();
         context.Request.Method = "POST";
@@ -99,7 +112,8 @@ public sealed class RequestTimingMiddlewareTests
             next: _ => Task.CompletedTask,
             logger: logger,
             performanceOptions: options,
-            hostEnvironment: env);
+            hostEnvironment: env,
+            errorRateMonitor: CreateErrorRateMonitor());
 
         var context = new DefaultHttpContext();
         context.Request.Method = "GET";
@@ -123,7 +137,8 @@ public sealed class RequestTimingMiddlewareTests
             next: _ => Task.CompletedTask,
             logger: logger,
             performanceOptions: options,
-            hostEnvironment: env);
+            hostEnvironment: env,
+            errorRateMonitor: CreateErrorRateMonitor());
 
         var context = new DefaultHttpContext();
         context.Request.Method = "GET";

@@ -1,3 +1,4 @@
+using MoneyTracker.Api;
 using MoneyTracker.Api.Configuration;
 using MoneyTracker.Api.Contracts;
 using MoneyTracker.Api.Diagnostics;
@@ -11,9 +12,11 @@ using MoneyTracker.Modules.BankConnections.Presentation;
 using MoneyTracker.Modules.Subscriptions.Presentation;
 using MoneyTracker.Modules.Analytics.Presentation;
 using MoneyTracker.Modules.Insights.Presentation;
+using MoneyTracker.Api.Health;
 using MoneyTracker.Modules.Experiments.Presentation;
 using MoneyTracker.Api.Observability;
 using MoneyTracker.Api.Security;
+using MoneyTracker.Modules.SharedKernel.Health;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,8 +24,10 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddValidatedConfiguration(builder.Configuration);
 builder.Services.AddSingleton<ErrorRateMonitor>();
+builder.Services.AddSingleton<BackgroundWorkerHealthTracker>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddAuthModule();
+builder.Services.AddSingleton<IModuleHealthCheck, AuthModuleHealthCheck>();
 builder.Services.AddHouseholdsModule();
 builder.Services.AddBudgetsModule();
 builder.Services.AddTransactionsModule();
@@ -63,6 +68,7 @@ app.MapSubscriptionEndpoints();
 app.MapAnalyticsEndpoints();
 app.MapInsightsEndpoints();
 app.MapExperimentEndpoints();
+app.MapSystemHealthEndpoints();
 
 if (app.Environment.IsEnvironment("Testing"))
 {

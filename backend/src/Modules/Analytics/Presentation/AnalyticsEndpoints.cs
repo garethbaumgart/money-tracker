@@ -7,6 +7,7 @@ using MoneyTracker.Modules.Analytics.Application.RecordEvent;
 using MoneyTracker.Modules.Analytics.Domain;
 using MoneyTracker.Modules.Analytics.Infrastructure;
 using MoneyTracker.Modules.SharedKernel.Analytics;
+using MoneyTracker.Modules.SharedKernel.Health;
 using MoneyTracker.Modules.SharedKernel.Presentation;
 using MoneyTracker.Modules.SharedKernel.Privacy;
 
@@ -22,6 +23,7 @@ public static class AnalyticsEndpoints
         services.AddScoped<GetActivationFunnelHandler>();
         services.AddSingleton<IUserDataExportParticipant, AnalyticsDataExportParticipant>();
         services.AddSingleton<IUserDeletionParticipant, AnalyticsDataExportParticipant>();
+        services.AddSingleton<IModuleHealthCheck, AnalyticsModuleHealthCheck>();
 
         return services;
     }

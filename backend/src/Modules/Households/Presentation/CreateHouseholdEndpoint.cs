@@ -10,6 +10,7 @@ using MoneyTracker.Modules.Households.Application.GetHouseholdMembers;
 using MoneyTracker.Modules.Households.Application.InviteHouseholdMember;
 using MoneyTracker.Modules.Households.Domain;
 using MoneyTracker.Modules.SharedKernel.Households;
+using MoneyTracker.Modules.SharedKernel.Health;
 using MoneyTracker.Modules.SharedKernel.Presentation;
 using MoneyTracker.Modules.SharedKernel.Privacy;
 
@@ -30,6 +31,7 @@ public static class CreateHouseholdEndpoint
         services.AddScoped<GetHouseholdDashboardHandler>();
         services.AddSingleton<IUserDataExportParticipant, Infrastructure.HouseholdDataExportParticipant>();
         services.AddSingleton<IUserDeletionParticipant, Infrastructure.HouseholdDataExportParticipant>();
+        services.AddSingleton<IModuleHealthCheck, Infrastructure.HouseholdsModuleHealthCheck>();
 
         return services;
     }

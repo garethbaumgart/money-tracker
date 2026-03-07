@@ -13,6 +13,7 @@ using MoneyTracker.Modules.Subscriptions.Application.RestorePurchases;
 using MoneyTracker.Modules.Subscriptions.Application.StartTrial;
 using MoneyTracker.Modules.Subscriptions.Domain;
 using MoneyTracker.Modules.SharedKernel.Households;
+using MoneyTracker.Modules.SharedKernel.Health;
 using MoneyTracker.Modules.SharedKernel.Presentation;
 using MoneyTracker.Modules.SharedKernel.Privacy;
 
@@ -47,6 +48,7 @@ public static class SubscriptionEndpoints
         services.AddHostedService<Infrastructure.TrialExpiryWorker>();
         services.AddSingleton<IUserDataExportParticipant, Infrastructure.SubscriptionDataExportParticipant>();
         services.AddSingleton<IUserDeletionParticipant, Infrastructure.SubscriptionDataExportParticipant>();
+        services.AddSingleton<IModuleHealthCheck, Infrastructure.SubscriptionsModuleHealthCheck>();
 
         return services;
     }
