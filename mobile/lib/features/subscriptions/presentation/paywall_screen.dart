@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../app/theme/app_theme_tokens.dart';
-import '../domain/offering.dart';
 import '../domain/purchase_result.dart';
 import 'paywall_controller.dart';
 import 'plan_card.dart';

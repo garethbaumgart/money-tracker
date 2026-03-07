@@ -6,7 +6,7 @@ import 'package:money_tracker/shared_kernel/analytics/analytics_service.dart';
 
 void main() {
   group('ActivationTracker', () {
-    QueuedAnalyticsService _makeService(List<List<AnalyticsEvent>> sent) {
+    QueuedAnalyticsService makeService(List<List<AnalyticsEvent>> sent) {
       final queue = AnalyticsQueue(
         sender: (batch) async {
           sent.add(List.of(batch));
@@ -23,7 +23,7 @@ void main() {
     test('trackIfNew tracks first occurrence and returns true', () async {
       final sent = <List<AnalyticsEvent>>[];
       final tracker = ActivationTracker(
-        analyticsService: _makeService(sent),
+        analyticsService: makeService(sent),
       );
 
       final result = await tracker.trackIfNew('signup_completed');
@@ -36,7 +36,7 @@ void main() {
     test('trackIfNew returns false for duplicate milestone', () async {
       final sent = <List<AnalyticsEvent>>[];
       final tracker = ActivationTracker(
-        analyticsService: _makeService(sent),
+        analyticsService: makeService(sent),
       );
 
       await tracker.trackIfNew('signup_completed');
@@ -49,7 +49,7 @@ void main() {
     test('trackIfNew tracks different milestones independently', () async {
       final sent = <List<AnalyticsEvent>>[];
       final tracker = ActivationTracker(
-        analyticsService: _makeService(sent),
+        analyticsService: makeService(sent),
       );
 
       final r1 = await tracker.trackIfNew('signup_completed');
@@ -63,7 +63,7 @@ void main() {
     test('trackIfNew passes householdId and metadata through', () async {
       final sent = <List<AnalyticsEvent>>[];
       final tracker = ActivationTracker(
-        analyticsService: _makeService(sent),
+        analyticsService: makeService(sent),
       );
 
       await tracker.trackIfNew(
@@ -79,7 +79,7 @@ void main() {
     test('restore loads previously recorded milestones', () async {
       final sent = <List<AnalyticsEvent>>[];
       final tracker = ActivationTracker(
-        analyticsService: _makeService(sent),
+        analyticsService: makeService(sent),
         loader: () async => {'signup_completed'},
       );
 
@@ -94,7 +94,7 @@ void main() {
     test('restore tolerates loader failure', () async {
       final sent = <List<AnalyticsEvent>>[];
       final tracker = ActivationTracker(
-        analyticsService: _makeService(sent),
+        analyticsService: makeService(sent),
         loader: () async => throw Exception('storage error'),
       );
 
@@ -121,7 +121,7 @@ void main() {
     test('reset clears recorded milestones', () async {
       final sent = <List<AnalyticsEvent>>[];
       final tracker = ActivationTracker(
-        analyticsService: _makeService(sent),
+        analyticsService: makeService(sent),
       );
 
       await tracker.trackIfNew('signup_completed');
@@ -139,7 +139,7 @@ void main() {
     test('auto-restores on first trackIfNew if loader is set', () async {
       final sent = <List<AnalyticsEvent>>[];
       final tracker = ActivationTracker(
-        analyticsService: _makeService(sent),
+        analyticsService: makeService(sent),
         loader: () async => {'signup_completed'},
       );
 

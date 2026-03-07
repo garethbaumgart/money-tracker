@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_tracker/features/subscriptions/application/entitlement_provider.dart';
 import 'package:money_tracker/features/subscriptions/application/restore_purchases_controller.dart';
-import 'package:money_tracker/features/subscriptions/domain/subscription_tier.dart';
 import 'package:money_tracker/features/subscriptions/infrastructure/revenuecat_sdk_adapter.dart';
 import 'package:money_tracker/features/subscriptions/infrastructure/subscription_gateway.dart';
 
@@ -68,12 +67,6 @@ void main() {
     'currentPeriodEndUtc': '2026-04-01T00:00:00Z',
   });
 
-  final restoreNoneResponse = jsonEncode({
-    'status': 'None',
-    'tier': 'Free',
-    'featureKeys': <String>[],
-    'currentPeriodEndUtc': null,
-  });
 
   setUp(() {
     sdkAdapter = InMemoryRevenueCatSdkAdapter(

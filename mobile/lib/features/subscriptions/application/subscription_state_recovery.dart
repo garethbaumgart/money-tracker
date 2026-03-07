@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import '../infrastructure/revenuecat_sdk_adapter.dart';
 import '../infrastructure/subscription_gateway.dart';
 import 'entitlement_provider.dart';
-import 'restore_purchases_controller.dart';
 
 /// Handles subscription state recovery on app launch.
 /// AC-12: Reconciles local state with RevenueCat on app launch.

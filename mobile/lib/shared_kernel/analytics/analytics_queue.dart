@@ -46,7 +46,7 @@ class AnalyticsQueue {
   Future<void> restore() async {
     if (_loader == null) return;
     try {
-      final events = await _loader!();
+      final events = await _loader();
       _queue.addAll(events);
     } catch (_) {
       // Restore failure is tolerated; events may be lost.
@@ -117,7 +117,7 @@ class AnalyticsQueue {
   Future<void> _persist() async {
     if (_persister == null) return;
     try {
-      await _persister!(_queue.toList());
+      await _persister(_queue.toList());
     } catch (_) {
       // Persist failure is tolerated.
     }

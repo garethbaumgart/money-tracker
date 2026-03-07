@@ -6,7 +6,6 @@ import 'package:money_tracker/features/subscriptions/application/entitlement_pro
 import 'package:money_tracker/features/subscriptions/application/offerings_provider.dart';
 import 'package:money_tracker/features/subscriptions/application/purchase_controller.dart';
 import 'package:money_tracker/features/subscriptions/domain/offering.dart';
-import 'package:money_tracker/features/subscriptions/domain/purchase_result.dart';
 import 'package:money_tracker/features/subscriptions/infrastructure/revenuecat_sdk_adapter.dart';
 import 'package:money_tracker/features/subscriptions/infrastructure/subscription_gateway.dart';
 import 'package:money_tracker/features/subscriptions/presentation/paywall_controller.dart';

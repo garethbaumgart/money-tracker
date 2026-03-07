@@ -151,7 +151,7 @@ class _BreakdownRow extends StatelessWidget {
         SizedBox(
           width: 36,
           child: Text(
-            '${score.toStringAsFixed(0)}',
+            score.toStringAsFixed(0),
             style: theme.textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.w600,
             ),

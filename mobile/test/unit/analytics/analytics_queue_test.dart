@@ -4,7 +4,7 @@ import 'package:money_tracker/shared_kernel/analytics/analytics_queue.dart';
 
 void main() {
   group('AnalyticsQueue', () {
-    AnalyticsEvent _makeEvent(String milestone) => AnalyticsEvent(
+    AnalyticsEvent makeEvent(String milestone) => AnalyticsEvent(
           milestone: milestone,
           occurredAtUtc: DateTime.utc(2026, 3, 7, 12, 0, 0),
         );
@@ -19,10 +19,10 @@ void main() {
         batchSize: 2,
       );
 
-      await queue.enqueue(_makeEvent('signup_completed'));
+      await queue.enqueue(makeEvent('signup_completed'));
       expect(sent.length, 0); // Not yet at batch size.
 
-      await queue.enqueue(_makeEvent('household_created'));
+      await queue.enqueue(makeEvent('household_created'));
       expect(sent.length, 1);
       expect(sent.first.length, 2);
       expect(sent.first[0].milestone, 'signup_completed');
@@ -39,8 +39,8 @@ void main() {
         batchSize: 100, // Large batch size to prevent auto-flush.
       );
 
-      await queue.enqueue(_makeEvent('signup_completed'));
-      await queue.enqueue(_makeEvent('household_created'));
+      await queue.enqueue(makeEvent('signup_completed'));
+      await queue.enqueue(makeEvent('household_created'));
       expect(sent.length, 0);
 
       await queue.flush();
@@ -61,7 +61,7 @@ void main() {
         batchSize: 100,
       );
 
-      await queue.enqueue(_makeEvent('signup_completed'));
+      await queue.enqueue(makeEvent('signup_completed'));
       await queue.flush(); // First attempt fails.
       expect(queue.length, 1); // Event retained.
       expect(sent.length, 0);
@@ -77,7 +77,7 @@ void main() {
         batchSize: 100,
       );
 
-      await queue.enqueue(_makeEvent('signup_completed'));
+      await queue.enqueue(makeEvent('signup_completed'));
       await queue.flush(); // Should not throw.
       expect(queue.length, 1); // Event retained.
     });
@@ -104,7 +104,7 @@ void main() {
         batchSize: 100,
       );
 
-      await queue.enqueue(_makeEvent('signup_completed'));
+      await queue.enqueue(makeEvent('signup_completed'));
       expect(persisted.length, 1);
       expect(persisted.last.length, 1);
 
@@ -116,7 +116,7 @@ void main() {
     test('restore loads events from loader', () async {
       final queue = AnalyticsQueue(
         sender: (_) async => true,
-        loader: () async => [_makeEvent('signup_completed')],
+        loader: () async => [makeEvent('signup_completed')],
         batchSize: 100,
       );
 

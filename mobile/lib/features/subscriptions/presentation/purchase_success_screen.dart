@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../app/theme/app_theme_tokens.dart';
-import '../domain/feature_key.dart';
 
 /// Post-purchase confirmation screen.
 /// AC-5: Shows purchase success screen after successful purchase.

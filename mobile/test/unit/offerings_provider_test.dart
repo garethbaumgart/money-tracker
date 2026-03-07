@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_tracker/features/subscriptions/application/offerings_provider.dart';
 import 'package:money_tracker/features/subscriptions/domain/offering.dart';
-import 'package:money_tracker/features/subscriptions/domain/purchase_result.dart';
 import 'package:money_tracker/features/subscriptions/infrastructure/revenuecat_sdk_adapter.dart';
 
 Offering _buildDefaultOffering() {

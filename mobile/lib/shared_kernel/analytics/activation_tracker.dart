@@ -31,7 +31,7 @@ class ActivationTracker {
   Future<void> restore() async {
     if (_loader == null) return;
     try {
-      final loaded = await _loader!();
+      final loaded = await _loader();
       _recorded.addAll(loaded);
       _restored = true;
     } catch (_) {
@@ -76,7 +76,7 @@ class ActivationTracker {
   Future<void> _save() async {
     if (_saver == null) return;
     try {
-      await _saver!(Set.from(_recorded));
+      await _saver(Set.from(_recorded));
     } catch (_) {
       // Save failure is tolerated.
     }

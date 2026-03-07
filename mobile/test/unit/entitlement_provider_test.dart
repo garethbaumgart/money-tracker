@@ -48,12 +48,6 @@ void main() {
     'currentPeriodEndUtc': '2026-04-01T00:00:00Z',
   });
 
-  final freeResponse = jsonEncode({
-    'tier': 'Free',
-    'featureKeys': <String>[],
-    'trialExpiresAtUtc': null,
-    'currentPeriodEndUtc': null,
-  });
 
   setUp(() {
     httpClient = StubHttpClient(

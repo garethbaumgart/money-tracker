@@ -85,7 +85,7 @@ class SubscriptionGateway {
 
   Future<HttpResponse> _performGet(Uri uri) async {
     if (_httpClient != null) {
-      return _httpClient!.get(uri, headers: _buildHeaders());
+      return _httpClient.get(uri, headers: _buildHeaders());
     }
 
     // Default implementation would use dart:io HttpClient
@@ -97,7 +97,7 @@ class SubscriptionGateway {
 
   Future<HttpResponse> _performPost(Uri uri, String body) async {
     if (_httpClient != null) {
-      return _httpClient!.post(uri, body: body, headers: _buildHeaders());
+      return _httpClient.post(uri, body: body, headers: _buildHeaders());
     }
 
     throw UnimplementedError(
