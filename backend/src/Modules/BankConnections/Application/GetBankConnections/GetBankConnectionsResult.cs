@@ -49,6 +49,8 @@ public sealed record BankConnectionSummary(
     Guid HouseholdId,
     string? InstitutionName,
     string Status,
+    string? ConsentStatus,
+    DateTimeOffset? ConsentExpiresAtUtc,
     string? ErrorCode,
     string? ErrorMessage,
     DateTimeOffset CreatedAtUtc,

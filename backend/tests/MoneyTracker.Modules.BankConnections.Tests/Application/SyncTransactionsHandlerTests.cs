@@ -202,13 +202,46 @@ internal sealed class StubBankConnectionRepository : IBankConnectionRepository
         return Task.CompletedTask;
     }
 
-    public Task UpdateAsync(BankConnection connection, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task UpdateAsync(BankConnection connection, CancellationToken cancellationToken)
+    {
+        lock (_sync)
+        {
+            if (!string.IsNullOrWhiteSpace(connection.ConsentSessionId))
+            {
+                _connectionsByConsentSession[connection.ConsentSessionId] = connection;
+            }
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task<BankConnection?> GetByIdAsync(BankConnectionId id, CancellationToken cancellationToken)
+    {
+        lock (_sync)
+        {
+            var connection = _connectionsByHousehold.Values
+                .SelectMany(l => l)
+                .FirstOrDefault(c => c.Id == id);
+            return Task.FromResult(connection);
+        }
+    }
 
     public Task<BankConnection?> GetByConsentSessionIdAsync(string consentSessionId, CancellationToken cancellationToken)
     {
         lock (_sync)
         {
             _connectionsByConsentSession.TryGetValue(consentSessionId, out var connection);
+            return Task.FromResult(connection);
+        }
+    }
+
+    public Task<BankConnection?> GetByExternalConnectionIdAsync(string externalConnectionId, CancellationToken cancellationToken)
+    {
+        lock (_sync)
+        {
+            var connection = _connectionsByHousehold.Values
+                .SelectMany(l => l)
+                .FirstOrDefault(c =>
+                    string.Equals(c.ExternalConnectionId, externalConnectionId, StringComparison.Ordinal));
             return Task.FromResult(connection);
         }
     }
