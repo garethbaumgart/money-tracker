@@ -178,5 +178,3 @@ public sealed record BudgetCategorySnapshotResponse(
     decimal Allocated,
     decimal Spent,
     decimal Remaining);
-
-internal sealed record AuthenticatedUser(Guid UserId, string Email);
