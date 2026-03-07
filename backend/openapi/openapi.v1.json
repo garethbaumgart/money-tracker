@@ -1,4 +1,149 @@
 {
+  "components": {
+    "schemas": {
+      "BillReminderResponse": {
+        "properties": {
+          "amount": {
+            "format": "double",
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ]
+          },
+          "cadence": {
+            "type": "string"
+          },
+          "createdAtUtc": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "dispatchAttemptCount": {
+            "format": "int32",
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "isOverdue": {
+            "type": "boolean"
+          },
+          "lastDispatchErrorCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lastDispatchErrorMessage": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lastNotifiedAtUtc": {
+            "format": "date-time",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "nextDueDateUtc": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "amount",
+          "cadence",
+          "nextDueDateUtc",
+          "lastNotifiedAtUtc",
+          "isOverdue",
+          "dispatchAttemptCount",
+          "lastDispatchErrorCode",
+          "lastDispatchErrorMessage",
+          "createdAtUtc"
+        ],
+        "type": "object"
+      },
+      "CreateBillReminderRequest": {
+        "properties": {
+          "amount": {
+            "format": "double",
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ]
+          },
+          "cadence": {
+            "type": "string"
+          },
+          "dueDateUtc": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "amount",
+          "dueDateUtc",
+          "cadence"
+        ],
+        "type": "object"
+      },
+      "ProblemDetails": {
+        "properties": {
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "format": "int32",
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "type": "object"
+      }
+    }
+  },
   "info": {
     "title": "MoneyTracker.Api | v1",
     "version": "1.0.0"
@@ -51,6 +196,103 @@
         "summary": "Accept a household invitation.",
         "tags": [
           "CreateHouseholdEndpoint"
+        ]
+      }
+    },
+    "/households/{householdId}/bill-reminders": {
+      "get": {
+        "description": "Returns household-scoped bill reminders.",
+        "operationId": "GetBillReminders",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "householdId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "List bill reminders.",
+        "tags": [
+          "BillReminderEndpoints"
+        ]
+      },
+      "post": {
+        "description": "Creates a household-scoped bill reminder.",
+        "operationId": "CreateBillReminder",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "householdId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBillReminderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillReminderResponse"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Create a bill reminder.",
+        "tags": [
+          "BillReminderEndpoints"
         ]
       }
     },
@@ -113,6 +355,9 @@
     },
     {
       "name": "CreateHouseholdEndpoint"
+    },
+    {
+      "name": "BillReminderEndpoints"
     }
   ]
 }
