@@ -16,6 +16,7 @@
     <ProjectReference Include="..\Modules\BankConnections\MoneyTracker.Modules.BankConnections.csproj" />
     <ProjectReference Include="..\Modules\Subscriptions\MoneyTracker.Modules.Subscriptions.csproj" />
     <ProjectReference Include="..\Modules\Analytics\MoneyTracker.Modules.Analytics.csproj" />
+    <ProjectReference Include="..\Modules\Insights\MoneyTracker.Modules.Insights.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
   </ItemGroup>
 
