@@ -11,6 +11,8 @@ public sealed class Subscription
     public DateTimeOffset? CurrentPeriodEndUtc { get; private set; }
     public DateTimeOffset? CancelledAtUtc { get; private set; }
     public DateTimeOffset? BillingIssueDetectedAtUtc { get; private set; }
+    public DateTimeOffset? TrialStartedAtUtc { get; private set; }
+    public DateTimeOffset? TrialExpiresAtUtc { get; private set; }
     public DateTimeOffset? OriginalPurchaseDateUtc { get; private set; }
     public string? LastEventId { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; }
@@ -67,7 +69,9 @@ public sealed class Subscription
             nowUtc)
         {
             CurrentPeriodStartUtc = periodStartUtc,
-            CurrentPeriodEndUtc = periodEndUtc
+            CurrentPeriodEndUtc = periodEndUtc,
+            TrialStartedAtUtc = nowUtc,
+            TrialExpiresAtUtc = periodEndUtc
         };
 
         return subscription;
@@ -244,6 +248,94 @@ public sealed class Subscription
     }
 
     /// <summary>
+    /// Starts a trial period on this subscription.
+    /// Can only be called when the subscription is in None status (no existing trial or active subscription).
+    /// </summary>
+    public void StartTrial(DateTimeOffset nowUtc, int trialDays = 14)
+    {
+        if (Status is SubscriptionStatus.Trial)
+        {
+            throw new SubscriptionDomainException(
+                SubscriptionErrors.TrialAlreadyStarted,
+                "A trial has already been started for this subscription.");
+        }
+
+        if (Status is SubscriptionStatus.Active)
+        {
+            throw new SubscriptionDomainException(
+                SubscriptionErrors.SubscriptionAlreadyActive,
+                "Cannot start a trial on an already active subscription.");
+        }
+
+        if (Status is not SubscriptionStatus.None)
+        {
+            throw new SubscriptionDomainException(
+                SubscriptionErrors.InvalidStateTransition,
+                $"Cannot start trial from {Status}.");
+        }
+
+        Status = SubscriptionStatus.Trial;
+        TrialStartedAtUtc = nowUtc;
+        TrialExpiresAtUtc = nowUtc.AddDays(trialDays);
+        CurrentPeriodStartUtc = nowUtc;
+        CurrentPeriodEndUtc = nowUtc.AddDays(trialDays);
+        UpdatedAtUtc = nowUtc;
+    }
+
+    /// <summary>
+    /// Expires the trial, transitioning the subscription to None status.
+    /// Only applies when the subscription is in Trial status.
+    /// </summary>
+    public void ExpireTrial(DateTimeOffset nowUtc)
+    {
+        if (Status is not SubscriptionStatus.Trial)
+        {
+            return; // No-op for non-trial subscriptions (AC-4)
+        }
+
+        Status = SubscriptionStatus.None;
+        UpdatedAtUtc = nowUtc;
+    }
+
+    /// <summary>
+    /// Restores the subscription state from the payment provider (RevenueCat).
+    /// This is the authoritative state reconciliation method.
+    /// </summary>
+    public void RestoreFromProvider(
+        SubscriptionStatus status,
+        string productId,
+        DateTimeOffset? periodStart,
+        DateTimeOffset? periodEnd)
+    {
+        if (string.IsNullOrWhiteSpace(productId))
+        {
+            throw new SubscriptionDomainException(
+                SubscriptionErrors.ValidationError,
+                "Product ID is required for restore.");
+        }
+
+        Status = status;
+        ProductId = productId;
+        CurrentPeriodStartUtc = periodStart;
+        CurrentPeriodEndUtc = periodEnd;
+        UpdatedAtUtc = DateTimeOffset.UtcNow;
+
+        // Clear trial fields if transitioning away from trial
+        if (status is not SubscriptionStatus.Trial)
+        {
+            TrialStartedAtUtc = null;
+            TrialExpiresAtUtc = null;
+        }
+
+        // Clear cancellation/billing issue fields when restoring to active
+        if (status is SubscriptionStatus.Active)
+        {
+            CancelledAtUtc = null;
+            BillingIssueDetectedAtUtc = null;
+        }
+    }
+
+    /// <summary>
     /// Checks if the given event has already been processed (idempotency).
     /// </summary>
     public bool HasProcessedEvent(string eventId)
@@ -257,7 +349,9 @@ public sealed class Subscription
         var allowed = (Status, target) switch
         {
             (SubscriptionStatus.None, SubscriptionStatus.Active) => true,
+            (SubscriptionStatus.None, SubscriptionStatus.Trial) => true,
             (SubscriptionStatus.Trial, SubscriptionStatus.Active) => true,
+            (SubscriptionStatus.Trial, SubscriptionStatus.None) => true,
             (SubscriptionStatus.Active, SubscriptionStatus.Cancelled) => true,
             (SubscriptionStatus.Active, SubscriptionStatus.Expired) => true,
             (SubscriptionStatus.Active, SubscriptionStatus.BillingIssue) => true,

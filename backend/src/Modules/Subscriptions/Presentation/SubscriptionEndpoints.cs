@@ -5,9 +5,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using MoneyTracker.Modules.Subscriptions.Application.CheckFeatureAccess;
+using MoneyTracker.Modules.Subscriptions.Application.ExpireTrial;
 using MoneyTracker.Modules.Subscriptions.Application.GetEntitlements;
 using MoneyTracker.Modules.Subscriptions.Application.GetSubscription;
 using MoneyTracker.Modules.Subscriptions.Application.ProcessWebhook;
+using MoneyTracker.Modules.Subscriptions.Application.RestorePurchases;
+using MoneyTracker.Modules.Subscriptions.Application.StartTrial;
 using MoneyTracker.Modules.Subscriptions.Domain;
 using MoneyTracker.Modules.SharedKernel.Households;
 using MoneyTracker.Modules.SharedKernel.Presentation;
@@ -32,6 +35,16 @@ public static class SubscriptionEndpoints
         services.AddScoped<GetEntitlementsHandler>();
         services.AddScoped<CheckFeatureAccessHandler>();
 
+        // P4-3: Trial handling, restore purchases
+        services.AddSingleton<Infrastructure.InMemoryRevenueCatClient>();
+        services.AddSingleton<Infrastructure.RevenueCatClient>();
+        services.AddSingleton<IRevenueCatClient>(sp =>
+            sp.GetRequiredService<Infrastructure.RevenueCatClient>());
+        services.AddScoped<StartTrialHandler>();
+        services.AddScoped<RestorePurchasesHandler>();
+        services.AddScoped<ExpireTrialHandler>();
+        services.AddHostedService<Infrastructure.TrialExpiryWorker>();
+
         return services;
     }
 
@@ -52,6 +65,17 @@ public static class SubscriptionEndpoints
             .WithSummary("Get entitlements for a household.")
             .WithDescription("Returns the subscription tier and enabled feature keys for the specified household.")
             .Produces<EntitlementsResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        var restoreEndpoint = (RouteHandlerBuilder)app.MapPost("/subscriptions/restore", RestorePurchases);
+        restoreEndpoint
+            .WithName("RestorePurchases")
+            .WithSummary("Restore purchases from payment provider.")
+            .WithDescription("Calls RevenueCat REST API to reconcile subscription state and returns current entitlements.")
+            .Produces<RestorePurchasesResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -206,6 +230,63 @@ public static class SubscriptionEndpoints
         await TypedResults.Ok(response).ExecuteAsync(httpContext);
     }
 
+    private static async Task RestorePurchases(HttpContext httpContext)
+    {
+        // AC-7: Authenticate
+        var authResult = await EndpointHelpers.ResolveAuthenticatedUser(httpContext);
+        if (!authResult.Success)
+        {
+            await authResult.Problem!.ExecuteAsync(httpContext);
+            return;
+        }
+
+        // Parse request body
+        var (isValid, request, error) = await EndpointHelpers.ReadJsonRequestAsync<RestorePurchasesRequest>(
+            httpContext,
+            SubscriptionErrors.ValidationError);
+
+        if (!isValid)
+        {
+            await error!.ExecuteAsync(httpContext);
+            return;
+        }
+
+        var handler = httpContext.RequestServices.GetRequiredService<RestorePurchasesHandler>();
+        var result = await handler.HandleAsync(
+            new RestorePurchasesCommand(
+                request!.HouseholdId,
+                authResult.AuthenticatedUser!.UserId,
+                request.RevenueCatAppUserId),
+            httpContext.RequestAborted);
+
+        if (!result.IsSuccess)
+        {
+            var statusCode = result.ErrorCode switch
+            {
+                SubscriptionErrors.HouseholdNotFound => StatusCodes.Status404NotFound,
+                SubscriptionErrors.AccessDenied => StatusCodes.Status403Forbidden,
+                SubscriptionErrors.ProviderError => StatusCodes.Status502BadGateway,
+                _ => StatusCodes.Status400BadRequest
+            };
+
+            await EndpointHelpers.WriteProblemAsync(
+                httpContext,
+                statusCode,
+                statusCode == StatusCodes.Status403Forbidden ? "Access denied." : "Restore failed.",
+                result.ErrorMessage ?? "Request rejected.",
+                result.ErrorCode,
+                SubscriptionErrors.ValidationError);
+            return;
+        }
+
+        var response = new RestorePurchasesResponse(
+            result.Status!,
+            result.Tier!,
+            result.FeatureKeys!,
+            result.CurrentPeriodEndUtc);
+        await TypedResults.Ok(response).ExecuteAsync(httpContext);
+    }
+
     private static bool TryGetGuidQuery(HttpContext httpContext, string key, out Guid value)
     {
         value = Guid.Empty;
@@ -251,4 +332,14 @@ public sealed record EntitlementsResponse(
     string Tier,
     string[] FeatureKeys,
     DateTimeOffset? TrialExpiresAtUtc,
+    DateTimeOffset? CurrentPeriodEndUtc);
+
+public sealed record RestorePurchasesRequest(
+    Guid HouseholdId,
+    string RevenueCatAppUserId);
+
+public sealed record RestorePurchasesResponse(
+    string Status,
+    string Tier,
+    string[] FeatureKeys,
     DateTimeOffset? CurrentPeriodEndUtc);

@@ -84,4 +84,22 @@ public sealed class InMemorySubscriptionRepository : ISubscriptionRepository
             return Task.FromResult(subscription);
         }
     }
+
+    public Task<IReadOnlyList<Subscription>> GetExpiredTrialsAsync(DateTimeOffset asOfUtc, CancellationToken cancellationToken)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return Task.FromCanceled<IReadOnlyList<Subscription>>(cancellationToken);
+        }
+
+        lock (_sync)
+        {
+            var expired = _subscriptionsByHousehold.Values
+                .Where(s => s.Status == SubscriptionStatus.Trial
+                            && s.TrialExpiresAtUtc.HasValue
+                            && s.TrialExpiresAtUtc.Value <= asOfUtc)
+                .ToList();
+            return Task.FromResult<IReadOnlyList<Subscription>>(expired);
+        }
+    }
 }

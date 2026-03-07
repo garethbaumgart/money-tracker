@@ -15,6 +15,12 @@ class StubHttpClient implements HttpClientAdapter {
   Future<HttpResponse> get(Uri uri, {Map<String, String>? headers}) async {
     return HttpResponse(statusCode: 200, body: responseBody);
   }
+
+  @override
+  Future<HttpResponse> post(Uri uri,
+      {String? body, Map<String, String>? headers}) async {
+    return HttpResponse(statusCode: 200, body: responseBody);
+  }
 }
 
 void main() {

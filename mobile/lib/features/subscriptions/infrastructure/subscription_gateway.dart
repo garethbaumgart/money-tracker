@@ -15,6 +15,39 @@ class SubscriptionGateway {
   final String Function() _tokenProvider;
   final HttpClientAdapter? _httpClient;
 
+  Future<RestoreResponse> restorePurchases({
+    required String householdId,
+    required String revenueCatAppUserId,
+  }) async {
+    final uri = _apiBaseUrl.replace(path: '/subscriptions/restore');
+
+    final body = jsonEncode({
+      'householdId': householdId,
+      'revenueCatAppUserId': revenueCatAppUserId,
+    });
+
+    final response = await _performPost(uri, body);
+
+    if (response.statusCode != 200) {
+      throw SubscriptionGatewayException(
+        'Failed to restore purchases: ${response.statusCode}',
+      );
+    }
+
+    final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
+
+    return RestoreResponse(
+      status: responseBody['status'] as String,
+      tier: responseBody['tier'] as String,
+      featureKeys: (responseBody['featureKeys'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+      currentPeriodEndUtc: responseBody['currentPeriodEndUtc'] != null
+          ? DateTime.parse(responseBody['currentPeriodEndUtc'] as String)
+          : null,
+    );
+  }
+
   Future<EntitlementSet> getEntitlements(String householdId) async {
     final uri = _apiBaseUrl.replace(
       path: '/subscriptions/entitlements',
@@ -62,6 +95,16 @@ class SubscriptionGateway {
     );
   }
 
+  Future<HttpResponse> _performPost(Uri uri, String body) async {
+    if (_httpClient != null) {
+      return _httpClient!.post(uri, body: body, headers: _buildHeaders());
+    }
+
+    throw UnimplementedError(
+      'HTTP client not configured. Provide an HttpClientAdapter.',
+    );
+  }
+
   Map<String, String> _buildHeaders() {
     return {
       'Authorization': 'Bearer ${_tokenProvider()}',
@@ -86,6 +129,21 @@ class HttpResponse {
   final String body;
 }
 
+class RestoreResponse {
+  const RestoreResponse({
+    required this.status,
+    required this.tier,
+    required this.featureKeys,
+    this.currentPeriodEndUtc,
+  });
+
+  final String status;
+  final String tier;
+  final List<String> featureKeys;
+  final DateTime? currentPeriodEndUtc;
+}
+
 abstract class HttpClientAdapter {
   Future<HttpResponse> get(Uri uri, {Map<String, String>? headers});
+  Future<HttpResponse> post(Uri uri, {String? body, Map<String, String>? headers});
 }
