@@ -11,6 +11,7 @@ using MoneyTracker.Modules.BankConnections.Presentation;
 using MoneyTracker.Modules.Subscriptions.Presentation;
 using MoneyTracker.Modules.Analytics.Presentation;
 using MoneyTracker.Modules.Insights.Presentation;
+using MoneyTracker.Modules.Experiments.Presentation;
 using MoneyTracker.Api.Observability;
 using MoneyTracker.Api.Security;
 
@@ -31,6 +32,7 @@ builder.Services.AddBankConnectionsModule();
 builder.Services.AddSubscriptionsModule();
 builder.Services.AddAnalyticsModule();
 builder.Services.AddInsightsModule();
+builder.Services.AddExperimentsModule();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
@@ -60,6 +62,7 @@ app.MapBankConnectionEndpoints();
 app.MapSubscriptionEndpoints();
 app.MapAnalyticsEndpoints();
 app.MapInsightsEndpoints();
+app.MapExperimentEndpoints();
 
 if (app.Environment.IsEnvironment("Testing"))
 {

@@ -12,6 +12,7 @@
     <Project Path="src/Modules/Subscriptions/MoneyTracker.Modules.Subscriptions.csproj" />
     <Project Path="src/Modules/Analytics/MoneyTracker.Modules.Analytics.csproj" />
     <Project Path="src/Modules/Insights/MoneyTracker.Modules.Insights.csproj" />
+    <Project Path="src/Modules/Experiments/MoneyTracker.Modules.Experiments.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/MoneyTracker.Api.Tests/MoneyTracker.Api.Tests.csproj" />
@@ -24,5 +25,6 @@
     <Project Path="tests/MoneyTracker.Modules.Analytics.Tests/MoneyTracker.Modules.Analytics.Tests.csproj" />
     <Project Path="tests/MoneyTracker.Modules.Insights.Tests/MoneyTracker.Modules.Insights.Tests.csproj" />
     <Project Path="tests/MoneyTracker.Modules.Auth.Tests/MoneyTracker.Modules.Auth.Tests.csproj" />
+    <Project Path="tests/MoneyTracker.Modules.Experiments.Tests/MoneyTracker.Modules.Experiments.Tests.csproj" />
   </Folder>
 </Solution>
