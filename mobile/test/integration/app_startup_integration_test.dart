@@ -22,7 +22,7 @@ void main() {
     await tester.pumpWidget(const MoneyTrackerApp(themeMode: ThemeMode.system));
     await tester.pumpAndSettle();
 
-    expect(find.text('Forecast confidence'), findsOneWidget);
+    expect(find.text('Shared dashboard'), findsOneWidget);
     expect(find.byType(NavigationBar), findsOneWidget);
 
     await tester.tap(find.text('Activity'));
@@ -36,7 +36,7 @@ void main() {
 
     await tester.tap(find.text('Home'));
     await tester.pumpAndSettle();
-    expect(find.text('Priority checklist'), findsOneWidget);
+    expect(find.text('Shared dashboard'), findsOneWidget);
   });
 
   test('fails fast when startup config is invalid', () {

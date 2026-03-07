@@ -22,7 +22,7 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.text('Forecast confidence'), findsOneWidget);
+    expect(find.text('Shared dashboard'), findsOneWidget);
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.byType(NavigationRail), findsNothing);
   });

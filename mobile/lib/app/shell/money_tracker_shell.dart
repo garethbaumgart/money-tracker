@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:money_tracker/features/dashboard/dashboard_controller.dart';
+import 'package:money_tracker/features/dashboard/dashboard_screen.dart';
 import 'package:money_tracker/features/reminders/reminders_controller.dart';
 import 'package:money_tracker/features/reminders/reminders_screen.dart';
 
@@ -32,16 +34,23 @@ class _MoneyTrackerShellState extends State<MoneyTrackerShell> {
   ];
 
   var _selectedIndex = 0;
+  late final DashboardController _dashboardController;
   late final RemindersController _remindersController;
 
   @override
   void initState() {
     super.initState();
+    _dashboardController = DashboardController();
+    assert(() {
+      _dashboardController.seedSample();
+      return true;
+    }());
     _remindersController = RemindersController()..seedSample();
   }
 
   @override
   void dispose() {
+    _dashboardController.dispose();
     _remindersController.dispose();
     super.dispose();
   }
@@ -107,11 +116,15 @@ class _MoneyTrackerShellState extends State<MoneyTrackerShell> {
                     Expanded(
                       child: _ShellBody(
                         destination: _destinations[_selectedIndex],
+                        dashboardController: _dashboardController,
                       ),
                     ),
                   ],
                 )
-              : _ShellBody(destination: _destinations[_selectedIndex]),
+              : _ShellBody(
+                  destination: _destinations[_selectedIndex],
+                  dashboardController: _dashboardController,
+                ),
           bottomNavigationBar: isExpandedShell
               ? null
               : NavigationBar(
@@ -134,14 +147,18 @@ class _MoneyTrackerShellState extends State<MoneyTrackerShell> {
 }
 
 class _ShellBody extends StatelessWidget {
-  const _ShellBody({required this.destination});
+  const _ShellBody({
+    required this.destination,
+    required this.dashboardController,
+  });
 
   final _ShellDestination destination;
+  final DashboardController dashboardController;
 
   @override
   Widget build(BuildContext context) {
     if (destination == _ShellDestination.home) {
-      return const _HomeDashboard();
+      return DashboardScreen(controller: dashboardController);
     }
     if (destination == _ShellDestination.settings) {
       return const _SettingsView();
@@ -249,6 +266,7 @@ class _SettingsView extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _HomeDashboard extends StatelessWidget {
   const _HomeDashboard();
 
