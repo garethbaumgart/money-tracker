@@ -22,7 +22,7 @@ public sealed class NonFunctionalTests
         var connection = CreateActiveConnection(householdId);
         await connectionRepo.AddAsync(connection, CancellationToken.None);
 
-        var transactionRepo = new StubTransactionRepository();
+        var transactionRepo = new StubTransactionSyncRepository();
         var providerAdapter = new SyncFailingBankProviderAdapter();
 
         var handler = new SyncTransactionsHandler(

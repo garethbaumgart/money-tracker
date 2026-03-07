@@ -1,13 +1,13 @@
 using Microsoft.Extensions.Logging;
 using MoneyTracker.Modules.BankConnections.Domain;
-using MoneyTracker.Modules.Transactions.Domain;
+using MoneyTracker.Modules.SharedKernel.Transactions;
 
 namespace MoneyTracker.Modules.BankConnections.Application.SyncTransactions;
 
 public sealed class SyncTransactionsHandler(
     IBankConnectionRepository connectionRepository,
     IBankProviderAdapter providerAdapter,
-    ITransactionRepository transactionRepository,
+    ITransactionSyncRepository transactionSyncRepository,
     TimeProvider timeProvider,
     ILogger<SyncTransactionsHandler> logger)
 {
@@ -90,11 +90,11 @@ public sealed class SyncTransactionsHandler(
 
         var synced = 0;
         var skipped = 0;
-        var newTransactions = new List<Transaction>();
+        var newTransactions = new List<SyncedTransaction>();
 
         foreach (var providerTxn in providerResult.Transactions)
         {
-            var exists = await transactionRepository.ExistsByExternalIdAsync(
+            var exists = await transactionSyncRepository.ExistsByExternalIdAsync(
                 connection.Id.Value,
                 providerTxn.ExternalTransactionId,
                 cancellationToken);
@@ -106,7 +106,7 @@ public sealed class SyncTransactionsHandler(
             }
 
             var nowUtc = timeProvider.GetUtcNow();
-            var transaction = Transactions.Domain.Transaction.CreateSynced(
+            var transaction = new SyncedTransaction(
                 connection.HouseholdId,
                 connection.Id.Value,
                 providerTxn.ExternalTransactionId,
@@ -121,7 +121,7 @@ public sealed class SyncTransactionsHandler(
 
         if (newTransactions.Count > 0)
         {
-            await transactionRepository.AddRangeAsync(newTransactions, cancellationToken);
+            await transactionSyncRepository.AddSyncedTransactionsAsync(newTransactions, cancellationToken);
         }
 
         return (synced, skipped);

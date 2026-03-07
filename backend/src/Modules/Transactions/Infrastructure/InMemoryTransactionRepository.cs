@@ -1,8 +1,9 @@
+using MoneyTracker.Modules.SharedKernel.Transactions;
 using MoneyTracker.Modules.Transactions.Domain;
 
 namespace MoneyTracker.Modules.Transactions.Infrastructure;
 
-public sealed class InMemoryTransactionRepository : ITransactionRepository
+public sealed class InMemoryTransactionRepository : ITransactionRepository, ITransactionSyncRepository
 {
     private readonly object _sync = new();
     private readonly Dictionary<Guid, List<Transaction>> _transactionsByHousehold = new();
@@ -113,5 +114,49 @@ public sealed class InMemoryTransactionRepository : ITransactionRepository
 
             return Task.FromResult(false);
         }
+    }
+
+    public Task AddSyncedTransactionAsync(
+        SyncedTransaction syncedTransaction,
+        CancellationToken cancellationToken)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return Task.FromCanceled(cancellationToken);
+        }
+
+        var transaction = Transaction.CreateSynced(
+            syncedTransaction.HouseholdId,
+            syncedTransaction.BankConnectionId,
+            syncedTransaction.ExternalTransactionId,
+            syncedTransaction.Amount,
+            syncedTransaction.OccurredAtUtc,
+            syncedTransaction.Description,
+            syncedTransaction.CreatedAtUtc);
+
+        return AddAsync(transaction, cancellationToken);
+    }
+
+    public Task AddSyncedTransactionsAsync(
+        IReadOnlyCollection<SyncedTransaction> syncedTransactions,
+        CancellationToken cancellationToken)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return Task.FromCanceled(cancellationToken);
+        }
+
+        var transactions = syncedTransactions
+            .Select(st => Transaction.CreateSynced(
+                st.HouseholdId,
+                st.BankConnectionId,
+                st.ExternalTransactionId,
+                st.Amount,
+                st.OccurredAtUtc,
+                st.Description,
+                st.CreatedAtUtc))
+            .ToArray();
+
+        return AddRangeAsync(transactions, cancellationToken);
     }
 }

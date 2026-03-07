@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using MoneyTracker.Modules.BankConnections.Application.SyncTransactions;
 using MoneyTracker.Modules.BankConnections.Domain;
+using MoneyTracker.Modules.SharedKernel.Transactions;
 using MoneyTracker.Modules.Transactions.Domain;
 
 namespace MoneyTracker.Modules.BankConnections.Tests.Application;
@@ -21,12 +22,13 @@ public sealed class SyncTransactionsHandlerTests
         var connection = CreateActiveConnection(householdId);
         await connectionRepo.AddAsync(connection, CancellationToken.None);
 
-        var transactionRepo = new StubTransactionRepository();
-        // Pre-populate with an existing transaction matching the external ID
-        var existingTxn = Transaction.CreateSynced(
-            householdId, connection.Id.Value, externalTxnId, 50m,
-            NowUtc.AddHours(-1), "Existing", NowUtc);
-        await transactionRepo.AddAsync(existingTxn, CancellationToken.None);
+        var transactionRepo = new StubTransactionSyncRepository();
+        // Pre-populate with an existing synced transaction matching the external ID
+        await transactionRepo.AddSyncedTransactionAsync(
+            new SyncedTransaction(
+                householdId, connection.Id.Value, externalTxnId, 50m,
+                NowUtc.AddHours(-1), "Existing", NowUtc),
+            CancellationToken.None);
 
         var providerAdapter = new SyncStubBankProviderAdapter(
         [
@@ -57,7 +59,7 @@ public sealed class SyncTransactionsHandlerTests
         var connection = CreateActiveConnection(householdId);
         await connectionRepo.AddAsync(connection, CancellationToken.None);
 
-        var transactionRepo = new StubTransactionRepository();
+        var transactionRepo = new StubTransactionSyncRepository();
 
         var providerAdapter = new SyncStubBankProviderAdapter(
         [
@@ -77,9 +79,7 @@ public sealed class SyncTransactionsHandlerTests
         Assert.Equal(0, result.SkippedCount);
 
         // Verify transaction was persisted
-        var transactions = await transactionRepo.GetByHouseholdAsync(
-            householdId, null, null, CancellationToken.None);
-        Assert.Single(transactions);
+        Assert.Equal(1, transactionRepo.GetSyncedCount(householdId));
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public sealed class SyncTransactionsHandlerTests
         var connection = CreateActiveConnection(householdId);
         await connectionRepo.AddAsync(connection, CancellationToken.None);
 
-        var transactionRepo = new StubTransactionRepository();
+        var transactionRepo = new StubTransactionSyncRepository();
         var providerAdapter = new SyncStubBankProviderAdapter([]);
 
         var handler = new SyncTransactionsHandler(
@@ -120,7 +120,7 @@ public sealed class SyncTransactionsHandlerTests
         var connection = CreateActiveConnection(householdId);
         await connectionRepo.AddAsync(connection, CancellationToken.None);
 
-        var transactionRepo = new StubTransactionRepository();
+        var transactionRepo = new StubTransactionSyncRepository();
         // Provider returns failure
         var providerAdapter = new SyncFailingBankProviderAdapter();
 
@@ -234,54 +234,10 @@ internal sealed class StubBankConnectionRepository : IBankConnectionRepository
     }
 }
 
-internal sealed class StubTransactionRepository : ITransactionRepository
+internal sealed class StubTransactionSyncRepository : ITransactionSyncRepository
 {
     private readonly object _sync = new();
-    private readonly Dictionary<Guid, List<Transaction>> _transactionsByHousehold = new();
-
-    public Task AddAsync(Transaction transaction, CancellationToken cancellationToken)
-    {
-        lock (_sync)
-        {
-            if (!_transactionsByHousehold.TryGetValue(transaction.HouseholdId, out var list))
-            {
-                list = [];
-                _transactionsByHousehold[transaction.HouseholdId] = list;
-            }
-            list.Add(transaction);
-        }
-        return Task.CompletedTask;
-    }
-
-    public Task AddRangeAsync(IReadOnlyCollection<Transaction> transactions, CancellationToken cancellationToken)
-    {
-        lock (_sync)
-        {
-            foreach (var transaction in transactions)
-            {
-                if (!_transactionsByHousehold.TryGetValue(transaction.HouseholdId, out var list))
-                {
-                    list = [];
-                    _transactionsByHousehold[transaction.HouseholdId] = list;
-                }
-                list.Add(transaction);
-            }
-        }
-        return Task.CompletedTask;
-    }
-
-    public Task<IReadOnlyCollection<Transaction>> GetByHouseholdAsync(
-        Guid householdId, DateTimeOffset? fromUtc, DateTimeOffset? toUtc, CancellationToken cancellationToken)
-    {
-        lock (_sync)
-        {
-            if (!_transactionsByHousehold.TryGetValue(householdId, out var list))
-            {
-                return Task.FromResult<IReadOnlyCollection<Transaction>>(Array.Empty<Transaction>());
-            }
-            return Task.FromResult<IReadOnlyCollection<Transaction>>(list.ToArray());
-        }
-    }
+    private readonly Dictionary<Guid, List<SyncedTransaction>> _transactionsByHousehold = new();
 
     public Task<bool> ExistsByExternalIdAsync(Guid bankConnectionId, string externalTransactionId, CancellationToken cancellationToken)
     {
@@ -299,6 +255,49 @@ internal sealed class StubTransactionRepository : ITransactionRepository
                 }
             }
             return Task.FromResult(false);
+        }
+    }
+
+    public Task AddSyncedTransactionAsync(SyncedTransaction transaction, CancellationToken cancellationToken)
+    {
+        lock (_sync)
+        {
+            if (!_transactionsByHousehold.TryGetValue(transaction.HouseholdId, out var list))
+            {
+                list = [];
+                _transactionsByHousehold[transaction.HouseholdId] = list;
+            }
+            list.Add(transaction);
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task AddSyncedTransactionsAsync(IReadOnlyCollection<SyncedTransaction> transactions, CancellationToken cancellationToken)
+    {
+        lock (_sync)
+        {
+            foreach (var transaction in transactions)
+            {
+                if (!_transactionsByHousehold.TryGetValue(transaction.HouseholdId, out var list))
+                {
+                    list = [];
+                    _transactionsByHousehold[transaction.HouseholdId] = list;
+                }
+                list.Add(transaction);
+            }
+        }
+        return Task.CompletedTask;
+    }
+
+    public int GetSyncedCount(Guid householdId)
+    {
+        lock (_sync)
+        {
+            if (!_transactionsByHousehold.TryGetValue(householdId, out var list))
+            {
+                return 0;
+            }
+            return list.Count;
         }
     }
 }

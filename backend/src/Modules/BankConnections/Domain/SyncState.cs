@@ -11,14 +11,14 @@ public sealed class SyncState
     {
     }
 
-    public void RecordSuccess(DateTimeOffset utcNow)
+    internal void RecordSuccess(DateTimeOffset utcNow)
     {
         LastSuccessUtc = utcNow;
         LastSyncCursorUtc = utcNow;
         ConsecutiveFailures = 0;
     }
 
-    public void RecordFailure(DateTimeOffset utcNow)
+    internal void RecordFailure(DateTimeOffset utcNow)
     {
         LastFailureUtc = utcNow;
         ConsecutiveFailures += 1;

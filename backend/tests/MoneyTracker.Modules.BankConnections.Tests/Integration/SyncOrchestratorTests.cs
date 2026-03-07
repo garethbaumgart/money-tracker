@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MoneyTracker.Modules.BankConnections.Application.SyncTransactions;
 using MoneyTracker.Modules.BankConnections.Domain;
 using MoneyTracker.Modules.BankConnections.Tests.Application;
-using MoneyTracker.Modules.Transactions.Domain;
+using MoneyTracker.Modules.SharedKernel.Transactions;
 
 namespace MoneyTracker.Modules.BankConnections.Tests.Integration;
 
@@ -21,16 +21,17 @@ public sealed class SyncOrchestratorTests
         var connection = CreateActiveConnection(householdId);
         await connectionRepo.AddAsync(connection, CancellationToken.None);
 
-        var transactionRepo = new StubTransactionRepository();
+        var transactionRepo = new StubTransactionSyncRepository();
 
         // Pre-populate 3 existing transactions
         var existingIds = new[] { "txn-001", "txn-002", "txn-003" };
         foreach (var existingId in existingIds)
         {
-            var existingTxn = Transaction.CreateSynced(
-                householdId, connection.Id.Value, existingId, 10m,
-                NowUtc.AddHours(-2), "Existing", NowUtc);
-            await transactionRepo.AddAsync(existingTxn, CancellationToken.None);
+            await transactionRepo.AddSyncedTransactionAsync(
+                new SyncedTransaction(
+                    householdId, connection.Id.Value, existingId, 10m,
+                    NowUtc.AddHours(-2), "Existing", NowUtc),
+                CancellationToken.None);
         }
 
         // Provider returns 10 transactions (3 overlap, 7 new)
@@ -57,9 +58,7 @@ public sealed class SyncOrchestratorTests
         Assert.Equal(0, result.FailedConnections);
 
         // Verify total transactions: 3 existing + 7 new = 10
-        var allTransactions = await transactionRepo.GetByHouseholdAsync(
-            householdId, null, null, CancellationToken.None);
-        Assert.Equal(10, allTransactions.Count);
+        Assert.Equal(10, transactionRepo.GetSyncedCount(householdId));
     }
 
     [Fact]
@@ -73,7 +72,7 @@ public sealed class SyncOrchestratorTests
         var connection = CreateActiveConnection(householdId);
         await connectionRepo.AddAsync(connection, CancellationToken.None);
 
-        var transactionRepo = new StubTransactionRepository();
+        var transactionRepo = new StubTransactionSyncRepository();
 
         // Provider that fails once, then succeeds
         var providerAdapter = new RetryingBankProviderAdapter(
@@ -88,12 +87,27 @@ public sealed class SyncOrchestratorTests
             new StubTimeProvider(NowUtc),
             NullLogger<SyncTransactionsHandler>.Instance);
 
-        var result = await handler.HandleAsync(
+        // First call — provider returns failure, handler records sync failure on connection
+        var result1 = await handler.HandleAsync(
             new SyncTransactionsCommand(householdId), CancellationToken.None);
 
-        Assert.True(result.IsSuccess);
-        Assert.Equal(1, result.SyncedCount);
-        Assert.Equal(0, result.FailedConnections);
+        Assert.True(result1.IsSuccess); // Handler-level success (per-connection failures are not handler errors)
+        Assert.Equal(0, result1.SyncedCount);
+        Assert.Equal(1, result1.FailedConnections);
+        Assert.Equal(1, connection.SyncState.ConsecutiveFailures);
+        Assert.NotNull(connection.SyncState.LastFailureUtc);
+
+        // Second call — provider succeeds, handler syncs transaction
+        var result2 = await handler.HandleAsync(
+            new SyncTransactionsCommand(householdId), CancellationToken.None);
+
+        Assert.True(result2.IsSuccess);
+        Assert.Equal(1, result2.SyncedCount);
+        Assert.Equal(0, result2.FailedConnections);
+        Assert.Equal(0, connection.SyncState.ConsecutiveFailures);
+
+        // Total synced count reflects only the successful call
+        Assert.Equal(1, transactionRepo.GetSyncedCount(householdId));
     }
 
     [Fact]
@@ -107,7 +121,7 @@ public sealed class SyncOrchestratorTests
         var connection = CreateActiveConnection(householdId);
         await connectionRepo.AddAsync(connection, CancellationToken.None);
 
-        var transactionRepo = new StubTransactionRepository();
+        var transactionRepo = new StubTransactionSyncRepository();
 
         var providerAdapter = new SyncStubBankProviderAdapter(
         [
@@ -139,9 +153,7 @@ public sealed class SyncOrchestratorTests
         Assert.Equal(2, result3.SkippedCount);
 
         // Verify only 2 transactions total
-        var allTransactions = await transactionRepo.GetByHouseholdAsync(
-            householdId, null, null, CancellationToken.None);
-        Assert.Equal(2, allTransactions.Count);
+        Assert.Equal(2, transactionRepo.GetSyncedCount(householdId));
     }
 
     private static BankConnection CreateActiveConnection(Guid householdId)
@@ -182,9 +194,8 @@ internal sealed class RetryingBankProviderAdapter : IBankProviderAdapter
         _callCount++;
         if (_callCount <= _failCount)
         {
-            // Simulate transient failure that would be retried at the provider level
-            // In real scenario, BasiqBankProviderAdapter retries internally
-            // Here we simulate the final result after internal retry succeeds
+            return Task.FromResult(new GetTransactionsResult(
+                false, null, BankConnectionErrors.SyncProviderError, "Simulated 503 transient failure."));
         }
         return Task.FromResult(new GetTransactionsResult(true, _successTransactions, null, null));
     }
