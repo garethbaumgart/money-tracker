@@ -33,6 +33,10 @@ class InsightsDashboardScreen extends StatelessWidget {
         }
 
         if (state.isPremiumRequired) {
+          // TODO(#105): Replace SnackBar placeholder with PaywallScreen
+          // navigation once dependency injection for OfferingsProvider and
+          // PurchaseController is available at this level. See issue AC-1
+          // through AC-5 for full acceptance criteria.
           return InsightsPaywallGate(
             onUpgrade: () {
               ScaffoldMessenger.of(context).showSnackBar(
