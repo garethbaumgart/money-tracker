@@ -6,6 +6,7 @@ using MoneyTracker.Modules.BankConnections.Application.CreateLinkSession;
 using MoneyTracker.Modules.BankConnections.Application.ProcessCallback;
 using MoneyTracker.Modules.BankConnections.Domain;
 using MoneyTracker.Modules.BankConnections.Infrastructure;
+using MoneyTracker.Modules.BankConnections.Tests.Application;
 
 namespace MoneyTracker.Modules.BankConnections.Tests.Integration;
 
@@ -101,7 +102,9 @@ public sealed class BasiqBankProviderAdapterTests
             repository,
             stubAdapter,
             new AllowedHouseholdAccessService(),
-            timeProvider);
+            new StubLinkEventRepository(),
+            timeProvider,
+            NullLogger<CreateLinkSessionHandler>.Instance);
 
         var householdId = Guid.NewGuid();
         var userId = Guid.NewGuid();

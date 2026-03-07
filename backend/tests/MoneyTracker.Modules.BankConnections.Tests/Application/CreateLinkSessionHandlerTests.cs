@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using MoneyTracker.Modules.BankConnections.Application.CreateLinkSession;
 using MoneyTracker.Modules.BankConnections.Domain;
 using MoneyTracker.Modules.BankConnections.Infrastructure;
@@ -16,7 +17,9 @@ public sealed class CreateLinkSessionHandlerTests
             new InMemoryBankConnectionRepository(),
             new StubBankProviderAdapter(),
             new NotFoundHouseholdAccessService(),
-            new FakeTimeProvider(DateTimeOffset.Parse("2026-03-01T00:00:00Z")));
+            new StubLinkEventRepository(),
+            new FakeTimeProvider(DateTimeOffset.Parse("2026-03-01T00:00:00Z")),
+            NullLogger<CreateLinkSessionHandler>.Instance);
 
         var result = await handler.HandleAsync(
             new CreateLinkSessionCommand(Guid.NewGuid(), Guid.NewGuid()),
@@ -34,7 +37,9 @@ public sealed class CreateLinkSessionHandlerTests
             new InMemoryBankConnectionRepository(),
             new StubBankProviderAdapter(),
             new DeniedHouseholdAccessService(),
-            new FakeTimeProvider(DateTimeOffset.Parse("2026-03-01T00:00:00Z")));
+            new StubLinkEventRepository(),
+            new FakeTimeProvider(DateTimeOffset.Parse("2026-03-01T00:00:00Z")),
+            NullLogger<CreateLinkSessionHandler>.Instance);
 
         var result = await handler.HandleAsync(
             new CreateLinkSessionCommand(Guid.NewGuid(), Guid.NewGuid()),
@@ -52,7 +57,9 @@ public sealed class CreateLinkSessionHandlerTests
             new InMemoryBankConnectionRepository(),
             new StubBankProviderAdapter(),
             new AllowedHouseholdAccessService(),
-            new FakeTimeProvider(DateTimeOffset.Parse("2026-03-01T00:00:00Z")));
+            new StubLinkEventRepository(),
+            new FakeTimeProvider(DateTimeOffset.Parse("2026-03-01T00:00:00Z")),
+            NullLogger<CreateLinkSessionHandler>.Instance);
 
         var result = await handler.HandleAsync(
             new CreateLinkSessionCommand(Guid.NewGuid(), Guid.NewGuid()),
@@ -72,7 +79,9 @@ public sealed class CreateLinkSessionHandlerTests
             new InMemoryBankConnectionRepository(),
             new FailingBankProviderAdapter(),
             new AllowedHouseholdAccessService(),
-            new FakeTimeProvider(DateTimeOffset.Parse("2026-03-01T00:00:00Z")));
+            new StubLinkEventRepository(),
+            new FakeTimeProvider(DateTimeOffset.Parse("2026-03-01T00:00:00Z")),
+            NullLogger<CreateLinkSessionHandler>.Instance);
 
         var result = await handler.HandleAsync(
             new CreateLinkSessionCommand(Guid.NewGuid(), Guid.NewGuid()),
