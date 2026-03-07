@@ -21,6 +21,13 @@ class StubHttpClient implements HttpClientAdapter {
     callCount++;
     return HttpResponse(statusCode: statusCode, body: responseBody);
   }
+
+  @override
+  Future<HttpResponse> post(Uri uri,
+      {String? body, Map<String, String>? headers}) async {
+    callCount++;
+    return HttpResponse(statusCode: statusCode, body: responseBody);
+  }
 }
 
 void main() {

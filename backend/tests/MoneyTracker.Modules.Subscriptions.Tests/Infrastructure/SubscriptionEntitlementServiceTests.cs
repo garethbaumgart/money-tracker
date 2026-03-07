@@ -181,5 +181,8 @@ public sealed class SubscriptionEntitlementServiceTests
 
         public Task<Subscription?> GetByRevenueCatAppUserIdAsync(string appUserId, CancellationToken cancellationToken)
             => Task.FromResult(subscription);
+
+        public Task<IReadOnlyList<Subscription>> GetExpiredTrialsAsync(DateTimeOffset asOfUtc, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<Subscription>>(Array.Empty<Subscription>());
     }
 }
