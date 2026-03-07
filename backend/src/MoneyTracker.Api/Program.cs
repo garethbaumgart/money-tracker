@@ -9,6 +9,7 @@ using MoneyTracker.Modules.Notifications.Presentation;
 using MoneyTracker.Modules.Transactions.Presentation;
 using MoneyTracker.Modules.BankConnections.Presentation;
 using MoneyTracker.Modules.Subscriptions.Presentation;
+using MoneyTracker.Modules.Insights.Presentation;
 using MoneyTracker.Api.Observability;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,6 +26,7 @@ builder.Services.AddBillRemindersModule();
 builder.Services.AddNotificationsModule();
 builder.Services.AddBankConnectionsModule();
 builder.Services.AddSubscriptionsModule();
+builder.Services.AddInsightsModule();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
@@ -48,6 +50,7 @@ app.MapBillReminderEndpoints();
 app.MapNotificationEndpoints();
 app.MapBankConnectionEndpoints();
 app.MapSubscriptionEndpoints();
+app.MapInsightsEndpoints();
 
 if (app.Environment.IsEnvironment("Testing"))
 {
