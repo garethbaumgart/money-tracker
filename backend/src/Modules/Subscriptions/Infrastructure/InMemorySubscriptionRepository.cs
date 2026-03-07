@@ -106,4 +106,18 @@ public sealed class InMemorySubscriptionRepository : ISubscriptionRepository
             return Task.FromResult<IReadOnlyList<Subscription>>(expired);
         }
     }
+
+    public Task<IReadOnlyList<Subscription>> GetAllAsync(CancellationToken cancellationToken)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return Task.FromCanceled<IReadOnlyList<Subscription>>(cancellationToken);
+        }
+
+        lock (_sync)
+        {
+            return Task.FromResult<IReadOnlyList<Subscription>>(
+                _subscriptionsByHousehold.Values.ToList());
+        }
+    }
 }

@@ -7,9 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="MoneyTracker.Modules.Analytics.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="..\Auth\MoneyTracker.Modules.Auth.csproj" />
     <ProjectReference Include="..\SharedKernel\MoneyTracker.Modules.SharedKernel.csproj" />
+    <ProjectReference Include="..\Subscriptions\MoneyTracker.Modules.Subscriptions.csproj" />
   </ItemGroup>
 
 </Project>

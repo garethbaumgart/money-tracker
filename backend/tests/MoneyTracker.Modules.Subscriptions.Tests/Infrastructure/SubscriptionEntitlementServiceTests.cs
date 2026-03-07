@@ -184,5 +184,8 @@ public sealed class SubscriptionEntitlementServiceTests
 
         public Task<IReadOnlyList<Subscription>> GetExpiredTrialsAsync(DateTimeOffset asOfUtc, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<Subscription>>(Array.Empty<Subscription>());
+
+        public Task<IReadOnlyList<Subscription>> GetAllAsync(CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<Subscription>>(subscription is not null ? [subscription] : Array.Empty<Subscription>());
     }
 }
