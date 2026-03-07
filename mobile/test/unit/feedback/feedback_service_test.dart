@@ -119,13 +119,29 @@ void main() {
 
       const submission = FeedbackSubmission(
         category: FeedbackCategory.bug,
-        description: 'Some bug',
+        description: 'Some bug report here',
         rating: 3,
       );
 
       final result = await failService.submitFeedback(submission);
 
       expect(result, isA<FeedbackFailure>());
+    });
+
+    test('submitFeedback returns failure for too-short description', () async {
+      const submission = FeedbackSubmission(
+        category: FeedbackCategory.general,
+        description: 'Short',
+        rating: 3,
+      );
+
+      final result = await service.submitFeedback(submission);
+
+      expect(result, isA<FeedbackFailure>());
+      expect(
+        (result as FeedbackFailure).errorMessage,
+        contains('at least'),
+      );
     });
   });
 }

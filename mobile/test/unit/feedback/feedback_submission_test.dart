@@ -25,6 +25,42 @@ void main() {
       expect(submission.validate(), contains('Description is required'));
     });
 
+    test('validate returns error for whitespace-only description', () {
+      const submission = FeedbackSubmission(
+        category: FeedbackCategory.general,
+        description: '     ',
+        rating: 3,
+      );
+
+      expect(submission.validate(), isNotNull);
+      expect(submission.validate(), contains('Description is required'));
+    });
+
+    test(
+        'validate returns error for description shorter than minDescriptionLength',
+        () {
+      const submission = FeedbackSubmission(
+        category: FeedbackCategory.general,
+        description: 'Short',
+        rating: 3,
+      );
+
+      expect(submission.validate(), isNotNull);
+      expect(submission.validate(), contains('at least'));
+    });
+
+    test(
+        'validate returns null for description exactly at minDescriptionLength',
+        () {
+      final submission = FeedbackSubmission(
+        category: FeedbackCategory.general,
+        description: 'a' * FeedbackSubmission.minDescriptionLength,
+        rating: 3,
+      );
+
+      expect(submission.validate(), isNull);
+    });
+
     test('validate returns error for description exceeding max length', () {
       final submission = FeedbackSubmission(
         category: FeedbackCategory.general,

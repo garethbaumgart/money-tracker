@@ -19,6 +19,9 @@ class FeedbackSubmission {
   final String? deviceModel;
   final String? osVersion;
 
+  /// Minimum description length.
+  static const int minDescriptionLength = 10;
+
   /// Maximum description length.
   static const int maxDescriptionLength = 5000;
 
@@ -27,6 +30,9 @@ class FeedbackSubmission {
   String? validate() {
     if (description.trim().isEmpty) {
       return 'Description is required.';
+    }
+    if (description.trim().length < minDescriptionLength) {
+      return 'Description must be at least $minDescriptionLength characters.';
     }
     if (description.length > maxDescriptionLength) {
       return 'Description exceeds maximum length of $maxDescriptionLength characters.';
