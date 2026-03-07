@@ -57,7 +57,7 @@ class DashboardCategorySummary {
       return 0;
     }
 
-    return (spent / allocated).clamp(0, 1);
+    return (spent / allocated).clamp(0.0, 1.0).toDouble();
   }
 }
 
@@ -78,14 +78,15 @@ class DashboardTransactionSummary {
 }
 
 class DashboardState {
-  const DashboardState({
+  DashboardState({
     required this.summary,
-    required this.categories,
-    required this.recentTransactions,
+    required List<DashboardCategorySummary> categories,
+    required List<DashboardTransactionSummary> recentTransactions,
     required this.lastUpdatedAt,
     required this.refreshCount,
     required this.isLoading,
-  });
+  })  : categories = List.unmodifiable(categories),
+        recentTransactions = List.unmodifiable(recentTransactions);
 
   final DashboardSummary summary;
   final List<DashboardCategorySummary> categories;

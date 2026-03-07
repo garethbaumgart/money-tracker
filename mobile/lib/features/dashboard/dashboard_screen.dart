@@ -381,7 +381,7 @@ class _EmptyDashboardCard extends StatelessWidget {
             ),
             SizedBox(height: tokens.space3),
             FilledButton(
-              onPressed: () {},
+              onPressed: null,
               child: const Text('Create a budget'),
             ),
           ],
