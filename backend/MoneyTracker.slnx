@@ -9,6 +9,7 @@
     <Project Path="src/Modules/Budgets/MoneyTracker.Modules.Budgets.csproj" />
     <Project Path="src/Modules/Transactions/MoneyTracker.Modules.Transactions.csproj" />
     <Project Path="src/Modules/BankConnections/MoneyTracker.Modules.BankConnections.csproj" />
+    <Project Path="src/Modules/Subscriptions/MoneyTracker.Modules.Subscriptions.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/MoneyTracker.Api.Tests/MoneyTracker.Api.Tests.csproj" />
@@ -17,5 +18,6 @@
     <Project Path="tests/MoneyTracker.Modules.Budgets.Tests/MoneyTracker.Modules.Budgets.Tests.csproj" />
     <Project Path="tests/MoneyTracker.Modules.Transactions.Tests/MoneyTracker.Modules.Transactions.Tests.csproj" />
     <Project Path="tests/MoneyTracker.Modules.BankConnections.Tests/MoneyTracker.Modules.BankConnections.Tests.csproj" />
+    <Project Path="tests/MoneyTracker.Modules.Subscriptions.Tests/MoneyTracker.Modules.Subscriptions.Tests.csproj" />
   </Folder>
 </Solution>
