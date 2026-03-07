@@ -201,7 +201,15 @@ class _ShellBody extends StatelessWidget {
               ),
               const Spacer(),
               TextButton.icon(
-                onPressed: () {},
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Roadmap coming soon'),
+                      behavior: SnackBarBehavior.floating,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
                 icon: const Icon(Icons.open_in_new),
                 label: const Text('Explore roadmap'),
               ),
