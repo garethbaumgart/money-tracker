@@ -2,8 +2,10 @@ using MoneyTracker.Api.Configuration;
 using MoneyTracker.Api.Contracts;
 using MoneyTracker.Api.Diagnostics;
 using MoneyTracker.Modules.Auth.Presentation;
+using MoneyTracker.Modules.BillReminders.Presentation;
 using MoneyTracker.Modules.Budgets.Presentation;
 using MoneyTracker.Modules.Households.Presentation;
+using MoneyTracker.Modules.Notifications.Presentation;
 using MoneyTracker.Modules.Transactions.Presentation;
 using MoneyTracker.Api.Observability;
 
@@ -17,6 +19,8 @@ builder.Services.AddAuthModule();
 builder.Services.AddHouseholdsModule();
 builder.Services.AddBudgetsModule();
 builder.Services.AddTransactionsModule();
+builder.Services.AddBillRemindersModule();
+builder.Services.AddNotificationsModule();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
@@ -36,6 +40,8 @@ app.MapHouseholdEndpoints();
 app.MapBudgetEndpoints();
 app.MapBudgetSnapshotEndpoints();
 app.MapTransactionEndpoints();
+app.MapBillReminderEndpoints();
+app.MapNotificationEndpoints();
 
 if (app.Environment.IsEnvironment("Testing"))
 {

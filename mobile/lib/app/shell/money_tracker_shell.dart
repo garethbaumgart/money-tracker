@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:money_tracker/features/reminders/reminders_controller.dart';
+import 'package:money_tracker/features/reminders/reminders_screen.dart';
 
 import '../theme/app_theme_controller.dart';
 import '../theme/app_theme_mode.dart';
@@ -30,6 +32,19 @@ class _MoneyTrackerShellState extends State<MoneyTrackerShell> {
   ];
 
   var _selectedIndex = 0;
+  late final RemindersController _remindersController;
+
+  @override
+  void initState() {
+    super.initState();
+    _remindersController = RemindersController()..seedSample();
+  }
+
+  @override
+  void dispose() {
+    _remindersController.dispose();
+    super.dispose();
+  }
 
   void _onDestinationSelected(int index) {
     if (_selectedIndex == index) {
@@ -57,9 +72,17 @@ class _MoneyTrackerShellState extends State<MoneyTrackerShell> {
             ),
             actions: [
               IconButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => RemindersScreen(
+                        controller: _remindersController,
+                      ),
+                    ),
+                  );
+                },
                 icon: const Icon(Icons.notifications_outlined),
-                tooltip: 'Notifications',
+                tooltip: 'Bill reminders',
               ),
             ],
           ),

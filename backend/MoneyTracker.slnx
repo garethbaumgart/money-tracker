@@ -3,6 +3,8 @@
     <Project Path="src/MoneyTracker.Api/MoneyTracker.Api.csproj" />
     <Project Path="src/Modules/Households/MoneyTracker.Modules.Households.csproj" />
     <Project Path="src/Modules/Auth/MoneyTracker.Modules.Auth.csproj" />
+    <Project Path="src/Modules/BillReminders/MoneyTracker.Modules.BillReminders.csproj" />
+    <Project Path="src/Modules/Notifications/MoneyTracker.Modules.Notifications.csproj" />
     <Project Path="src/Modules/SharedKernel/MoneyTracker.Modules.SharedKernel.csproj" />
     <Project Path="src/Modules/Budgets/MoneyTracker.Modules.Budgets.csproj" />
     <Project Path="src/Modules/Transactions/MoneyTracker.Modules.Transactions.csproj" />
@@ -10,6 +12,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/MoneyTracker.Api.Tests/MoneyTracker.Api.Tests.csproj" />
     <Project Path="tests/MoneyTracker.Modules.Households.Tests/MoneyTracker.Modules.Households.Tests.csproj" />
+    <Project Path="tests/MoneyTracker.Modules.BillReminders.Tests/MoneyTracker.Modules.BillReminders.Tests.csproj" />
     <Project Path="tests/MoneyTracker.Modules.Budgets.Tests/MoneyTracker.Modules.Budgets.Tests.csproj" />
     <Project Path="tests/MoneyTracker.Modules.Transactions.Tests/MoneyTracker.Modules.Transactions.Tests.csproj" />
   </Folder>

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>P2-4 Reminders UX Options</title>
+  <link rel="stylesheet" href="./tokens.css" />
+  <style>
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f6fffc; color: #0f172a; }
+    .main { max-width: 1100px; margin: 0 auto; padding: 22px; }
+    .header { margin-bottom: 16px; }
+    .recommended { border-color: #0ea5e9 !important; box-shadow: 0 8px 20px rgba(14, 165, 233, 0.22); }
+    .rec-tag { font-weight: 700; color: #0ea5e9; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .card { border: 1px solid #d0d5dd; border-radius: 14px; padding: 12px; background: #fff; box-shadow: 0 4px 16px rgba(15,23,42,0.06); }
+    a { text-decoration: none; color: #0ea5e9; }
+  </style>
+</head>
+<body>
+  <div class="main">
+    <div class="header">
+      <h1>Issue #55 — Bill Reminder + Notifications Plumbing</h1>
+      <p>UX selection hub for all options (A-E). <span class="rec-tag">Recommended: Option A</span></p>
+    </div>
+    <div class="grid">
+      <div class="card recommended"><a href="./option-a/index.html"><strong>Option A</strong></a><p>Single list + create reminder form. <span class="rec-tag">(Recommended)</span></p></div>
+      <div class="card"><a href="./option-b/index.html"><strong>Option B</strong></a><p>Timeline-centric upcoming/overdue reminder list.</p></div>
+      <div class="card"><a href="./option-c/index.html"><strong>Option C</strong></a><p>Action grid with quick-tile interactions.</p></div>
+      <div class="card"><a href="./option-d/index.html"><strong>Option D</strong></a><p>List-first with detail drawer interactions.</p></div>
+      <div class="card"><a href="./option-e/index.html"><strong>Option E</strong></a><p>Calendar-focused upcoming reminder timeline.</p></div>
+    </div>
+  </div>
+</body>
+</html>
