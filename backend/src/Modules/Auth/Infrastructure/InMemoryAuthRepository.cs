@@ -2,6 +2,12 @@ using MoneyTracker.Modules.Auth.Domain;
 
 namespace MoneyTracker.Modules.Auth.Infrastructure;
 
+// PostgreSQL index recommendations:
+// - IX_auth_challenges_token: UNIQUE index on auth_challenges(token) for challenge lookups
+// - IX_auth_sessions_access_token: UNIQUE index on auth_sessions(access_token) for token validation
+// - IX_auth_sessions_refresh_token: UNIQUE index on auth_sessions(refresh_token) for token refresh
+// - IX_auth_users_email: UNIQUE index on auth_users(LOWER(email)) for case-insensitive email lookups
+// - IX_auth_users_id: PRIMARY KEY on auth_users(id)
 public sealed class InMemoryAuthRepository : IAuthRepository
 {
     private readonly object _sync = new();

@@ -18,6 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddValidatedConfiguration(builder.Configuration);
+builder.Services.AddSingleton<ErrorRateMonitor>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddAuthModule();
 builder.Services.AddHouseholdsModule();
@@ -34,6 +35,7 @@ builder.Services.AddOpenApi();
 var app = builder.Build();
 
 app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<RequestTimingMiddleware>();
 app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))

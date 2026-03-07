@@ -2,6 +2,9 @@ using MoneyTracker.Modules.Notifications.Domain;
 
 namespace MoneyTracker.Modules.Notifications.Infrastructure;
 
+// PostgreSQL index recommendations:
+// - IX_device_tokens_user_device: UNIQUE index on device_tokens(user_id, device_id) for upsert
+// - IX_device_tokens_user_id: index on device_tokens(user_id) for multi-user token lookups
 public sealed class InMemoryNotificationTokenRepository : INotificationTokenRepository
 {
     private readonly object _sync = new();

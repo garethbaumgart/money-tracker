@@ -2,6 +2,11 @@ using MoneyTracker.Modules.Budgets.Domain;
 
 namespace MoneyTracker.Modules.Budgets.Infrastructure;
 
+// PostgreSQL index recommendations:
+// - IX_budget_categories_household_name: UNIQUE index on budget_categories(household_id, LOWER(normalized_name))
+// - IX_budget_categories_household_id: index on budget_categories(household_id, id)
+// - IX_budget_allocations_lookup: UNIQUE index on budget_allocations(household_id, category_id, period_start_utc)
+// - IX_budget_allocations_period: index on budget_allocations(household_id, period_start_utc) for period queries
 public sealed class InMemoryBudgetRepository : IBudgetRepository
 {
     private readonly object _sync = new();

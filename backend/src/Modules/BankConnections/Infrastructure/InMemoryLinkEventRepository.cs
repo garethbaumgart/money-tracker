@@ -2,6 +2,8 @@ using MoneyTracker.Modules.BankConnections.Domain;
 
 namespace MoneyTracker.Modules.BankConnections.Infrastructure;
 
+// PostgreSQL index recommendations:
+// - IX_link_events_occurred_at: index on link_events(occurred_at_utc) for time-range queries
 public sealed class InMemoryLinkEventRepository : ILinkEventRepository
 {
     private readonly object _sync = new();

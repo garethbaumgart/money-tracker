@@ -2,6 +2,10 @@ using MoneyTracker.Modules.BillReminders.Domain;
 
 namespace MoneyTracker.Modules.BillReminders.Infrastructure;
 
+// PostgreSQL index recommendations:
+// - IX_bill_reminders_household_id: index on bill_reminders(household_id) for household-scoped queries
+// - IX_bill_reminders_due: index on bill_reminders(next_due_date_utc) for due reminder lookups
+// - IX_bill_reminder_dispatch_records_key: UNIQUE index on bill_reminder_dispatch_records(reminder_id, due_date_utc) for dispatch deduplication
 public sealed class InMemoryBillReminderRepository : IBillReminderRepository
 {
     private readonly object _sync = new();

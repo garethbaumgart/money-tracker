@@ -2,6 +2,10 @@ using MoneyTracker.Modules.Analytics.Domain;
 
 namespace MoneyTracker.Modules.Analytics.Infrastructure;
 
+// PostgreSQL index recommendations:
+// - IX_activation_events_user_milestone: UNIQUE index on activation_events(user_id, milestone) for deduplication
+// - IX_activation_events_period: index on activation_events(occurred_at_utc) for time-range queries
+// - IX_activation_events_platform_region: index on activation_events(LOWER(platform), LOWER(region), occurred_at_utc) for filtered period queries
 public sealed class InMemoryActivationEventRepository : IActivationEventRepository
 {
     private readonly object _sync = new();
