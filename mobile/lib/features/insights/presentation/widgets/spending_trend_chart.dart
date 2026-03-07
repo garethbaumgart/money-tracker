@@ -159,23 +159,32 @@ class _CategoryBar extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: SizedBox(
-            height: 8,
-            child: Stack(
-              children: [
-                FractionallySizedBox(
-                  widthFactor: previousFraction,
-                  child: Container(color: theme.colorScheme.outline.withValues(alpha: 0.4)),
-                ),
-                FractionallySizedBox(
+        Column(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: SizedBox(
+                height: 4,
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
                   widthFactor: currentFraction,
                   child: Container(color: theme.colorScheme.primary),
                 ),
-              ],
+              ),
             ),
-          ),
+            const SizedBox(height: 2),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: SizedBox(
+                height: 4,
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: previousFraction,
+                  child: Container(color: theme.colorScheme.outline.withValues(alpha: 0.4)),
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 2),
         Text(
