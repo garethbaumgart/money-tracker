@@ -11,7 +11,7 @@ public sealed class PilotMetricEventTests
     public void SyncEvent_Created_AllFieldsPopulated()
     {
         // P3-4-UNIT-01: SyncEvent created with all required fields -> no nulls
-        var connectionId = Guid.NewGuid();
+        var connectionId = BankConnectionId.New();
 
         var syncEvent = SyncEvent.Create(
             connectionId,
@@ -62,7 +62,7 @@ public sealed class PilotMetricEventTests
     {
         var exception = Assert.Throws<BankConnectionDomainException>(
             () => SyncEvent.Create(
-                Guid.NewGuid(),
+                BankConnectionId.New(),
                 "CBA",
                 "AU",
                 EventOutcome.Failed,
@@ -96,7 +96,7 @@ public sealed class PilotMetricEventTests
     {
         var exception = Assert.Throws<BankConnectionDomainException>(
             () => SyncEvent.Create(
-                Guid.NewGuid(),
+                BankConnectionId.New(),
                 "",
                 "AU",
                 EventOutcome.Success,
@@ -114,7 +114,7 @@ public sealed class PilotMetricEventTests
     {
         var exception = Assert.Throws<BankConnectionDomainException>(
             () => SyncEvent.Create(
-                Guid.NewGuid(),
+                BankConnectionId.New(),
                 "CBA",
                 "AU",
                 EventOutcome.Success,
@@ -131,7 +131,7 @@ public sealed class PilotMetricEventTests
     public void SyncEvent_RegionIsNormalized_ToUpperCase()
     {
         var syncEvent = SyncEvent.Create(
-            Guid.NewGuid(),
+            BankConnectionId.New(),
             "CBA",
             "au",
             EventOutcome.Success,

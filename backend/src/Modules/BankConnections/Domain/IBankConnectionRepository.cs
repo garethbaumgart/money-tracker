@@ -10,4 +10,6 @@ public interface IBankConnectionRepository
         CancellationToken cancellationToken);
     Task<IReadOnlyCollection<BankConnection>> GetActiveConnectionsAsync(
         CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<BankConnection>> GetAllConnectionsAsync(
+        CancellationToken cancellationToken);
 }

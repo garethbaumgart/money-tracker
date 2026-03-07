@@ -236,6 +236,17 @@ internal sealed class StubBankConnectionRepository : IBankConnectionRepository
             return Task.FromResult<IReadOnlyCollection<BankConnection>>(active);
         }
     }
+
+    public Task<IReadOnlyCollection<BankConnection>> GetAllConnectionsAsync(CancellationToken cancellationToken)
+    {
+        lock (_sync)
+        {
+            var all = _connectionsByHousehold.Values
+                .SelectMany(l => l)
+                .ToArray();
+            return Task.FromResult<IReadOnlyCollection<BankConnection>>(all);
+        }
+    }
 }
 
 internal sealed class StubTransactionSyncRepository : ITransactionSyncRepository
@@ -359,24 +370,6 @@ internal sealed class StubSyncEventRepository : ISyncEventRepository
         {
             return Task.FromResult<IReadOnlyCollection<SyncEvent>>(
                 _events.Where(e => e.OccurredAtUtc >= since).ToArray());
-        }
-    }
-
-    public Task<IReadOnlyCollection<SyncEvent>> GetByRegionAsync(string region, DateTimeOffset since, CancellationToken cancellationToken)
-    {
-        lock (_sync)
-        {
-            return Task.FromResult<IReadOnlyCollection<SyncEvent>>(
-                _events.Where(e => e.OccurredAtUtc >= since && e.Region.Equals(region, StringComparison.OrdinalIgnoreCase)).ToArray());
-        }
-    }
-
-    public Task<IReadOnlyCollection<SyncEvent>> GetByInstitutionAsync(string institution, DateTimeOffset since, CancellationToken cancellationToken)
-    {
-        lock (_sync)
-        {
-            return Task.FromResult<IReadOnlyCollection<SyncEvent>>(
-                _events.Where(e => e.OccurredAtUtc >= since && e.Institution.Equals(institution, StringComparison.OrdinalIgnoreCase)).ToArray());
         }
     }
 

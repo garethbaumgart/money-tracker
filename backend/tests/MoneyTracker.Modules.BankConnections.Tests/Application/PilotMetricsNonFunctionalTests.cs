@@ -31,7 +31,7 @@ public sealed class PilotMetricsNonFunctionalTests
 
             await syncEventRepo.AddAsync(
                 SyncEvent.Create(
-                    Guid.NewGuid(),
+                    BankConnectionId.New(),
                     institution,
                     region,
                     outcome,

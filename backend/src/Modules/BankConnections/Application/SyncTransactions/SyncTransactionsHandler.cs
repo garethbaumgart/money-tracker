@@ -107,7 +107,7 @@ public sealed class SyncTransactionsHandler(
             var region = DefaultRegion;
 
             var syncEvent = SyncEvent.Create(
-                connection.Id.Value,
+                connection.Id,
                 institution,
                 region,
                 outcome,

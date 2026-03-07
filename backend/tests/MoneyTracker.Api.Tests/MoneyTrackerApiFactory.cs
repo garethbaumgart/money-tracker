@@ -30,7 +30,8 @@ public sealed class MoneyTrackerApiFactory : WebApplicationFactory<Program>
         {
             configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Api:Environment"] = _environmentName
+                ["Api:Environment"] = _environmentName,
+                ["Admin:UserIds"] = "*"
             });
 
             if (_configurationOverrides is null)

@@ -43,6 +43,7 @@ public static class BankConnectionEndpoints
         services.AddScoped<RecordSyncEventHandler>();
         services.AddScoped<RecordLinkEventHandler>();
         services.AddScoped<GetPilotMetricsHandler>();
+        services.AddSingleton<IAdminAccessService, ConfigurationAdminAccessService>();
         services.AddHostedService<Infrastructure.TransactionSyncWorker>();
 
         return services;
@@ -465,12 +466,25 @@ public static class BankConnectionEndpoints
 
     private static async Task GetPilotMetrics(HttpContext httpContext)
     {
-        // Admin auth gate: requires authenticated user.
-        // In production, this should be enhanced with a role-based check (e.g., IsAdmin).
         var authResult = await EndpointHelpers.ResolveAuthenticatedUser(httpContext);
         if (!authResult.Success)
         {
             await authResult.Problem!.ExecuteAsync(httpContext);
+            return;
+        }
+
+        // Admin role gate: authenticated user must have admin access.
+        var adminService = httpContext.RequestServices.GetRequiredService<IAdminAccessService>();
+        var isAdmin = await adminService.IsAdminAsync(authResult.AuthenticatedUser!.UserId, httpContext.RequestAborted);
+        if (!isAdmin)
+        {
+            await EndpointHelpers.WriteProblemAsync(
+                httpContext,
+                StatusCodes.Status403Forbidden,
+                "Access denied.",
+                "Admin access is required to view pilot metrics.",
+                PilotMetricErrors.MetricsAccessDenied,
+                PilotMetricErrors.MetricsAccessDenied);
             return;
         }
 

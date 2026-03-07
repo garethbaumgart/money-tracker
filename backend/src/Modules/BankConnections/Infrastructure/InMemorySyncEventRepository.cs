@@ -39,39 +39,4 @@ public sealed class InMemorySyncEventRepository : ISyncEventRepository
         }
     }
 
-    public Task<IReadOnlyCollection<SyncEvent>> GetByRegionAsync(string region, DateTimeOffset since, CancellationToken cancellationToken)
-    {
-        if (cancellationToken.IsCancellationRequested)
-        {
-            return Task.FromCanceled<IReadOnlyCollection<SyncEvent>>(cancellationToken);
-        }
-
-        lock (_sync)
-        {
-            var result = _events
-                .Where(e => e.OccurredAtUtc >= since
-                    && e.Region.Equals(region, StringComparison.OrdinalIgnoreCase))
-                .ToArray();
-
-            return Task.FromResult<IReadOnlyCollection<SyncEvent>>(result);
-        }
-    }
-
-    public Task<IReadOnlyCollection<SyncEvent>> GetByInstitutionAsync(string institution, DateTimeOffset since, CancellationToken cancellationToken)
-    {
-        if (cancellationToken.IsCancellationRequested)
-        {
-            return Task.FromCanceled<IReadOnlyCollection<SyncEvent>>(cancellationToken);
-        }
-
-        lock (_sync)
-        {
-            var result = _events
-                .Where(e => e.OccurredAtUtc >= since
-                    && e.Institution.Equals(institution, StringComparison.OrdinalIgnoreCase))
-                .ToArray();
-
-            return Task.FromResult<IReadOnlyCollection<SyncEvent>>(result);
-        }
-    }
 }

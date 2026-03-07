@@ -3,7 +3,7 @@ namespace MoneyTracker.Modules.BankConnections.Domain;
 public sealed class SyncEvent
 {
     public SyncEventId Id { get; }
-    public Guid ConnectionId { get; }
+    public BankConnectionId ConnectionId { get; }
     public string Institution { get; }
     public string Region { get; }
     public EventOutcome Outcome { get; }
@@ -14,7 +14,7 @@ public sealed class SyncEvent
 
     private SyncEvent(
         SyncEventId id,
-        Guid connectionId,
+        BankConnectionId connectionId,
         string institution,
         string region,
         EventOutcome outcome,
@@ -35,7 +35,7 @@ public sealed class SyncEvent
     }
 
     public static SyncEvent Create(
-        Guid connectionId,
+        BankConnectionId connectionId,
         string institution,
         string region,
         EventOutcome outcome,

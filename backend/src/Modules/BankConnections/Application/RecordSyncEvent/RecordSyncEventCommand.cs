@@ -3,7 +3,7 @@ using MoneyTracker.Modules.BankConnections.Domain;
 namespace MoneyTracker.Modules.BankConnections.Application.RecordSyncEvent;
 
 public sealed record RecordSyncEventCommand(
-    Guid ConnectionId,
+    BankConnectionId ConnectionId,
     string Institution,
     string Region,
     EventOutcome Outcome,

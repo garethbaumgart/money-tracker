@@ -73,12 +73,7 @@ public sealed class GetPilotMetricsHandler(
 
     private async Task<ConsentHealth> AggregateConsentHealthAsync(CancellationToken cancellationToken)
     {
-        var allConnections = await bankConnectionRepository.GetActiveConnectionsAsync(cancellationToken);
-
-        // Also include non-active connections for revocation rate calculation
-        // For now, we derive from what's available in the active connections repository
-        // plus compute from all household connections.
-        // We'll compute from the existing data available.
+        var allConnections = await bankConnectionRepository.GetAllConnectionsAsync(cancellationToken);
 
         if (allConnections.Count == 0)
         {
@@ -88,19 +83,24 @@ public sealed class GetPilotMetricsHandler(
         // Average consent duration in days (from creation to now for active, or creation to updated for terminal states)
         var nowUtc = timeProvider.GetUtcNow();
         var totalDurationDays = allConnections
-            .Select(c => (nowUtc - c.CreatedAtUtc).TotalDays)
+            .Select(c => c.Status is BankConnectionStatus.Revoked or BankConnectionStatus.Failed
+                ? (c.UpdatedAtUtc - c.CreatedAtUtc).TotalDays
+                : (nowUtc - c.CreatedAtUtc).TotalDays)
             .Average();
 
-        // Re-consent rate and revocation rate require knowledge of all connections (not just active).
-        // Since the repository only gives us active connections, we'll return 0 for these
-        // until we have a method to fetch all connections. For now, this is a placeholder
-        // that can be enhanced when the repository interface supports it.
+        // Revocation rate: proportion of all connections that are currently revoked.
+        var revokedCount = allConnections.Count(c => c.Status == BankConnectionStatus.Revoked);
+        var revocationRate = (double)revokedCount / allConnections.Count;
+
+        // Re-consent rate requires historical state-transition tracking (e.g. a connection
+        // that moved from Expired/Revoked back to Active). The current domain model does
+        // not persist state-change history, so this metric cannot be computed yet.
+        // TODO(#68): Implement connection state history to enable re-consent rate tracking.
         var reConsentRate = 0.0;
-        var revocationRate = 0.0;
 
         return new ConsentHealth(
             Math.Round(totalDurationDays, 2),
             reConsentRate,
-            revocationRate);
+            Math.Round(revocationRate, 4));
     }
 }

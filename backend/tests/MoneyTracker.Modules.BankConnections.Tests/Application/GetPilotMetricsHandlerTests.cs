@@ -21,24 +21,24 @@ public sealed class GetPilotMetricsHandlerTests
         for (var i = 0; i < 9; i++)
         {
             await syncEventRepo.AddAsync(
-                SyncEvent.Create(Guid.NewGuid(), "CBA", "AU", EventOutcome.Success, 1000, 5, null, NowUtc.AddDays(-i)),
+                SyncEvent.Create(BankConnectionId.New(), "CBA", "AU", EventOutcome.Success, 1000, 5, null, NowUtc.AddDays(-i)),
                 CancellationToken.None);
         }
         await syncEventRepo.AddAsync(
-            SyncEvent.Create(Guid.NewGuid(), "CBA", "AU", EventOutcome.Failed, 2000, 0, "ProviderError", NowUtc.AddDays(-10)),
+            SyncEvent.Create(BankConnectionId.New(), "CBA", "AU", EventOutcome.Failed, 2000, 0, "ProviderError", NowUtc.AddDays(-10)),
             CancellationToken.None);
 
         // Add NZ sync events: 7 success, 3 failure = 70% success rate
         for (var i = 0; i < 7; i++)
         {
             await syncEventRepo.AddAsync(
-                SyncEvent.Create(Guid.NewGuid(), "ANZ NZ", "NZ", EventOutcome.Success, 1500, 3, null, NowUtc.AddDays(-i)),
+                SyncEvent.Create(BankConnectionId.New(), "ANZ NZ", "NZ", EventOutcome.Success, 1500, 3, null, NowUtc.AddDays(-i)),
                 CancellationToken.None);
         }
         for (var i = 0; i < 3; i++)
         {
             await syncEventRepo.AddAsync(
-                SyncEvent.Create(Guid.NewGuid(), "ANZ NZ", "NZ", EventOutcome.Failed, 3000, 0, "Timeout", NowUtc.AddDays(-i - 7)),
+                SyncEvent.Create(BankConnectionId.New(), "ANZ NZ", "NZ", EventOutcome.Failed, 3000, 0, "Timeout", NowUtc.AddDays(-i - 7)),
                 CancellationToken.None);
         }
 
@@ -74,21 +74,21 @@ public sealed class GetPilotMetricsHandlerTests
 
         // AU events with latencies: 1000, 2000, 3000 -> avg = 2000
         await syncEventRepo.AddAsync(
-            SyncEvent.Create(Guid.NewGuid(), "CBA", "AU", EventOutcome.Success, 1000, 5, null, NowUtc.AddDays(-1)),
+            SyncEvent.Create(BankConnectionId.New(), "CBA", "AU", EventOutcome.Success, 1000, 5, null, NowUtc.AddDays(-1)),
             CancellationToken.None);
         await syncEventRepo.AddAsync(
-            SyncEvent.Create(Guid.NewGuid(), "CBA", "AU", EventOutcome.Success, 2000, 3, null, NowUtc.AddDays(-2)),
+            SyncEvent.Create(BankConnectionId.New(), "CBA", "AU", EventOutcome.Success, 2000, 3, null, NowUtc.AddDays(-2)),
             CancellationToken.None);
         await syncEventRepo.AddAsync(
-            SyncEvent.Create(Guid.NewGuid(), "CBA", "AU", EventOutcome.Success, 3000, 2, null, NowUtc.AddDays(-3)),
+            SyncEvent.Create(BankConnectionId.New(), "CBA", "AU", EventOutcome.Success, 3000, 2, null, NowUtc.AddDays(-3)),
             CancellationToken.None);
 
         // NZ events with latencies: 5000, 10000 -> avg = 7500
         await syncEventRepo.AddAsync(
-            SyncEvent.Create(Guid.NewGuid(), "ANZ NZ", "NZ", EventOutcome.Success, 5000, 3, null, NowUtc.AddDays(-1)),
+            SyncEvent.Create(BankConnectionId.New(), "ANZ NZ", "NZ", EventOutcome.Success, 5000, 3, null, NowUtc.AddDays(-1)),
             CancellationToken.None);
         await syncEventRepo.AddAsync(
-            SyncEvent.Create(Guid.NewGuid(), "ANZ NZ", "NZ", EventOutcome.Success, 10000, 2, null, NowUtc.AddDays(-2)),
+            SyncEvent.Create(BankConnectionId.New(), "ANZ NZ", "NZ", EventOutcome.Success, 10000, 2, null, NowUtc.AddDays(-2)),
             CancellationToken.None);
 
         var handler = new GetPilotMetricsHandler(
@@ -187,10 +187,10 @@ public sealed class GetPilotMetricsHandlerTests
 
         // Add AU and NZ events
         await syncEventRepo.AddAsync(
-            SyncEvent.Create(Guid.NewGuid(), "CBA", "AU", EventOutcome.Success, 1000, 5, null, NowUtc.AddDays(-1)),
+            SyncEvent.Create(BankConnectionId.New(), "CBA", "AU", EventOutcome.Success, 1000, 5, null, NowUtc.AddDays(-1)),
             CancellationToken.None);
         await syncEventRepo.AddAsync(
-            SyncEvent.Create(Guid.NewGuid(), "ANZ NZ", "NZ", EventOutcome.Success, 2000, 3, null, NowUtc.AddDays(-1)),
+            SyncEvent.Create(BankConnectionId.New(), "ANZ NZ", "NZ", EventOutcome.Success, 2000, 3, null, NowUtc.AddDays(-1)),
             CancellationToken.None);
 
         var handler = new GetPilotMetricsHandler(

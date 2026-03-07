@@ -30,12 +30,12 @@ public sealed class PilotMetricsEndpointTests : IClassFixture<MoneyTrackerApiFac
 
         // Add event within 7 days
         await syncEventRepo.AddAsync(
-            SyncEvent.Create(Guid.NewGuid(), "CBA", "AU", EventOutcome.Success, 800, 5, null, nowUtc.AddDays(-3)),
+            SyncEvent.Create(BankConnectionId.New(), "CBA", "AU", EventOutcome.Success, 800, 5, null, nowUtc.AddDays(-3)),
             CancellationToken.None);
 
         // Add event outside 7 days (should not be included)
         await syncEventRepo.AddAsync(
-            SyncEvent.Create(Guid.NewGuid(), "ANZ", "AU", EventOutcome.Success, 1200, 3, null, nowUtc.AddDays(-10)),
+            SyncEvent.Create(BankConnectionId.New(), "ANZ", "AU", EventOutcome.Success, 1200, 3, null, nowUtc.AddDays(-10)),
             CancellationToken.None);
 
         using var response = await client.GetAsync("/admin/pilot-metrics?periodDays=7");
@@ -58,12 +58,30 @@ public sealed class PilotMetricsEndpointTests : IClassFixture<MoneyTrackerApiFac
     [Trait("Category", "Component")]
     public async Task GetPilotMetrics_WithoutAuth_Returns401()
     {
-        // P3-4-COMP-02: GET /admin/pilot-metrics without admin auth -> 401
+        // P3-4-COMP-02a: GET /admin/pilot-metrics without auth -> 401
         using var client = _factory.CreateClient();
 
         using var response = await client.GetAsync("/admin/pilot-metrics");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    [Trait("Category", "Component")]
+    public async Task GetPilotMetrics_AuthenticatedButNotAdmin_Returns403()
+    {
+        // P3-4-COMP-02b: GET /admin/pilot-metrics authenticated but not admin -> 403
+        // Create a factory with no admin user IDs configured (empty string = no admins)
+        using var restrictedFactory = new MoneyTrackerApiFactory(
+            "Testing",
+            new Dictionary<string, string?> { ["Admin:UserIds"] = "" });
+        using var client = restrictedFactory.CreateClient();
+        var accessToken = await AuthTestHelpers.GetAccessTokenAsync(client, $"{Guid.NewGuid():N}@example.com");
+        AuthTestHelpers.SetBearer(client, accessToken);
+
+        using var response = await client.GetAsync("/admin/pilot-metrics");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]
@@ -80,10 +98,10 @@ public sealed class PilotMetricsEndpointTests : IClassFixture<MoneyTrackerApiFac
         var nowUtc = DateTimeOffset.UtcNow;
 
         await syncEventRepo.AddAsync(
-            SyncEvent.Create(Guid.NewGuid(), "CBA", "AU", EventOutcome.Success, 800, 5, null, nowUtc.AddDays(-1)),
+            SyncEvent.Create(BankConnectionId.New(), "CBA", "AU", EventOutcome.Success, 800, 5, null, nowUtc.AddDays(-1)),
             CancellationToken.None);
         await syncEventRepo.AddAsync(
-            SyncEvent.Create(Guid.NewGuid(), "ANZ NZ", "NZ", EventOutcome.Success, 1500, 3, null, nowUtc.AddDays(-1)),
+            SyncEvent.Create(BankConnectionId.New(), "ANZ NZ", "NZ", EventOutcome.Success, 1500, 3, null, nowUtc.AddDays(-1)),
             CancellationToken.None);
 
         using var response = await client.GetAsync("/admin/pilot-metrics?region=NZ");
