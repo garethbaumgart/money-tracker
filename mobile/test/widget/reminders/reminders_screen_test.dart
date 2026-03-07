@@ -17,14 +17,14 @@ void main() {
         (tester) async {
       final controller = RemindersController();
       final now = DateTime.now();
-      final yesterday =
+      final pastDate =
           DateTime(now.year, now.month, now.day).subtract(const Duration(days: 2));
 
       controller.addReminder(ReminderEntry(
         id: 'overdue-1',
         title: 'Overdue bill',
         amount: 100.0,
-        dueDate: yesterday,
+        dueDate: pastDate,
         cadence: 'Monthly',
       ));
 
