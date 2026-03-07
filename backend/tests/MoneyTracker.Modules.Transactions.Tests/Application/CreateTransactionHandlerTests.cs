@@ -1,4 +1,5 @@
 using MoneyTracker.Modules.Budgets.Infrastructure;
+using MoneyTracker.Modules.SharedKernel.Analytics;
 using MoneyTracker.Modules.SharedKernel.Households;
 using MoneyTracker.Modules.Transactions.Application.CreateTransaction;
 using MoneyTracker.Modules.Transactions.Domain;
@@ -19,7 +20,8 @@ public sealed class CreateTransactionHandlerTests
             new InMemoryTransactionRepository(),
             new InMemoryBudgetRepository(),
             new AllowedHouseholdAccessService(),
-            new FakeTimeProvider(nowUtc));
+            new FakeTimeProvider(nowUtc),
+            new NoopAnalyticsEventPublisher());
 
         var result = await handler.HandleAsync(
             new CreateTransactionCommand(

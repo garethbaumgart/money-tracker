@@ -1,4 +1,5 @@
 using MoneyTracker.Modules.Budgets.Domain;
+using MoneyTracker.Modules.SharedKernel.Analytics;
 using MoneyTracker.Modules.SharedKernel.Households;
 using MoneyTracker.Modules.Transactions.Domain;
 
@@ -8,7 +9,8 @@ public sealed class CreateTransactionHandler(
     ITransactionRepository transactionRepository,
     IBudgetRepository budgetRepository,
     IHouseholdAccessService householdAccessService,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    IAnalyticsEventPublisher analyticsPublisher)
 {
     public async Task<CreateTransactionResult> HandleAsync(
         CreateTransactionCommand command,
@@ -58,6 +60,10 @@ public sealed class CreateTransactionHandler(
         }
 
         await transactionRepository.AddAsync(transaction, cancellationToken);
+
+        await analyticsPublisher.PublishAsync(
+            command.RequestingUserId, "first_transaction_created", command.HouseholdId, cancellationToken);
+
         return CreateTransactionResult.Success(transaction);
     }
 }

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using MoneyTracker.Modules.BankConnections.Domain;
+using MoneyTracker.Modules.SharedKernel.Analytics;
 using MoneyTracker.Modules.SharedKernel.Transactions;
 
 namespace MoneyTracker.Modules.BankConnections.Application.SyncTransactions;
@@ -10,6 +11,7 @@ public sealed class SyncTransactionsHandler(
     IBankProviderAdapter providerAdapter,
     ITransactionSyncRepository transactionSyncRepository,
     ISyncEventRepository syncEventRepository,
+    IAnalyticsEventPublisher analyticsPublisher,
     TimeProvider timeProvider,
     ILogger<SyncTransactionsHandler> logger)
 {
@@ -71,6 +73,9 @@ public sealed class SyncTransactionsHandler(
                     synced + skipped,
                     errorCategory: null,
                     cancellationToken);
+
+                await analyticsPublisher.PublishAsync(
+                    connection.CreatedByUserId, "first_sync_completed", connection.HouseholdId, cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {

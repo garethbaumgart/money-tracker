@@ -281,6 +281,155 @@
         ],
         "type": "object"
       },
+      "RecordEventsRequest": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/RecordEventItemRequest"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "type": "object"
+      },
+      "RecordEventItemRequest": {
+        "properties": {
+          "milestone": {
+            "type": "string"
+          },
+          "householdId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "metadata": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": [
+              "null",
+              "object"
+            ]
+          },
+          "occurredAtUtc": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "milestone",
+          "occurredAtUtc"
+        ],
+        "type": "object"
+      },
+      "RecordEventsResponse": {
+        "properties": {
+          "acceptedCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "duplicateCount": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "acceptedCount",
+          "duplicateCount"
+        ],
+        "type": "object"
+      },
+      "ActivationFunnelResponse": {
+        "properties": {
+          "periodDays": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string"
+          },
+          "totalUsers": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "stages": {
+            "items": {
+              "$ref": "#/components/schemas/FunnelStageResponse"
+            },
+            "type": "array"
+          },
+          "cohorts": {
+            "items": {
+              "$ref": "#/components/schemas/CohortSummaryResponse"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "periodDays",
+          "platform",
+          "region",
+          "totalUsers",
+          "stages",
+          "cohorts"
+        ],
+        "type": "object"
+      },
+      "FunnelStageResponse": {
+        "properties": {
+          "milestone": {
+            "type": "string"
+          },
+          "userCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "conversionRate": {
+            "format": "double",
+            "type": "number"
+          },
+          "dropOffRate": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "milestone",
+          "userCount",
+          "conversionRate",
+          "dropOffRate"
+        ],
+        "type": "object"
+      },
+      "CohortSummaryResponse": {
+        "properties": {
+          "cohortKey": {
+            "type": "string"
+          },
+          "signupCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "paidConversionRate": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "cohortKey",
+          "signupCount",
+          "paidConversionRate"
+        ],
+        "type": "object"
+      },
       "ProblemDetails": {
         "properties": {
           "detail": {
@@ -348,6 +497,127 @@
         },
         "tags": [
           "MoneyTracker.Api"
+        ]
+      }
+    },
+    "/analytics/events": {
+      "post": {
+        "description": "Accepts a batch of activation milestone events. Deduplicates by (userId, milestone).",
+        "operationId": "RecordEvents",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordEventsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordEventsResponse"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "summary": "Record activation milestone events.",
+        "tags": [
+          "AnalyticsEndpoints"
+        ]
+      }
+    },
+    "/admin/activation-funnel": {
+      "get": {
+        "description": "Returns funnel stages with user counts, conversion rates, drop-off rates, and cohort summaries. Admin-gated via IAdminAccessService.",
+        "operationId": "GetActivationFunnel",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "periodDays",
+            "schema": {
+              "default": 30,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "platform",
+            "schema": {
+              "default": "all",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "region",
+            "schema": {
+              "default": "all",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivationFunnelResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "summary": "Get the activation funnel report.",
+        "tags": [
+          "AnalyticsEndpoints"
         ]
       }
     },
@@ -658,6 +928,9 @@
     },
     {
       "name": "BillReminderEndpoints"
+    },
+    {
+      "name": "AnalyticsEndpoints"
     }
   ]
 }

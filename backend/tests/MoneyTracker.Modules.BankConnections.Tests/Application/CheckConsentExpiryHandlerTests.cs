@@ -4,6 +4,7 @@ using MoneyTracker.Modules.BankConnections.Application.ProcessCallback;
 using MoneyTracker.Modules.BankConnections.Application.SyncTransactions;
 using MoneyTracker.Modules.BankConnections.Domain;
 using MoneyTracker.Modules.BankConnections.Infrastructure;
+using MoneyTracker.Modules.SharedKernel.Analytics;
 using MoneyTracker.Modules.SharedKernel.Transactions;
 
 namespace MoneyTracker.Modules.BankConnections.Tests.Application;
@@ -129,6 +130,7 @@ public sealed class CheckConsentExpiryHandlerTests
         var handler = new SyncTransactionsHandler(
             connectionRepo, providerAdapter, transactionRepo,
             new NoOpSyncEventRepository(),
+            new NoopAnalyticsEventPublisher(),
             new StubTimeProvider(NowUtc),
             NullLogger<SyncTransactionsHandler>.Instance);
 
@@ -163,6 +165,7 @@ public sealed class CheckConsentExpiryHandlerTests
         var callbackHandler = new ProcessCallbackHandler(
             connectionRepo,
             providerAdapter,
+            new NoopAnalyticsEventPublisher(),
             new StubTimeProvider(NowUtc));
 
         var result = await callbackHandler.HandleAsync(

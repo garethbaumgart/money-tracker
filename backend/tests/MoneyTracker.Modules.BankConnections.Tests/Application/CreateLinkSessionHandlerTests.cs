@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MoneyTracker.Modules.BankConnections.Application.CreateLinkSession;
 using MoneyTracker.Modules.BankConnections.Domain;
 using MoneyTracker.Modules.BankConnections.Infrastructure;
+using MoneyTracker.Modules.SharedKernel.Analytics;
 using MoneyTracker.Modules.SharedKernel.Households;
 
 namespace MoneyTracker.Modules.BankConnections.Tests.Application;
@@ -18,6 +19,7 @@ public sealed class CreateLinkSessionHandlerTests
             new StubBankProviderAdapter(),
             new NotFoundHouseholdAccessService(),
             new StubLinkEventRepository(),
+            new NoopAnalyticsEventPublisher(),
             new FakeTimeProvider(DateTimeOffset.Parse("2026-03-01T00:00:00Z")),
             NullLogger<CreateLinkSessionHandler>.Instance);
 
@@ -38,6 +40,7 @@ public sealed class CreateLinkSessionHandlerTests
             new StubBankProviderAdapter(),
             new DeniedHouseholdAccessService(),
             new StubLinkEventRepository(),
+            new NoopAnalyticsEventPublisher(),
             new FakeTimeProvider(DateTimeOffset.Parse("2026-03-01T00:00:00Z")),
             NullLogger<CreateLinkSessionHandler>.Instance);
 
@@ -58,6 +61,7 @@ public sealed class CreateLinkSessionHandlerTests
             new StubBankProviderAdapter(),
             new AllowedHouseholdAccessService(),
             new StubLinkEventRepository(),
+            new NoopAnalyticsEventPublisher(),
             new FakeTimeProvider(DateTimeOffset.Parse("2026-03-01T00:00:00Z")),
             NullLogger<CreateLinkSessionHandler>.Instance);
 
@@ -80,6 +84,7 @@ public sealed class CreateLinkSessionHandlerTests
             new FailingBankProviderAdapter(),
             new AllowedHouseholdAccessService(),
             new StubLinkEventRepository(),
+            new NoopAnalyticsEventPublisher(),
             new FakeTimeProvider(DateTimeOffset.Parse("2026-03-01T00:00:00Z")),
             NullLogger<CreateLinkSessionHandler>.Instance);
 

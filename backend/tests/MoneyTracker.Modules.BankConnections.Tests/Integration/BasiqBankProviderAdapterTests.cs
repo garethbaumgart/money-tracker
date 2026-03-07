@@ -7,6 +7,7 @@ using MoneyTracker.Modules.BankConnections.Application.ProcessCallback;
 using MoneyTracker.Modules.BankConnections.Domain;
 using MoneyTracker.Modules.BankConnections.Infrastructure;
 using MoneyTracker.Modules.BankConnections.Tests.Application;
+using MoneyTracker.Modules.SharedKernel.Analytics;
 
 namespace MoneyTracker.Modules.BankConnections.Tests.Integration;
 
@@ -103,6 +104,7 @@ public sealed class BasiqBankProviderAdapterTests
             stubAdapter,
             new AllowedHouseholdAccessService(),
             new StubLinkEventRepository(),
+            new NoopAnalyticsEventPublisher(),
             timeProvider,
             NullLogger<CreateLinkSessionHandler>.Instance);
 
@@ -119,6 +121,7 @@ public sealed class BasiqBankProviderAdapterTests
         var callbackHandler = new ProcessCallbackHandler(
             repository,
             stubAdapter,
+            new NoopAnalyticsEventPublisher(),
             timeProvider);
 
         var callbackResult = await callbackHandler.HandleAsync(

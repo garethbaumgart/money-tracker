@@ -1,10 +1,12 @@
 using MoneyTracker.Modules.BankConnections.Domain;
+using MoneyTracker.Modules.SharedKernel.Analytics;
 
 namespace MoneyTracker.Modules.BankConnections.Application.ProcessCallback;
 
 public sealed class ProcessCallbackHandler(
     IBankConnectionRepository repository,
     IBankProviderAdapter providerAdapter,
+    IAnalyticsEventPublisher analyticsPublisher,
     TimeProvider timeProvider)
 {
     public async Task<ProcessCallbackResult> HandleAsync(
@@ -83,6 +85,10 @@ public sealed class ProcessCallbackHandler(
         }
 
         await repository.UpdateAsync(connection, cancellationToken);
+
+        await analyticsPublisher.PublishAsync(
+            connection.CreatedByUserId, "bank_link_completed", connection.HouseholdId, cancellationToken);
+
         return ProcessCallbackResult.Success(connection);
     }
 }

@@ -1,6 +1,7 @@
 using MoneyTracker.Modules.Budgets.Application.CreateBudgetCategory;
 using MoneyTracker.Modules.Budgets.Domain;
 using MoneyTracker.Modules.Budgets.Infrastructure;
+using MoneyTracker.Modules.SharedKernel.Analytics;
 using MoneyTracker.Modules.SharedKernel.Households;
 
 namespace MoneyTracker.Modules.Budgets.Tests.Application;
@@ -17,7 +18,8 @@ public sealed class CreateBudgetCategoryHandlerTests
         var handler = new CreateBudgetCategoryHandler(
             repository,
             new AllowedHouseholdAccessService(),
-            TimeProvider.System);
+            TimeProvider.System,
+            new NoopAnalyticsEventPublisher());
 
         var first = await handler.HandleAsync(
             new CreateBudgetCategoryCommand(householdId, "Dining", userId),
