@@ -14,4 +14,8 @@ public static class BankConnectionErrors
     public const string SyncNoActiveConnections = "bank_sync_no_active_connections";
     public const string WebhookInvalidSignature = "bank_webhook_invalid_signature";
     public const string WebhookInvalidPayload = "bank_webhook_invalid_payload";
+    public const string ConsentExpired = "bank_consent_expired";
+    public const string ConsentRevoked = "bank_consent_revoked";
+    public const string ConsentInvalidStateTransition = "bank_consent_invalid_state_transition";
+    public const string ReConsentNotNeeded = "bank_re_consent_not_needed";
 }

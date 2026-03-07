@@ -7,9 +7,11 @@ public sealed class BankConnection
     public Guid CreatedByUserId { get; }
     public string ExternalUserId { get; }
     public string ExternalConnectionId { get; private set; }
-    public string? ConsentSessionId { get; }
+    public string? ConsentSessionId { get; private set; }
     public string? InstitutionName { get; private set; }
     public BankConnectionStatus Status { get; private set; }
+    public ConsentStatus ConsentStatus { get; private set; }
+    public DateTimeOffset? ConsentExpiresAtUtc { get; private set; }
     public string? ErrorCode { get; private set; }
     public string? ErrorMessage { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; }
@@ -109,6 +111,94 @@ public sealed class BankConnection
         UpdatedAtUtc = nowUtc;
     }
 
+    public void UpdateConsentSessionId(string consentSessionId, DateTimeOffset nowUtc)
+    {
+        if (string.IsNullOrWhiteSpace(consentSessionId))
+        {
+            throw new BankConnectionDomainException(
+                BankConnectionErrors.ValidationError,
+                "Consent session ID is required.");
+        }
+
+        ConsentSessionId = consentSessionId;
+        UpdatedAtUtc = nowUtc;
+    }
+
+    public void UpdateConsentExpiry(DateTimeOffset expiresAtUtc, DateTimeOffset nowUtc)
+    {
+        ConsentExpiresAtUtc = expiresAtUtc;
+        ConsentStatus = ConsentStatus.Active;
+        UpdatedAtUtc = nowUtc;
+    }
+
+    public void MarkConsentExpiringSoon(DateTimeOffset nowUtc)
+    {
+        if (ConsentStatus != ConsentStatus.Active)
+        {
+            throw new BankConnectionDomainException(
+                BankConnectionErrors.ConsentInvalidStateTransition,
+                $"Cannot mark consent as expiring soon from {ConsentStatus}.");
+        }
+
+        ConsentStatus = ConsentStatus.ExpiringSoon;
+        UpdatedAtUtc = nowUtc;
+    }
+
+    public void MarkConsentExpired(DateTimeOffset nowUtc)
+    {
+        if (ConsentStatus is not (ConsentStatus.Active or ConsentStatus.ExpiringSoon))
+        {
+            throw new BankConnectionDomainException(
+                BankConnectionErrors.ConsentInvalidStateTransition,
+                $"Cannot mark consent as expired from {ConsentStatus}.");
+        }
+
+        ConsentStatus = ConsentStatus.Expired;
+        Status = BankConnectionStatus.Expired;
+        UpdatedAtUtc = nowUtc;
+    }
+
+    public void MarkConsentRevoked(DateTimeOffset nowUtc)
+    {
+        ConsentStatus = ConsentStatus.Revoked;
+        if (Status == BankConnectionStatus.Active)
+        {
+            Status = BankConnectionStatus.Revoked;
+        }
+        UpdatedAtUtc = nowUtc;
+    }
+
+    public void ReactivateAfterReConsent(string externalConnectionId, string? institutionName, DateTimeOffset consentExpiresAtUtc, DateTimeOffset nowUtc)
+    {
+        if (Status is not (BankConnectionStatus.Expired or BankConnectionStatus.Revoked))
+        {
+            throw new BankConnectionDomainException(
+                BankConnectionErrors.ReConsentNotNeeded,
+                "Connection is still active and does not require re-consent.");
+        }
+
+        if (string.IsNullOrWhiteSpace(externalConnectionId))
+        {
+            throw new BankConnectionDomainException(
+                BankConnectionErrors.ValidationError,
+                "External connection ID is required for re-activation.");
+        }
+
+        ExternalConnectionId = externalConnectionId;
+        InstitutionName = institutionName?.Trim();
+        Status = BankConnectionStatus.Active;
+        ConsentStatus = ConsentStatus.Active;
+        ConsentExpiresAtUtc = consentExpiresAtUtc;
+        ErrorCode = null;
+        ErrorMessage = null;
+        UpdatedAtUtc = nowUtc;
+    }
+
+    public bool IsConsentValid()
+    {
+        return ConsentStatus is ConsentStatus.Active or ConsentStatus.ExpiringSoon;
+    }
+
     public void RecordSyncSuccess(DateTimeOffset utcNow)
     {
         SyncState.RecordSuccess(utcNow);
@@ -128,6 +218,7 @@ public sealed class BankConnection
             (BankConnectionStatus.Pending, BankConnectionStatus.Active) => true,
             (BankConnectionStatus.Pending, BankConnectionStatus.Failed) => true,
             (BankConnectionStatus.Active, BankConnectionStatus.Revoked) => true,
+            (BankConnectionStatus.Active, BankConnectionStatus.Expired) => true,
             _ => false
         };
 

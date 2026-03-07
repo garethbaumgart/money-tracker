@@ -36,6 +36,8 @@ public sealed class GetBankConnectionsHandler(
                 c.HouseholdId,
                 c.InstitutionName,
                 c.Status.ToString(),
+                c.ConsentStatus.ToString(),
+                c.ConsentExpiresAtUtc,
                 c.ErrorCode,
                 c.ErrorMessage,
                 c.CreatedAtUtc,

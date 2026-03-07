@@ -41,7 +41,32 @@ public sealed class InMemoryBankConnectionRepository : IBankConnectionRepository
             return Task.FromCanceled(cancellationToken);
         }
 
+        lock (_sync)
+        {
+            // Re-index consent session mapping in case it changed (e.g., re-consent)
+            if (!string.IsNullOrWhiteSpace(connection.ConsentSessionId))
+            {
+                _connectionsByConsentSession[connection.ConsentSessionId] = connection;
+            }
+        }
+
         return Task.CompletedTask;
+    }
+
+    public Task<BankConnection?> GetByIdAsync(BankConnectionId id, CancellationToken cancellationToken)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return Task.FromCanceled<BankConnection?>(cancellationToken);
+        }
+
+        lock (_sync)
+        {
+            var connection = _connectionsByHousehold.Values
+                .SelectMany(list => list)
+                .FirstOrDefault(c => c.Id == id);
+            return Task.FromResult(connection);
+        }
     }
 
     public Task<BankConnection?> GetByConsentSessionIdAsync(
@@ -96,6 +121,24 @@ public sealed class InMemoryBankConnectionRepository : IBankConnectionRepository
                 .ToArray();
 
             return Task.FromResult<IReadOnlyCollection<BankConnection>>(active);
+        }
+    }
+
+    public Task<IReadOnlyCollection<BankConnection>> GetAllConnectionsAsync(
+        CancellationToken cancellationToken)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return Task.FromCanceled<IReadOnlyCollection<BankConnection>>(cancellationToken);
+        }
+
+        lock (_sync)
+        {
+            var all = _connectionsByHousehold.Values
+                .SelectMany(list => list)
+                .ToArray();
+
+            return Task.FromResult<IReadOnlyCollection<BankConnection>>(all);
         }
     }
 }

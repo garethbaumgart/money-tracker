@@ -4,10 +4,12 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using MoneyTracker.Modules.BankConnections.Application.CheckConsentExpiry;
 using MoneyTracker.Modules.BankConnections.Application.CreateLinkSession;
 using MoneyTracker.Modules.BankConnections.Application.GetBankConnections;
 using MoneyTracker.Modules.BankConnections.Application.ProcessCallback;
 using MoneyTracker.Modules.BankConnections.Application.ProcessWebhook;
+using MoneyTracker.Modules.BankConnections.Application.ReConsent;
 using MoneyTracker.Modules.BankConnections.Application.SyncTransactions;
 using MoneyTracker.Modules.BankConnections.Application.TriggerManualSync;
 using MoneyTracker.Modules.BankConnections.Domain;
@@ -29,13 +31,17 @@ public static class BankConnectionEndpoints
             client.BaseAddress = new Uri("https://au-api.basiq.io");
             client.Timeout = TimeSpan.FromSeconds(30);
         });
+        services.AddSingleton<IConsentNotificationSender, Infrastructure.InMemoryConsentNotificationSender>();
         services.AddScoped<CreateLinkSessionHandler>();
         services.AddScoped<ProcessCallbackHandler>();
         services.AddScoped<GetBankConnectionsHandler>();
         services.AddSingleton<SyncTransactionsHandler>();
         services.AddScoped<ProcessWebhookHandler>();
         services.AddScoped<TriggerManualSyncHandler>();
+        services.AddScoped<ReConsentHandler>();
+        services.AddSingleton<CheckConsentExpiryHandler>();
         services.AddHostedService<Infrastructure.TransactionSyncWorker>();
+        services.AddHostedService<Infrastructure.ConsentExpiryCheckWorker>();
 
         return services;
     }
@@ -89,11 +95,22 @@ public static class BankConnectionEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        var reConsentEndpoint = (RouteHandlerBuilder)app.MapPost("/bank/connections/{connectionId}/re-consent", ReConsentConnection);
+        reConsentEndpoint
+            .WithName("ReConsentConnection")
+            .WithSummary("Re-consent an expired or revoked connection.")
+            .WithDescription("Generates a new Basiq consent URL for re-consenting an expired or revoked bank connection.")
+            .Produces<ReConsentResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         var webhookEndpoint = (RouteHandlerBuilder)app.MapPost("/webhooks/basiq", ProcessBasiqWebhook);
         webhookEndpoint
             .WithName("ProcessBasiqWebhook")
             .WithSummary("Receive Basiq webhook.")
-            .WithDescription("Validates webhook signature and triggers transaction sync.")
+            .WithDescription("Validates webhook signature and triggers transaction sync or handles consent revocation.")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status400BadRequest);
@@ -250,6 +267,8 @@ public static class BankConnectionEndpoints
             connection.HouseholdId,
             connection.InstitutionName,
             connection.Status.ToString(),
+            connection.ConsentStatus.ToString(),
+            connection.ConsentExpiresAtUtc,
             connection.ErrorCode,
             connection.ErrorMessage,
             connection.CreatedAtUtc,
@@ -322,6 +341,8 @@ public static class BankConnectionEndpoints
                     c.HouseholdId,
                     c.InstitutionName,
                     c.Status,
+                    c.ConsentStatus,
+                    c.ConsentExpiresAtUtc,
                     c.ErrorCode,
                     c.ErrorMessage,
                     c.CreatedAtUtc,
@@ -393,6 +414,58 @@ public static class BankConnectionEndpoints
         await TypedResults.Ok(response).ExecuteAsync(httpContext);
     }
 
+    private static async Task ReConsentConnection(HttpContext httpContext)
+    {
+        var authResult = await EndpointHelpers.ResolveAuthenticatedUser(httpContext);
+        if (!authResult.Success)
+        {
+            await authResult.Problem!.ExecuteAsync(httpContext);
+            return;
+        }
+
+        if (!TryGetGuidRoute(httpContext, "connectionId", out var connectionId))
+        {
+            await EndpointHelpers.WriteProblemAsync(
+                httpContext,
+                StatusCodes.Status400BadRequest,
+                "Validation failed.",
+                "connectionId route parameter is required.",
+                BankConnectionErrors.ValidationError,
+                BankConnectionErrors.ValidationError);
+            return;
+        }
+
+        var handler = httpContext.RequestServices.GetRequiredService<ReConsentHandler>();
+        var result = await handler.HandleAsync(
+            new ReConsentCommand(
+                new BankConnectionId(connectionId),
+                authResult.AuthenticatedUser!.UserId),
+            httpContext.RequestAborted);
+
+        if (!result.IsSuccess)
+        {
+            var statusCode = result.ErrorCode switch
+            {
+                BankConnectionErrors.ConnectionNotFound => StatusCodes.Status404NotFound,
+                BankConnectionErrors.ConnectionAccessDenied => StatusCodes.Status403Forbidden,
+                BankConnectionErrors.ReConsentNotNeeded => StatusCodes.Status400BadRequest,
+                _ => StatusCodes.Status400BadRequest
+            };
+
+            await EndpointHelpers.WriteProblemAsync(
+                httpContext,
+                statusCode,
+                statusCode == StatusCodes.Status403Forbidden ? "Access denied." : "Validation failed.",
+                result.ErrorMessage ?? "Request rejected.",
+                result.ErrorCode,
+                BankConnectionErrors.ValidationError);
+            return;
+        }
+
+        var response = new ReConsentResponse(result.ConsentUrl!);
+        await TypedResults.Ok(response).ExecuteAsync(httpContext);
+    }
+
     private static async Task ProcessBasiqWebhook(HttpContext httpContext)
     {
         // Read raw body for signature validation
@@ -452,6 +525,13 @@ public static class BankConnectionEndpoints
         var raw = httpContext.Request.Query[key].FirstOrDefault();
         return raw is not null && Guid.TryParse(raw, out value);
     }
+
+    private static bool TryGetGuidRoute(HttpContext httpContext, string key, out Guid value)
+    {
+        value = Guid.Empty;
+        var raw = httpContext.Request.RouteValues[key]?.ToString();
+        return raw is not null && Guid.TryParse(raw, out value);
+    }
 }
 
 public sealed record CreateLinkSessionRequest(Guid HouseholdId);
@@ -465,6 +545,8 @@ public sealed record BankConnectionResponse(
     Guid HouseholdId,
     string? InstitutionName,
     string Status,
+    string? ConsentStatus,
+    DateTimeOffset? ConsentExpiresAtUtc,
     string? ErrorCode,
     string? ErrorMessage,
     DateTimeOffset CreatedAtUtc,
@@ -475,10 +557,14 @@ public sealed record BankConnectionSummaryResponse(
     Guid HouseholdId,
     string? InstitutionName,
     string Status,
+    string? ConsentStatus,
+    DateTimeOffset? ConsentExpiresAtUtc,
     string? ErrorCode,
     string? ErrorMessage,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset UpdatedAtUtc);
+
+public sealed record ReConsentResponse(string ConsentUrl);
 
 public sealed record BankConnectionsResponse(BankConnectionSummaryResponse[] Connections);
 

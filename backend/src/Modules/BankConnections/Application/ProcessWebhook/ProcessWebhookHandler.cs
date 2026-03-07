@@ -7,6 +7,9 @@ namespace MoneyTracker.Modules.BankConnections.Application.ProcessWebhook;
 public sealed class ProcessWebhookHandler(
     IWebhookSignatureValidator signatureValidator,
     SyncTransactionsHandler syncHandler,
+    IBankConnectionRepository connectionRepository,
+    IConsentNotificationSender consentNotificationSender,
+    TimeProvider timeProvider,
     ILogger<ProcessWebhookHandler> logger)
 {
     public async Task<ProcessWebhookResult> HandleAsync(
@@ -24,6 +27,12 @@ public sealed class ProcessWebhookHandler(
             command.EventType,
             command.ConnectionId);
 
+        if (string.Equals(command.EventType, "consent.revoked", StringComparison.OrdinalIgnoreCase))
+        {
+            await HandleConsentRevocationAsync(command.ConnectionId, cancellationToken);
+            return ProcessWebhookResult.Accepted();
+        }
+
         // Trigger sync — idempotent because SyncTransactionsHandler deduplicates
         // by ExternalTransactionId. Replayed webhooks will not create duplicates.
         await syncHandler.HandleAsync(
@@ -31,5 +40,38 @@ public sealed class ProcessWebhookHandler(
             cancellationToken);
 
         return ProcessWebhookResult.Accepted();
+    }
+
+    private async Task HandleConsentRevocationAsync(
+        string? externalConnectionId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(externalConnectionId))
+        {
+            logger.LogWarning("Consent revocation webhook received without connection ID.");
+            return;
+        }
+
+        var connections = await connectionRepository.GetAllConnectionsAsync(cancellationToken);
+        var connection = connections.FirstOrDefault(c =>
+            string.Equals(c.ExternalConnectionId, externalConnectionId, StringComparison.Ordinal));
+
+        if (connection is null)
+        {
+            logger.LogWarning(
+                "Consent revocation webhook for unknown connection={ConnectionId}",
+                externalConnectionId);
+            return;
+        }
+
+        var nowUtc = timeProvider.GetUtcNow();
+        connection.MarkConsentRevoked(nowUtc);
+        await connectionRepository.UpdateAsync(connection, cancellationToken);
+        await consentNotificationSender.SendConsentRevokedAsync(connection, cancellationToken);
+
+        logger.LogInformation(
+            "Consent revoked for connection={ConnectionId} household={HouseholdId}",
+            connection.Id.Value,
+            connection.HouseholdId);
     }
 }
