@@ -12,6 +12,20 @@ import '../theme/app_theme_controller.dart';
 import '../theme/app_theme_mode.dart';
 import '../theme/app_theme_tokens.dart';
 
+String _todayPlanTitle([DateTime? now]) {
+  const dayNames = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
+  final day = (now ?? DateTime.now()).weekday; // 1=Monday, 7=Sunday
+  return '${dayNames[day - 1]} plan';
+}
+
 const double _shellExpandedBreakpoint = 980.0;
 const double _dashboardSplitBreakpoint = 900.0;
 const double _summaryCompactBreakpoint = 560.0;
@@ -83,7 +97,7 @@ class _MoneyTrackerShellState extends State<MoneyTrackerShell> {
           appBar: AppBar(
             title: Text(
               _selectedIndex == 0
-                  ? 'Wednesday plan'
+                  ? _todayPlanTitle()
                   : _destinations[_selectedIndex].label,
             ),
             actions: [
@@ -396,7 +410,7 @@ class _TopSummaryCard extends StatelessWidget {
                 ),
                 SizedBox(height: tokens.space1),
                 Text(
-                  'Wednesday plan',
+                  _todayPlanTitle(),
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
               ],
