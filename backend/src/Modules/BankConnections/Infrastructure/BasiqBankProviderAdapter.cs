@@ -11,7 +11,6 @@ public sealed class BasiqBankProviderAdapter : IBankProviderAdapter
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<BasiqBankProviderAdapter> _logger;
-    private readonly TimeProvider _timeProvider;
 
     private const int MaxRetries = 3;
     private static readonly TimeSpan InitialRetryDelay = TimeSpan.FromSeconds(1);
@@ -19,12 +18,10 @@ public sealed class BasiqBankProviderAdapter : IBankProviderAdapter
 
     public BasiqBankProviderAdapter(
         HttpClient httpClient,
-        ILogger<BasiqBankProviderAdapter> logger,
-        TimeProvider timeProvider)
+        ILogger<BasiqBankProviderAdapter> logger)
     {
         _httpClient = httpClient;
         _logger = logger;
-        _timeProvider = timeProvider;
     }
 
     public async Task<CreateUserResult> CreateUserAsync(

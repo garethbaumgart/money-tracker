@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using MoneyTracker.Modules.Auth.Application.GetAuthenticatedUser;
 using MoneyTracker.Modules.Auth.Domain;
 using MoneyTracker.Modules.BankConnections.Application.CreateLinkSession;

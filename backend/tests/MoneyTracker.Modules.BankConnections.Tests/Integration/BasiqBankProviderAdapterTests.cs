@@ -26,8 +26,7 @@ public sealed class BasiqBankProviderAdapterTests
         var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://au-api.basiq.io") };
         var adapter = new BasiqBankProviderAdapter(
             httpClient,
-            NullLogger<BasiqBankProviderAdapter>.Instance,
-            TimeProvider.System);
+            NullLogger<BasiqBankProviderAdapter>.Instance);
 
         var result = await adapter.CreateConsentSessionAsync("ext-user-1", CancellationToken.None);
 
@@ -59,8 +58,7 @@ public sealed class BasiqBankProviderAdapterTests
         var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://au-api.basiq.io") };
         var adapter = new BasiqBankProviderAdapter(
             httpClient,
-            NullLogger<BasiqBankProviderAdapter>.Instance,
-            TimeProvider.System);
+            NullLogger<BasiqBankProviderAdapter>.Instance);
 
         var result = await adapter.CreateConsentSessionAsync("ext-user-1", CancellationToken.None);
 
@@ -78,8 +76,7 @@ public sealed class BasiqBankProviderAdapterTests
         var httpClient = new HttpClient(handler) { BaseAddress = new Uri("https://au-api.basiq.io") };
         var adapter = new BasiqBankProviderAdapter(
             httpClient,
-            NullLogger<BasiqBankProviderAdapter>.Instance,
-            TimeProvider.System);
+            NullLogger<BasiqBankProviderAdapter>.Instance);
 
         var result = await adapter.CreateConsentSessionAsync("ext-user-1", CancellationToken.None);
 
