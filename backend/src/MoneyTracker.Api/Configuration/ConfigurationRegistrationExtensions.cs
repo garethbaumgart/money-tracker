@@ -32,6 +32,14 @@ internal static class ConfigurationRegistrationExtensions
             .Bind(configuration.GetSection(AlertingOptions.SectionName))
             .ValidateOnStart();
 
+        services
+            .AddOptions<RateLimitOptions>()
+            .Bind(configuration.GetSection(RateLimitOptions.SectionName));
+
+        services
+            .AddOptions<SecurityOptions>()
+            .Bind(configuration.GetSection(SecurityOptions.SectionName));
+
         return services;
     }
 }

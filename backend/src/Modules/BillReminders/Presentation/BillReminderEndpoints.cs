@@ -10,6 +10,7 @@ using MoneyTracker.Modules.BillReminders.Application.CreateBillReminder;
 using MoneyTracker.Modules.BillReminders.Application.GetBillReminders;
 using MoneyTracker.Modules.BillReminders.Application.DispatchDueReminders;
 using MoneyTracker.Modules.BillReminders.Domain;
+using MoneyTracker.Modules.SharedKernel.Privacy;
 
 namespace MoneyTracker.Modules.BillReminders.Presentation;
 
@@ -23,6 +24,8 @@ public static class BillReminderEndpoints
         services.AddScoped<GetBillRemindersHandler>();
         services.AddSingleton<DispatchDueRemindersHandler>();
         services.AddHostedService<Infrastructure.BillReminderDispatchWorker>();
+        services.AddSingleton<IUserDataExportParticipant, Infrastructure.BillReminderDataExportParticipant>();
+        services.AddSingleton<IUserDeletionParticipant, Infrastructure.BillReminderDataExportParticipant>();
 
         return services;
     }

@@ -11,6 +11,7 @@
     <ProjectReference Include="..\\Auth\\MoneyTracker.Modules.Auth.csproj" />
     <ProjectReference Include="..\\Households\\MoneyTracker.Modules.Households.csproj" />
     <ProjectReference Include="..\\Notifications\\MoneyTracker.Modules.Notifications.csproj" />
+    <ProjectReference Include="..\\SharedKernel\\MoneyTracker.Modules.SharedKernel.csproj" />
   </ItemGroup>
 
 </Project>

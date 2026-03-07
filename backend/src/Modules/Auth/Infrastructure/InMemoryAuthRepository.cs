@@ -16,6 +16,8 @@ public sealed class InMemoryAuthRepository : IAuthRepository
     private readonly Dictionary<string, AuthSession> _sessionsByRefreshToken = new();
     private readonly Dictionary<string, AuthUser> _usersByEmail = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<Guid, AuthUser> _usersById = new();
+    private readonly HashSet<Guid> _deletedUserIds = new();
+    private readonly Dictionary<Guid, DateTimeOffset> _scheduledPurges = new();
 
     public Task AddChallengeAsync(AuthChallenge challenge, CancellationToken cancellationToken)
     {
@@ -144,6 +146,35 @@ public sealed class InMemoryAuthRepository : IAuthRepository
             {
                 _sessionsByAccessToken.Remove(existingSession.AccessToken);
             }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task<AuthUser?> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return Task.FromCanceled<AuthUser?>(cancellationToken);
+        }
+
+        lock (_sync)
+        {
+            return Task.FromResult<AuthUser?>(_usersById.GetValueOrDefault(userId));
+        }
+    }
+
+    public Task MarkUserDeletedAsync(Guid userId, DateTimeOffset scheduledPurgeAtUtc, CancellationToken cancellationToken)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return Task.FromCanceled(cancellationToken);
+        }
+
+        lock (_sync)
+        {
+            _deletedUserIds.Add(userId);
+            _scheduledPurges[userId] = scheduledPurgeAtUtc;
         }
 
         return Task.CompletedTask;

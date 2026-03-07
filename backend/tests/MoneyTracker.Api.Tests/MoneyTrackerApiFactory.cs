@@ -31,7 +31,14 @@ public sealed class MoneyTrackerApiFactory : WebApplicationFactory<Program>
             configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Api:Environment"] = _environmentName,
-                ["Admin:UserIds"] = "*"
+                ["Admin:UserIds"] = "*",
+                ["RateLimiting:Auth:RequestsPerMinute"] = "10000",
+                ["RateLimiting:Crud:RequestsPerMinute"] = "10000",
+                ["RateLimiting:Webhooks:RequestsPerMinute"] = "10000",
+                ["RateLimiting:Admin:RequestsPerMinute"] = "10000",
+                ["RateLimiting:Bank:RequestsPerMinute"] = "10000",
+                ["RateLimiting:Insights:RequestsPerMinute"] = "10000",
+                ["RateLimiting:Analytics:RequestsPerMinute"] = "10000"
             });
 
             if (_configurationOverrides is null)
