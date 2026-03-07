@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 /// Displayed when the user does not have a premium subscription.
 /// Shows a teaser description of insights features with an upgrade prompt.
 class InsightsPaywallGate extends StatelessWidget {
-  const InsightsPaywallGate({super.key});
+  const InsightsPaywallGate({super.key, required this.onUpgrade});
+
+  /// Called when the user taps the "Upgrade to Premium" button.
+  final VoidCallback onUpgrade;
 
   @override
   Widget build(BuildContext context) {
@@ -54,9 +57,7 @@ class InsightsPaywallGate extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
-              onPressed: () {
-                // TODO: Navigate to subscription/paywall screen.
-              },
+              onPressed: onUpgrade,
               icon: const Icon(Icons.star),
               label: const Text('Upgrade to Premium'),
             ),

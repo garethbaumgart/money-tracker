@@ -75,6 +75,22 @@ void main() {
       expect(find.text('Spending alerts'), findsOneWidget);
     });
 
+    testWidgets('shows snackbar when upgrade button is tapped',
+        (tester) async {
+      final controller = InsightsController(
+        initialState:
+            InsightsState(loadState: InsightsLoadState.premiumRequired),
+      );
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(buildTestWidget(controller));
+
+      await tester.tap(find.text('Upgrade to Premium'));
+      await tester.pump();
+
+      expect(find.text('Premium upgrade coming soon'), findsOneWidget);
+    });
+
     testWidgets('shows idle state message when no data', (tester) async {
       final controller = InsightsController(
         initialState: InsightsState(loadState: InsightsLoadState.idle),

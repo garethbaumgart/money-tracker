@@ -33,7 +33,15 @@ class InsightsDashboardScreen extends StatelessWidget {
         }
 
         if (state.isPremiumRequired) {
-          return const InsightsPaywallGate();
+          return InsightsPaywallGate(
+            onUpgrade: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Premium upgrade coming soon'),
+                ),
+              );
+            },
+          );
         }
 
         if (state.hasError) {
