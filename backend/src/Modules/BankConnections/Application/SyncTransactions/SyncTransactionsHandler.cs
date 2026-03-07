@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using MoneyTracker.Modules.BankConnections.Domain;
 using MoneyTracker.Modules.SharedKernel.Transactions;
@@ -8,9 +9,12 @@ public sealed class SyncTransactionsHandler(
     IBankConnectionRepository connectionRepository,
     IBankProviderAdapter providerAdapter,
     ITransactionSyncRepository transactionSyncRepository,
+    ISyncEventRepository syncEventRepository,
     TimeProvider timeProvider,
     ILogger<SyncTransactionsHandler> logger)
 {
+    private const string DefaultRegion = "AU";
+
     public async Task<SyncTransactionsResult> HandleAsync(
         SyncTransactionsCommand command,
         CancellationToken cancellationToken)
@@ -48,15 +52,25 @@ public sealed class SyncTransactionsHandler(
                 continue;
             }
 
+            var stopwatch = Stopwatch.StartNew();
             try
             {
                 var (synced, skipped) = await SyncConnectionAsync(connection, cancellationToken);
                 totalSynced += synced;
                 totalSkipped += skipped;
+                stopwatch.Stop();
 
                 var nowUtc = timeProvider.GetUtcNow();
                 connection.RecordSyncSuccess(nowUtc);
                 await connectionRepository.UpdateAsync(connection, cancellationToken);
+
+                await RecordSyncEventAsync(
+                    connection,
+                    EventOutcome.Success,
+                    stopwatch.ElapsedMilliseconds,
+                    synced + skipped,
+                    errorCategory: null,
+                    cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -64,6 +78,7 @@ public sealed class SyncTransactionsHandler(
             }
             catch (Exception ex)
             {
+                stopwatch.Stop();
                 totalFailed += 1;
                 logger.LogError(
                     ex,
@@ -74,10 +89,52 @@ public sealed class SyncTransactionsHandler(
                 var nowUtc = timeProvider.GetUtcNow();
                 connection.RecordSyncFailure(nowUtc);
                 await connectionRepository.UpdateAsync(connection, cancellationToken);
+
+                await RecordSyncEventAsync(
+                    connection,
+                    EventOutcome.Failed,
+                    stopwatch.ElapsedMilliseconds,
+                    transactionCount: 0,
+                    errorCategory: ex.GetType().Name,
+                    cancellationToken);
             }
         }
 
         return SyncTransactionsResult.Success(totalSynced, totalSkipped, totalFailed);
+    }
+
+    private async Task RecordSyncEventAsync(
+        BankConnection connection,
+        EventOutcome outcome,
+        long durationMs,
+        int transactionCount,
+        string? errorCategory,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var institution = connection.InstitutionName ?? "Unknown";
+            var region = DefaultRegion;
+
+            var syncEvent = SyncEvent.Create(
+                connection.Id,
+                institution,
+                region,
+                outcome,
+                durationMs,
+                transactionCount,
+                errorCategory,
+                timeProvider.GetUtcNow());
+
+            await syncEventRepository.AddAsync(syncEvent, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Failed to record sync event for connection={ConnectionId}",
+                connection.Id.Value);
+        }
     }
 
     private async Task<(int Synced, int Skipped)> SyncConnectionAsync(

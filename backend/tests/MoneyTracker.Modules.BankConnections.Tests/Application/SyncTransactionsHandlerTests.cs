@@ -37,6 +37,7 @@ public sealed class SyncTransactionsHandlerTests
 
         var handler = new SyncTransactionsHandler(
             connectionRepo, providerAdapter, transactionRepo,
+            new StubSyncEventRepository(),
             new StubTimeProvider(NowUtc),
             NullLogger<SyncTransactionsHandler>.Instance);
 
@@ -68,6 +69,7 @@ public sealed class SyncTransactionsHandlerTests
 
         var handler = new SyncTransactionsHandler(
             connectionRepo, providerAdapter, transactionRepo,
+            new StubSyncEventRepository(),
             new StubTimeProvider(NowUtc),
             NullLogger<SyncTransactionsHandler>.Instance);
 
@@ -98,6 +100,7 @@ public sealed class SyncTransactionsHandlerTests
 
         var handler = new SyncTransactionsHandler(
             connectionRepo, providerAdapter, transactionRepo,
+            new StubSyncEventRepository(),
             new StubTimeProvider(NowUtc),
             NullLogger<SyncTransactionsHandler>.Instance);
 
@@ -126,6 +129,7 @@ public sealed class SyncTransactionsHandlerTests
 
         var handler = new SyncTransactionsHandler(
             connectionRepo, providerAdapter, transactionRepo,
+            new StubSyncEventRepository(),
             new StubTimeProvider(NowUtc),
             NullLogger<SyncTransactionsHandler>.Instance);
 
@@ -380,4 +384,56 @@ internal sealed class SyncFailingBankProviderAdapter : IBankProviderAdapter
 
     public Task<GetTransactionsResult> GetTransactionsAsync(string externalConnectionId, DateTimeOffset sinceUtc, CancellationToken cancellationToken)
         => Task.FromResult(new GetTransactionsResult(false, null, BankConnectionErrors.SyncProviderError, "Provider error"));
+}
+
+internal sealed class StubSyncEventRepository : ISyncEventRepository
+{
+    private readonly object _sync = new();
+    private readonly List<SyncEvent> _events = [];
+
+    public Task AddAsync(SyncEvent syncEvent, CancellationToken cancellationToken)
+    {
+        lock (_sync) { _events.Add(syncEvent); }
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyCollection<SyncEvent>> GetByPeriodAsync(DateTimeOffset since, CancellationToken cancellationToken)
+    {
+        lock (_sync)
+        {
+            return Task.FromResult<IReadOnlyCollection<SyncEvent>>(
+                _events.Where(e => e.OccurredAtUtc >= since).ToArray());
+        }
+    }
+
+    public IReadOnlyCollection<SyncEvent> GetAll()
+    {
+        lock (_sync) { return _events.ToArray(); }
+    }
+}
+
+internal sealed class StubLinkEventRepository : ILinkEventRepository
+{
+    private readonly object _sync = new();
+    private readonly List<LinkEvent> _events = [];
+
+    public Task AddAsync(LinkEvent linkEvent, CancellationToken cancellationToken)
+    {
+        lock (_sync) { _events.Add(linkEvent); }
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyCollection<LinkEvent>> GetByPeriodAsync(DateTimeOffset since, CancellationToken cancellationToken)
+    {
+        lock (_sync)
+        {
+            return Task.FromResult<IReadOnlyCollection<LinkEvent>>(
+                _events.Where(e => e.OccurredAtUtc >= since).ToArray());
+        }
+    }
+
+    public IReadOnlyCollection<LinkEvent> GetAll()
+    {
+        lock (_sync) { return _events.ToArray(); }
+    }
 }

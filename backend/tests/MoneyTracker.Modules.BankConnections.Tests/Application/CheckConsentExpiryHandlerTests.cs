@@ -128,6 +128,7 @@ public sealed class CheckConsentExpiryHandlerTests
 
         var handler = new SyncTransactionsHandler(
             connectionRepo, providerAdapter, transactionRepo,
+            new NoOpSyncEventRepository(),
             new StubTimeProvider(NowUtc),
             NullLogger<SyncTransactionsHandler>.Instance);
 
@@ -183,4 +184,11 @@ public sealed class CheckConsentExpiryHandlerTests
         connection.UpdateConsentExpiry(consentExpiresAtUtc, NowUtc.AddDays(-30).AddMinutes(5));
         return connection;
     }
+}
+
+internal sealed class NoOpSyncEventRepository : ISyncEventRepository
+{
+    public Task AddAsync(SyncEvent syncEvent, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task<IReadOnlyCollection<SyncEvent>> GetByPeriodAsync(DateTimeOffset since, CancellationToken cancellationToken)
+        => Task.FromResult<IReadOnlyCollection<SyncEvent>>(Array.Empty<SyncEvent>());
 }

@@ -7,8 +7,11 @@ using Microsoft.Extensions.DependencyInjection;
 using MoneyTracker.Modules.BankConnections.Application.CheckConsentExpiry;
 using MoneyTracker.Modules.BankConnections.Application.CreateLinkSession;
 using MoneyTracker.Modules.BankConnections.Application.GetBankConnections;
+using MoneyTracker.Modules.BankConnections.Application.GetPilotMetrics;
 using MoneyTracker.Modules.BankConnections.Application.ProcessCallback;
 using MoneyTracker.Modules.BankConnections.Application.ProcessWebhook;
+using MoneyTracker.Modules.BankConnections.Application.RecordLinkEvent;
+using MoneyTracker.Modules.BankConnections.Application.RecordSyncEvent;
 using MoneyTracker.Modules.BankConnections.Application.ReConsent;
 using MoneyTracker.Modules.BankConnections.Application.SyncTransactions;
 using MoneyTracker.Modules.BankConnections.Application.TriggerManualSync;
@@ -31,6 +34,8 @@ public static class BankConnectionEndpoints
             client.BaseAddress = new Uri("https://au-api.basiq.io");
             client.Timeout = TimeSpan.FromSeconds(30);
         });
+        services.AddSingleton<ISyncEventRepository, Infrastructure.InMemorySyncEventRepository>();
+        services.AddSingleton<ILinkEventRepository, Infrastructure.InMemoryLinkEventRepository>();
         services.AddSingleton<IConsentNotificationSender, Infrastructure.InMemoryConsentNotificationSender>();
         services.AddScoped<CreateLinkSessionHandler>();
         services.AddScoped<ProcessCallbackHandler>();
@@ -38,6 +43,10 @@ public static class BankConnectionEndpoints
         services.AddSingleton<SyncTransactionsHandler>();
         services.AddScoped<ProcessWebhookHandler>();
         services.AddScoped<TriggerManualSyncHandler>();
+        services.AddScoped<RecordSyncEventHandler>();
+        services.AddScoped<RecordLinkEventHandler>();
+        services.AddScoped<GetPilotMetricsHandler>();
+        services.AddSingleton<IAdminAccessService, ConfigurationAdminAccessService>();
         services.AddScoped<ReConsentHandler>();
         services.AddSingleton<CheckConsentExpiryHandler>();
         services.AddHostedService<Infrastructure.TransactionSyncWorker>();
@@ -114,6 +123,15 @@ public static class BankConnectionEndpoints
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        var pilotMetricsEndpoint = (RouteHandlerBuilder)app.MapGet("/admin/pilot-metrics", GetPilotMetrics);
+        pilotMetricsEndpoint
+            .WithName("GetPilotMetrics")
+            .WithSummary("Get pilot quality metrics.")
+            .WithDescription("Returns aggregated sync, link, and consent metrics for the NZ fallback decision. Admin access required.")
+            .Produces<PilotMetricsResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
 
         return app;
     }
@@ -519,6 +537,84 @@ public static class BankConnectionEndpoints
         httpContext.Response.StatusCode = StatusCodes.Status204NoContent;
     }
 
+    private static async Task GetPilotMetrics(HttpContext httpContext)
+    {
+        var authResult = await EndpointHelpers.ResolveAuthenticatedUser(httpContext);
+        if (!authResult.Success)
+        {
+            await authResult.Problem!.ExecuteAsync(httpContext);
+            return;
+        }
+
+        // Admin role gate: authenticated user must have admin access.
+        var adminService = httpContext.RequestServices.GetRequiredService<IAdminAccessService>();
+        var isAdmin = await adminService.IsAdminAsync(authResult.AuthenticatedUser!.UserId, httpContext.RequestAborted);
+        if (!isAdmin)
+        {
+            await EndpointHelpers.WriteProblemAsync(
+                httpContext,
+                StatusCodes.Status403Forbidden,
+                "Access denied.",
+                "Admin access is required to view pilot metrics.",
+                PilotMetricErrors.MetricsAccessDenied,
+                PilotMetricErrors.MetricsAccessDenied);
+            return;
+        }
+
+        var periodDaysRaw = httpContext.Request.Query["periodDays"].FirstOrDefault();
+        var periodDays = 30;
+        if (periodDaysRaw is not null && int.TryParse(periodDaysRaw, out var parsed) && parsed > 0)
+        {
+            periodDays = parsed;
+        }
+
+        var region = httpContext.Request.Query["region"].FirstOrDefault();
+
+        var handler = httpContext.RequestServices.GetRequiredService<GetPilotMetricsHandler>();
+        var result = await handler.HandleAsync(
+            new GetPilotMetricsQuery(periodDays, region),
+            httpContext.RequestAborted);
+
+        if (!result.IsSuccess)
+        {
+            var statusCode = result.ErrorCode switch
+            {
+                PilotMetricErrors.MetricsAccessDenied => StatusCodes.Status403Forbidden,
+                _ => StatusCodes.Status400BadRequest
+            };
+
+            await EndpointHelpers.WriteProblemAsync(
+                httpContext,
+                statusCode,
+                statusCode == StatusCodes.Status403Forbidden ? "Access denied." : "Request failed.",
+                result.ErrorMessage ?? "Request rejected.",
+                result.ErrorCode,
+                PilotMetricErrors.MetricsQueryFailed);
+            return;
+        }
+
+        var response = new PilotMetricsResponse(
+            result.PeriodDays,
+            new SyncMetricsResponse(
+                result.SyncMetrics!.OverallSuccessRate,
+                result.SyncMetrics.ByRegion
+                    .Select(r => new RegionSyncMetricResponse(r.Region, r.SuccessRate, r.AvgLatencyMs))
+                    .ToArray(),
+                result.SyncMetrics.ByInstitution
+                    .Select(i => new InstitutionSyncMetricResponse(i.Institution, i.SuccessRate, i.AvgLatencyMs))
+                    .ToArray()),
+            new LinkMetricsResponse(
+                result.LinkMetrics!.ByInstitution
+                    .Select(i => new InstitutionLinkMetricResponse(i.Institution, i.Attempted, i.Successful))
+                    .ToArray()),
+            new ConsentHealthResponse(
+                result.ConsentHealth!.AverageDurationDays,
+                result.ConsentHealth.ReConsentRate,
+                result.ConsentHealth.RevocationRate));
+
+        await TypedResults.Ok(response).ExecuteAsync(httpContext);
+    }
+
     private static bool TryGetGuidQuery(HttpContext httpContext, string key, out Guid value)
     {
         value = Guid.Empty;
@@ -583,3 +679,24 @@ internal sealed record WebhookPayload
     [JsonPropertyName("connectionId")]
     public string? ConnectionId { get; init; }
 }
+
+public sealed record PilotMetricsResponse(
+    int PeriodDays,
+    SyncMetricsResponse SyncMetrics,
+    LinkMetricsResponse LinkMetrics,
+    ConsentHealthResponse ConsentHealth);
+
+public sealed record SyncMetricsResponse(
+    double OverallSuccessRate,
+    RegionSyncMetricResponse[] ByRegion,
+    InstitutionSyncMetricResponse[] ByInstitution);
+
+public sealed record RegionSyncMetricResponse(string Region, double SuccessRate, double AvgLatencyMs);
+
+public sealed record InstitutionSyncMetricResponse(string Institution, double SuccessRate, double AvgLatencyMs);
+
+public sealed record LinkMetricsResponse(InstitutionLinkMetricResponse[] ByInstitution);
+
+public sealed record InstitutionLinkMetricResponse(string Institution, int Attempted, int Successful);
+
+public sealed record ConsentHealthResponse(double AverageDurationDays, double ReConsentRate, double RevocationRate);

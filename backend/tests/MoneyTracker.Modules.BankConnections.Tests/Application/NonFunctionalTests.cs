@@ -27,6 +27,7 @@ public sealed class NonFunctionalTests
 
         var handler = new SyncTransactionsHandler(
             connectionRepo, providerAdapter, transactionRepo,
+            new StubSyncEventRepository(),
             new StubTimeProvider(NowUtc),
             NullLogger<SyncTransactionsHandler>.Instance);
 
