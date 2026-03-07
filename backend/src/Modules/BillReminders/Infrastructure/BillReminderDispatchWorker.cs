@@ -1,10 +1,12 @@
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using MoneyTracker.Modules.BillReminders.Application.DispatchDueReminders;
 
 namespace MoneyTracker.Modules.BillReminders.Infrastructure;
 
 public sealed class BillReminderDispatchWorker(
-    DispatchDueRemindersHandler handler) : BackgroundService
+    DispatchDueRemindersHandler handler,
+    ILogger<BillReminderDispatchWorker> logger) : BackgroundService
 {
     private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
 
@@ -20,6 +22,18 @@ public sealed class BillReminderDispatchWorker(
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
                 return;
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(exception, "Bill reminder dispatch worker failed.");
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
             }
         }
     }

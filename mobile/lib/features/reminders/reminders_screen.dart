@@ -159,7 +159,7 @@ class _ReminderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dueLabel = _formatDate(reminder.dueDate);
+    final dueLabel = _formatDate(context, reminder.dueDate);
     final badgeColor = reminder.isOverdue ? tokens.stateDanger : tokens.stateSuccess;
     final badgeText = reminder.isOverdue ? 'Overdue' : 'Due $dueLabel';
 
@@ -202,22 +202,8 @@ class _ReminderCard extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}';
+  String _formatDate(BuildContext context, DateTime date) {
+    return MaterialLocalizations.of(context).formatMediumDate(date);
   }
 }
 

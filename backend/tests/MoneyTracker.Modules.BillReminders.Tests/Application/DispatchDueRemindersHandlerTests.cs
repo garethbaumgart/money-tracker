@@ -3,6 +3,7 @@ using MoneyTracker.Modules.BillReminders.Domain;
 using MoneyTracker.Modules.BillReminders.Infrastructure;
 using MoneyTracker.Modules.Households.Domain;
 using MoneyTracker.Modules.Notifications.Domain;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace MoneyTracker.Modules.BillReminders.Tests.Application;
 
@@ -41,7 +42,8 @@ public sealed class DispatchDueRemindersHandlerTests
             new FakeDispatchHouseholdRepository(household),
             new FakeNotificationTokenRepository(),
             sender,
-            new FakeTimeProvider(nowUtc));
+            new FakeTimeProvider(nowUtc),
+            NullLogger<DispatchDueRemindersHandler>.Instance);
 
         await handler.HandleAsync(CancellationToken.None);
 

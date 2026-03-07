@@ -93,7 +93,6 @@ public static class NotificationEndpoints
         var token = result.Token!;
         var response = new RegisterDeviceTokenResponse(
             token.DeviceId,
-            token.Token,
             token.Platform,
             token.RegisteredAtUtc);
         await TypedResults.Created($"/notifications/device-tokens/{token.DeviceId}", response)
@@ -235,7 +234,6 @@ public sealed record RegisterDeviceTokenRequest(string DeviceId, string Token, s
 
 public sealed record RegisterDeviceTokenResponse(
     string DeviceId,
-    string Token,
     string Platform,
     DateTimeOffset RegisteredAtUtc);
 

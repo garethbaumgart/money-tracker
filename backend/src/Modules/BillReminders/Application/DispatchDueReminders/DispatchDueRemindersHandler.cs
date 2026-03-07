@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using MoneyTracker.Modules.BillReminders.Domain;
 using MoneyTracker.Modules.Households.Domain;
 using MoneyTracker.Modules.Notifications.Domain;
@@ -9,7 +10,8 @@ public sealed class DispatchDueRemindersHandler(
     IHouseholdRepository householdRepository,
     INotificationTokenRepository notificationTokenRepository,
     INotificationSender notificationSender,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    ILogger<DispatchDueRemindersHandler> logger)
 {
     public async Task<DispatchDueRemindersResult> HandleAsync(CancellationToken cancellationToken)
     {
@@ -37,6 +39,10 @@ public sealed class DispatchDueRemindersHandler(
             if (household is null)
             {
                 failed += 1;
+                logger.LogWarning(
+                    "Bill reminder dispatch failed for {ReminderId} due {DueDateUtc}: household not found.",
+                    reminder.Id.Value,
+                    reminder.NextDueDateUtc);
                 reminder.MarkDispatchFailure(
                     nowUtc,
                     CalculateRetryDelay(reminder.DispatchAttemptCount),
@@ -60,6 +66,10 @@ public sealed class DispatchDueRemindersHandler(
             if (tokens.Count == 0)
             {
                 failed += 1;
+                logger.LogWarning(
+                    "Bill reminder dispatch failed for {ReminderId} due {DueDateUtc}: no device tokens.",
+                    reminder.Id.Value,
+                    reminder.NextDueDateUtc);
                 reminder.MarkDispatchFailure(
                     nowUtc,
                     CalculateRetryDelay(reminder.DispatchAttemptCount),
@@ -84,18 +94,22 @@ public sealed class DispatchDueRemindersHandler(
                 reminder.Amount,
                 reminder.NextDueDateUtc);
 
+            var anySuccess = false;
             NotificationDispatchResult? failure = null;
             foreach (var token in tokens)
             {
                 var dispatchResult = await notificationSender.SendReminderAsync(message, token, cancellationToken);
-                if (!dispatchResult.IsSuccess)
+                if (dispatchResult.IsSuccess)
                 {
-                    failure = dispatchResult;
-                    break;
+                    anySuccess = true;
+                }
+                else
+                {
+                    failure ??= dispatchResult;
                 }
             }
 
-            if (failure is null)
+            if (anySuccess)
             {
                 reminder.MarkDispatchSuccess(nowUtc);
                 await reminderRepository.UpdateAsync(reminder, cancellationToken);
@@ -109,14 +123,31 @@ public sealed class DispatchDueRemindersHandler(
                         ErrorMessage: null),
                     cancellationToken);
                 sent += 1;
+                if (failure is not null)
+                {
+                    logger.LogWarning(
+                        "Bill reminder dispatch partially failed for {ReminderId} due {DueDateUtc}: {ErrorCode} {ErrorMessage}",
+                        reminder.Id.Value,
+                        reminder.NextDueDateUtc,
+                        failure.ErrorCode ?? BillReminderErrors.ReminderDispatchFailed,
+                        failure.ErrorMessage ?? "Reminder dispatch failed.");
+                }
             }
             else
             {
+                var errorCode = failure?.ErrorCode ?? BillReminderErrors.ReminderDispatchFailed;
+                var errorMessage = failure?.ErrorMessage ?? "Reminder dispatch failed.";
+                logger.LogWarning(
+                    "Bill reminder dispatch failed for {ReminderId} due {DueDateUtc}: {ErrorCode} {ErrorMessage}",
+                    reminder.Id.Value,
+                    reminder.NextDueDateUtc,
+                    errorCode,
+                    errorMessage);
                 reminder.MarkDispatchFailure(
                     nowUtc,
                     CalculateRetryDelay(reminder.DispatchAttemptCount),
-                    failure.ErrorCode ?? BillReminderErrors.ReminderDispatchFailed,
-                    failure.ErrorMessage ?? "Reminder dispatch failed.");
+                    errorCode,
+                    errorMessage);
                 await reminderRepository.UpdateAsync(reminder, cancellationToken);
                 await reminderRepository.RecordDispatchAsync(
                     new BillReminderDispatchRecord(
@@ -124,8 +155,8 @@ public sealed class DispatchDueRemindersHandler(
                         reminder.NextDueDateUtc,
                         nowUtc,
                         false,
-                        failure.ErrorCode ?? BillReminderErrors.ReminderDispatchFailed,
-                        failure.ErrorMessage ?? "Reminder dispatch failed."),
+                        errorCode,
+                        errorMessage),
                     cancellationToken);
                 failed += 1;
             }

@@ -125,7 +125,8 @@ public static class BillReminderEndpoints
         }
 
         var reminder = result.Reminder!;
-        var response = BuildReminderResponse(reminder, DateTimeOffset.UtcNow);
+        var timeProvider = httpContext.RequestServices.GetRequiredService<TimeProvider>();
+        var response = BuildReminderResponse(reminder, timeProvider.GetUtcNow());
         await TypedResults.Created(
                 $"/households/{householdId}/bill-reminders/{reminder.Id.Value}",
                 response)
@@ -165,7 +166,8 @@ public static class BillReminderEndpoints
             return;
         }
 
-        var nowUtc = DateTimeOffset.UtcNow;
+        var timeProvider = httpContext.RequestServices.GetRequiredService<TimeProvider>();
+        var nowUtc = timeProvider.GetUtcNow();
         var response = new BillRemindersResponse(
             result.Reminders!
                 .Select(reminder => BuildReminderResponse(reminder, nowUtc))

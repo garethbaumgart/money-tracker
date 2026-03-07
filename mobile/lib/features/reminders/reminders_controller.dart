@@ -41,6 +41,7 @@ class RemindersController extends ChangeNotifier {
 
   void addReminder(ReminderEntry reminder) {
     _reminders.add(reminder);
+    _sortReminders();
     notifyListeners();
   }
 
@@ -66,5 +67,10 @@ class RemindersController extends ChangeNotifier {
         cadence: 'Monthly',
       ),
     ]);
+    _sortReminders();
+  }
+
+  void _sortReminders() {
+    _reminders.sort((a, b) => a.dueDate.compareTo(b.dueDate));
   }
 }
