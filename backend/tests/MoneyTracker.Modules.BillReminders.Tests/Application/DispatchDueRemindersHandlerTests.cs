@@ -31,14 +31,14 @@ public sealed class DispatchDueRemindersHandlerTests
                 reminder.NextDueDateUtc,
                 nowUtc,
                 true,
-                errorCode: null,
-                errorMessage: null),
+                ErrorCode: null,
+                ErrorMessage: null),
             CancellationToken.None);
 
         var sender = new FakeNotificationSender();
         var handler = new DispatchDueRemindersHandler(
             reminderRepository,
-            new FakeHouseholdRepository(household),
+            new FakeDispatchHouseholdRepository(household),
             new FakeNotificationTokenRepository(),
             sender,
             new FakeTimeProvider(nowUtc));
@@ -78,7 +78,7 @@ internal sealed class FakeNotificationTokenRepository : INotificationTokenReposi
     }
 }
 
-internal sealed class FakeHouseholdRepository(Household household) : IHouseholdRepository
+internal sealed class FakeDispatchHouseholdRepository(Household household) : IHouseholdRepository
 {
     public Task<bool> AddIfNotExistsAsync(Household household, CancellationToken cancellationToken)
     {

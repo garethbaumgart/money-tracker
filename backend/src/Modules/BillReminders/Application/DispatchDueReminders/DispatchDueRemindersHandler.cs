@@ -105,8 +105,8 @@ public sealed class DispatchDueRemindersHandler(
                         reminder.LastNotifiedDueDateUtc!.Value,
                         nowUtc,
                         true,
-                        errorCode: null,
-                        errorMessage: null),
+                        ErrorCode: null,
+                        ErrorMessage: null),
                     cancellationToken);
                 sent += 1;
             }
