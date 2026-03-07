@@ -13,8 +13,13 @@ internal sealed class ErrorRateMonitor(
 
     public void RecordRequest(string endpoint, int statusCode)
     {
+        RecordRequest(endpoint, statusCode, durationMs: null);
+    }
+
+    public void RecordRequest(string endpoint, int statusCode, long? durationMs)
+    {
         var now = timeProvider.GetUtcNow();
-        var record = new RequestRecord(statusCode, now);
+        var record = new RequestRecord(statusCode, now, durationMs);
 
         var bag = _records.GetOrAdd(endpoint, _ => []);
         bag.Add(record);
@@ -57,6 +62,58 @@ internal sealed class ErrorRateMonitor(
         return (double)errorCount / recentRecords.Length * 100;
     }
 
+    /// <summary>
+    /// Returns the overall 5xx error rate across all endpoints within the sliding window.
+    /// </summary>
+    public double ComputeOverallErrorRate()
+    {
+        var now = timeProvider.GetUtcNow();
+        var windowStart = now.AddSeconds(-alertingOptions.Value.ErrorRateWindowSeconds);
+
+        var allRecords = _records.Values
+            .SelectMany(bag => bag.Where(r => r.TimestampUtc >= windowStart))
+            .ToArray();
+
+        if (allRecords.Length == 0)
+        {
+            return 0;
+        }
+
+        var errorCount = allRecords.Count(r => r.StatusCode >= 500);
+        return (double)errorCount / allRecords.Length * 100;
+    }
+
+    /// <summary>
+    /// Computes latency percentiles (p50, p95, p99) across all endpoints within the sliding window.
+    /// </summary>
+    public LatencyPercentiles ComputeLatencyPercentiles()
+    {
+        var now = timeProvider.GetUtcNow();
+        var windowStart = now.AddSeconds(-alertingOptions.Value.ErrorRateWindowSeconds);
+
+        var durations = _records.Values
+            .SelectMany(bag => bag.Where(r => r.TimestampUtc >= windowStart && r.DurationMs.HasValue))
+            .Select(r => r.DurationMs!.Value)
+            .OrderBy(d => d)
+            .ToArray();
+
+        if (durations.Length == 0)
+        {
+            return new LatencyPercentiles(0, 0, 0);
+        }
+
+        return new LatencyPercentiles(
+            Percentile(durations, 50),
+            Percentile(durations, 95),
+            Percentile(durations, 99));
+    }
+
+    private static long Percentile(long[] sorted, int percentile)
+    {
+        var index = (int)Math.Ceiling(percentile / 100.0 * sorted.Length) - 1;
+        return sorted[Math.Max(0, Math.Min(index, sorted.Length - 1))];
+    }
+
     private void PurgeExpiredEntries(string endpoint, DateTimeOffset now)
     {
         var windowStart = now.AddSeconds(-alertingOptions.Value.ErrorRateWindowSeconds);
@@ -74,5 +131,7 @@ internal sealed class ErrorRateMonitor(
         }
     }
 
-    private sealed record RequestRecord(int StatusCode, DateTimeOffset TimestampUtc);
+    private sealed record RequestRecord(int StatusCode, DateTimeOffset TimestampUtc, long? DurationMs = null);
 }
+
+public sealed record LatencyPercentiles(long P50Ms, long P95Ms, long P99Ms);

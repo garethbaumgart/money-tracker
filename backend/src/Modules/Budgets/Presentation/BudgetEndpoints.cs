@@ -10,6 +10,7 @@ using MoneyTracker.Modules.Budgets.Application.CreateBudgetCategory;
 using MoneyTracker.Modules.Budgets.Application.GetBudgetCategories;
 using MoneyTracker.Modules.Budgets.Application.UpsertBudgetAllocation;
 using MoneyTracker.Modules.Budgets.Domain;
+using MoneyTracker.Modules.SharedKernel.Health;
 using MoneyTracker.Modules.SharedKernel.Privacy;
 
 namespace MoneyTracker.Modules.Budgets.Presentation;
@@ -25,6 +26,7 @@ public static class BudgetEndpoints
         services.AddScoped<UpsertBudgetAllocationHandler>();
         services.AddSingleton<IUserDataExportParticipant, Infrastructure.BudgetDataExportParticipant>();
         services.AddSingleton<IUserDeletionParticipant, Infrastructure.BudgetDataExportParticipant>();
+        services.AddSingleton<IModuleHealthCheck, Infrastructure.BudgetsModuleHealthCheck>();
 
         return services;
     }

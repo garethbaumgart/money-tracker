@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MoneyTracker.Modules.Insights.Application.GetBudgetHealth;
 using MoneyTracker.Modules.Insights.Application.GetSpendingSummary;
 using MoneyTracker.Modules.Insights.Domain;
+using MoneyTracker.Modules.SharedKernel.Health;
 using MoneyTracker.Modules.SharedKernel.Presentation;
 
 namespace MoneyTracker.Modules.Insights.Presentation;
@@ -15,6 +16,7 @@ public static class InsightsEndpoints
     {
         services.AddScoped<GetSpendingSummaryHandler>();
         services.AddScoped<GetBudgetHealthHandler>();
+        services.AddSingleton<IModuleHealthCheck, Infrastructure.InsightsModuleHealthCheck>();
         return services;
     }
 

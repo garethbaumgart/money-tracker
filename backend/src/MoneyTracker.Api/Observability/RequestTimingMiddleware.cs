@@ -8,7 +8,8 @@ internal sealed class RequestTimingMiddleware(
     RequestDelegate next,
     ILogger<RequestTimingMiddleware> logger,
     IOptions<PerformanceOptions> performanceOptions,
-    IHostEnvironment hostEnvironment)
+    IHostEnvironment hostEnvironment,
+    ErrorRateMonitor errorRateMonitor)
 {
     private const string DurationHeader = "X-Request-Duration-Ms";
 
@@ -24,6 +25,8 @@ internal sealed class RequestTimingMiddleware(
         var method = context.Request.Method;
         var statusCode = context.Response.StatusCode;
         var correlationId = CorrelationHeaders.GetCorrelationId(context);
+
+        errorRateMonitor.RecordRequest(path, statusCode, elapsedMs);
 
         if (!hostEnvironment.IsProduction() && !context.Response.HasStarted)
         {
