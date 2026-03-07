@@ -2,6 +2,11 @@ using MoneyTracker.Modules.BankConnections.Domain;
 
 namespace MoneyTracker.Modules.BankConnections.Infrastructure;
 
+// PostgreSQL index recommendations:
+// - IX_bank_connections_household_id: index on bank_connections(household_id) for household-scoped queries
+// - IX_bank_connections_consent_session: UNIQUE index on bank_connections(consent_session_id) WHERE consent_session_id IS NOT NULL
+// - IX_bank_connections_external_id: UNIQUE index on bank_connections(external_connection_id) for external lookups
+// - IX_bank_connections_status: index on bank_connections(status) for active connection filtering
 public sealed class InMemoryBankConnectionRepository : IBankConnectionRepository
 {
     private readonly object _sync = new();

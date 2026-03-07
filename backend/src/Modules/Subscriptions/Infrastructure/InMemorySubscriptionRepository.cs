@@ -2,6 +2,10 @@ using MoneyTracker.Modules.Subscriptions.Domain;
 
 namespace MoneyTracker.Modules.Subscriptions.Infrastructure;
 
+// PostgreSQL index recommendations:
+// - IX_subscriptions_household_id: UNIQUE index on subscriptions(household_id) for household lookups
+// - IX_subscriptions_app_user_id: UNIQUE index on subscriptions(revenue_cat_app_user_id) for RevenueCat lookups
+// - IX_subscriptions_trial_expiry: index on subscriptions(status, trial_expires_at_utc) WHERE status = 'Trial' for expired trial queries
 public sealed class InMemorySubscriptionRepository : ISubscriptionRepository
 {
     private readonly object _sync = new();

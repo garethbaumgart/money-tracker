@@ -3,6 +3,10 @@ using MoneyTracker.Modules.Transactions.Domain;
 
 namespace MoneyTracker.Modules.Transactions.Infrastructure;
 
+// PostgreSQL index recommendations:
+// - IX_transactions_household_id: index on transactions(household_id) for household-scoped queries
+// - IX_transactions_household_occurred: index on transactions(household_id, occurred_at_utc) for date-range filtering
+// - IX_transactions_external_id: UNIQUE index on transactions(bank_connection_id, external_transaction_id) for sync deduplication
 public sealed class InMemoryTransactionRepository : ITransactionRepository, ITransactionSyncRepository
 {
     private readonly object _sync = new();

@@ -2,6 +2,10 @@ using MoneyTracker.Modules.Households.Domain;
 
 namespace MoneyTracker.Modules.Households.Infrastructure;
 
+// PostgreSQL index recommendations:
+// - IX_households_name: UNIQUE index on households(LOWER(name)) for case-insensitive name lookups
+// - IX_households_id: PRIMARY KEY on households(id)
+// - IX_household_invitations_token: UNIQUE index on household_invitations(token) for invitation lookups
 public sealed class InMemoryHouseholdRepository : IHouseholdRepository
 {
     private readonly object _sync = new();

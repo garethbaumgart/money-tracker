@@ -20,6 +20,18 @@ internal static class ConfigurationRegistrationExtensions
             .Bind(configuration.GetSection(DatabaseOptions.SectionName))
             .ValidateOnStart();
 
+        services.AddSingleton<IValidateOptions<PerformanceOptions>, PerformanceOptionsValidator>();
+        services
+            .AddOptions<PerformanceOptions>()
+            .Bind(configuration.GetSection(PerformanceOptions.SectionName))
+            .ValidateOnStart();
+
+        services.AddSingleton<IValidateOptions<AlertingOptions>, AlertingOptionsValidator>();
+        services
+            .AddOptions<AlertingOptions>()
+            .Bind(configuration.GetSection(AlertingOptions.SectionName))
+            .ValidateOnStart();
+
         return services;
     }
 }
