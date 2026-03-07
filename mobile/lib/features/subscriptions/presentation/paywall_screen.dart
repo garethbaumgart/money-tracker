@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../app/theme/app_theme_tokens.dart';
-import '../domain/offering.dart';
 import '../domain/purchase_result.dart';
 import 'paywall_controller.dart';
 import 'plan_card.dart';
@@ -409,6 +408,12 @@ class _LegalLinks extends StatelessWidget {
 
   final AppThemeTokens tokens;
 
+  // TODO(#107): Replace SnackBar approach with url_launcher once the
+  // package is added to pubspec.yaml. Use:
+  //   launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)
+  static const _termsUrl = 'https://moneytracker.app/terms';
+  static const _privacyUrl = 'https://moneytracker.app/privacy';
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -426,7 +431,12 @@ class _LegalLinks extends StatelessWidget {
           children: [
             TextButton(
               onPressed: () {
-                // Will be wired to actual terms URL in production.
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Terms of Service: $_termsUrl'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
               },
               child: Text(
                 'Terms of Service',
@@ -441,7 +451,12 @@ class _LegalLinks extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {
-                // Will be wired to actual privacy URL in production.
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Privacy Policy: $_privacyUrl'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
               },
               child: Text(
                 'Privacy Policy',
