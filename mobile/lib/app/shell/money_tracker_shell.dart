@@ -82,7 +82,7 @@ class _MoneyTrackerShellState extends State<MoneyTrackerShell> {
                   );
                 },
                 icon: const Icon(Icons.notifications_outlined),
-                tooltip: 'Notifications',
+                tooltip: 'Bill reminders',
               ),
             ],
           ),

@@ -120,7 +120,7 @@ public sealed class BillReminder
         DispatchAttemptCount = 0;
         NextAttemptAtUtc = null;
 
-        var nextDueDate = CalculateNextDueDate();
+        var nextDueDate = CalculateNextDueDate(nowUtc);
         NextDueDateUtc = nextDueDate ?? DateTimeOffset.MaxValue;
         UpdatedAtUtc = nowUtc;
     }
@@ -138,15 +138,41 @@ public sealed class BillReminder
         UpdatedAtUtc = nowUtc;
     }
 
-    private DateTimeOffset? CalculateNextDueDate()
+    private DateTimeOffset? CalculateNextDueDate(DateTimeOffset nowUtc)
+    {
+        if (Cadence == BillReminderCadence.Once)
+        {
+            return null;
+        }
+
+        var nextDueDate = AddCadence(NextDueDateUtc);
+        if (nextDueDate == NextDueDateUtc)
+        {
+            return null;
+        }
+
+        while (nextDueDate <= nowUtc)
+        {
+            var advanced = AddCadence(nextDueDate);
+            if (advanced == nextDueDate)
+            {
+                return null;
+            }
+
+            nextDueDate = advanced;
+        }
+
+        return nextDueDate;
+    }
+
+    private DateTimeOffset AddCadence(DateTimeOffset value)
     {
         return Cadence switch
         {
-            BillReminderCadence.Once => null,
-            BillReminderCadence.Weekly => NextDueDateUtc.AddDays(7),
-            BillReminderCadence.BiWeekly => NextDueDateUtc.AddDays(14),
-            BillReminderCadence.Monthly => NextDueDateUtc.AddMonths(1),
-            _ => null
+            BillReminderCadence.Weekly => value.AddDays(7),
+            BillReminderCadence.BiWeekly => value.AddDays(14),
+            BillReminderCadence.Monthly => value.AddMonths(1),
+            _ => value
         };
     }
 

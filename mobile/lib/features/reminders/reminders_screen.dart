@@ -288,7 +288,7 @@ class _AddReminderSheetState extends State<_AddReminderSheet> {
                 child: OutlinedButton.icon(
                   onPressed: _pickDate,
                   icon: const Icon(Icons.calendar_today_outlined),
-                  label: Text(_formatDate(_dueDate)),
+                  label: Text(_formatDate(context, _dueDate)),
                 ),
               ),
               SizedBox(width: tokens.space2),
@@ -367,21 +367,7 @@ class _AddReminderSheetState extends State<_AddReminderSheet> {
     Navigator.of(context).pop(reminder);
   }
 
-  String _formatDate(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}';
+  String _formatDate(BuildContext context, DateTime date) {
+    return MaterialLocalizations.of(context).formatMediumDate(date);
   }
 }

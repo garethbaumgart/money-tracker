@@ -47,7 +47,12 @@ public static class BillReminderEndpoints
                 GetBillReminders)
             .WithName("GetBillReminders")
             .WithSummary("List bill reminders.")
-            .WithDescription("Returns household-scoped bill reminders.");
+            .WithDescription("Returns household-scoped bill reminders.")
+            .Produces<BillRemindersResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return app;
     }

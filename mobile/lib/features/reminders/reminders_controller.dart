@@ -68,6 +68,7 @@ class RemindersController extends ChangeNotifier {
       ),
     ]);
     _sortReminders();
+    notifyListeners();
   }
 
   void _sortReminders() {

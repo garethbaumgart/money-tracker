@@ -23,9 +23,10 @@ public sealed class DispatchDueRemindersHandler(
 
         foreach (var reminder in dueReminders)
         {
+            var dueDateUtc = reminder.NextDueDateUtc;
             if (await reminderRepository.HasDispatchRecordAsync(
                     reminder.Id,
-                    reminder.NextDueDateUtc,
+                    dueDateUtc,
                     cancellationToken))
             {
                 continue;
@@ -42,7 +43,7 @@ public sealed class DispatchDueRemindersHandler(
                 logger.LogWarning(
                     "Bill reminder dispatch failed for {ReminderId} due {DueDateUtc}: household not found.",
                     reminder.Id.Value,
-                    reminder.NextDueDateUtc);
+                    dueDateUtc);
                 reminder.MarkDispatchFailure(
                     nowUtc,
                     CalculateRetryDelay(reminder.DispatchAttemptCount),
@@ -52,7 +53,7 @@ public sealed class DispatchDueRemindersHandler(
                 await reminderRepository.RecordDispatchAsync(
                     new BillReminderDispatchRecord(
                         reminder.Id,
-                        reminder.NextDueDateUtc,
+                        dueDateUtc,
                         nowUtc,
                         false,
                         BillReminderErrors.ReminderDispatchFailed,
@@ -69,7 +70,7 @@ public sealed class DispatchDueRemindersHandler(
                 logger.LogWarning(
                     "Bill reminder dispatch failed for {ReminderId} due {DueDateUtc}: no device tokens.",
                     reminder.Id.Value,
-                    reminder.NextDueDateUtc);
+                    dueDateUtc);
                 reminder.MarkDispatchFailure(
                     nowUtc,
                     CalculateRetryDelay(reminder.DispatchAttemptCount),
@@ -79,7 +80,7 @@ public sealed class DispatchDueRemindersHandler(
                 await reminderRepository.RecordDispatchAsync(
                     new BillReminderDispatchRecord(
                         reminder.Id,
-                        reminder.NextDueDateUtc,
+                        dueDateUtc,
                         nowUtc,
                         false,
                         BillReminderErrors.ReminderDispatchFailed,
@@ -92,7 +93,7 @@ public sealed class DispatchDueRemindersHandler(
                 reminder.Id.Value,
                 reminder.Title,
                 reminder.Amount,
-                reminder.NextDueDateUtc);
+                dueDateUtc);
 
             var anySuccess = false;
             NotificationDispatchResult? failure = null;
@@ -116,7 +117,7 @@ public sealed class DispatchDueRemindersHandler(
                 await reminderRepository.RecordDispatchAsync(
                     new BillReminderDispatchRecord(
                         reminder.Id,
-                        reminder.LastNotifiedDueDateUtc!.Value,
+                        dueDateUtc,
                         nowUtc,
                         true,
                         ErrorCode: null,
@@ -128,7 +129,7 @@ public sealed class DispatchDueRemindersHandler(
                     logger.LogWarning(
                         "Bill reminder dispatch partially failed for {ReminderId} due {DueDateUtc}: {ErrorCode} {ErrorMessage}",
                         reminder.Id.Value,
-                        reminder.NextDueDateUtc,
+                        dueDateUtc,
                         failure.ErrorCode ?? BillReminderErrors.ReminderDispatchFailed,
                         failure.ErrorMessage ?? "Reminder dispatch failed.");
                 }
@@ -140,7 +141,7 @@ public sealed class DispatchDueRemindersHandler(
                 logger.LogWarning(
                     "Bill reminder dispatch failed for {ReminderId} due {DueDateUtc}: {ErrorCode} {ErrorMessage}",
                     reminder.Id.Value,
-                    reminder.NextDueDateUtc,
+                    dueDateUtc,
                     errorCode,
                     errorMessage);
                 reminder.MarkDispatchFailure(
@@ -152,7 +153,7 @@ public sealed class DispatchDueRemindersHandler(
                 await reminderRepository.RecordDispatchAsync(
                     new BillReminderDispatchRecord(
                         reminder.Id,
-                        reminder.NextDueDateUtc,
+                        dueDateUtc,
                         nowUtc,
                         false,
                         errorCode,
