@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../app/theme/app_theme_tokens.dart';
 import '../../domain/spending_analysis.dart';
 
 /// Displays a bar chart comparing current vs previous period spending
@@ -122,7 +123,9 @@ class _CategoryBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final currentFraction = maxValue > 0 ? category.currentSpent / maxValue : 0.0;
+    final tokens = AppThemeTokens.of(context);
+    final currentFraction =
+        maxValue > 0 ? category.currentSpent / maxValue : 0.0;
     final previousFraction =
         maxValue > 0 ? category.previousSpent / maxValue : 0.0;
 
@@ -134,7 +137,7 @@ class _CategoryBar extends StatelessWidget {
         ? theme.colorScheme.error
         : category.changePercent > 0
             ? theme.colorScheme.tertiary
-            : Colors.green;
+            : tokens.stateSuccess;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,7 +170,9 @@ class _CategoryBar extends StatelessWidget {
               children: [
                 FractionallySizedBox(
                   widthFactor: previousFraction,
-                  child: Container(color: theme.colorScheme.outline.withValues(alpha: 0.4)),
+                  child: Container(
+                    color: theme.colorScheme.outline.withValues(alpha: 0.4),
+                  ),
                 ),
                 FractionallySizedBox(
                   widthFactor: currentFraction,

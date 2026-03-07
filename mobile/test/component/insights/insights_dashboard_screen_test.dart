@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:money_tracker/app/theme/app_theme_tokens.dart';
 import 'package:money_tracker/features/insights/application/insights_controller.dart';
 import 'package:money_tracker/features/insights/presentation/insights_dashboard_screen.dart';
 
 void main() {
   Widget buildTestWidget(InsightsController controller) {
+    final theme = ThemeData.light().copyWith(
+      extensions: <ThemeExtension<dynamic>>[
+        AppThemeTokens.fromBrightness(Brightness.light),
+      ],
+    );
+
     return MaterialApp(
+      theme: theme,
       home: Scaffold(
         body: InsightsDashboardScreen(controller: controller),
       ),

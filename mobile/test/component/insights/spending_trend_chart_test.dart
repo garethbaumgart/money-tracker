@@ -1,11 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:money_tracker/app/theme/app_theme_tokens.dart';
 import 'package:money_tracker/features/insights/domain/spending_analysis.dart';
 import 'package:money_tracker/features/insights/presentation/widgets/spending_trend_chart.dart';
 
 void main() {
-  Widget buildTestWidget(List<CategorySpending> categories, String period) {
+  Widget buildTestWidget(
+    List<CategorySpending> categories,
+    String period, {
+    Brightness brightness = Brightness.light,
+  }) {
+    final theme = ThemeData(brightness: brightness).copyWith(
+      extensions: <ThemeExtension<dynamic>>[
+        AppThemeTokens.fromBrightness(brightness),
+      ],
+    );
+
     return MaterialApp(
+      theme: theme,
       home: Scaffold(
         body: SingleChildScrollView(
           child: SpendingTrendChart(
@@ -80,5 +92,38 @@ void main() {
       expect(find.text('Current'), findsOneWidget);
       expect(find.text('Previous'), findsOneWidget);
     });
+  });
+
+  group('SpendingTrendChart change-percent colors', () {
+    for (final brightness in Brightness.values) {
+      final modeName = brightness == Brightness.light ? 'light' : 'dark';
+      final tokens = AppThemeTokens.fromBrightness(brightness);
+
+      testWidgets(
+        'uses stateSuccess for negative change percent ($modeName mode)',
+        (tester) async {
+          const categories = [
+            CategorySpending(
+              categoryId: 'cat-1',
+              categoryName: 'Groceries',
+              currentSpent: 400,
+              previousSpent: 500,
+              changePercent: -20.0,
+            ),
+          ];
+
+          await tester.pumpWidget(
+            buildTestWidget(categories, '30d', brightness: brightness),
+          );
+
+          // Find the change-percent text widget
+          final changeTextFinder = find.text('-20.0%');
+          expect(changeTextFinder, findsOneWidget);
+
+          final textWidget = tester.widget<Text>(changeTextFinder);
+          expect(textWidget.style?.color, equals(tokens.stateSuccess));
+        },
+      );
+    }
   });
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../app/theme/app_theme_tokens.dart';
 import '../../domain/budget_health.dart';
 
 /// Displays the composite budget health score as a colored ring gauge
@@ -12,16 +13,17 @@ class BudgetHealthCard extends StatelessWidget {
 
   final BudgetHealth health;
 
-  Color _scoreColor(int score) {
-    if (score >= 80) return Colors.green;
-    if (score >= 50) return Colors.orange;
-    return Colors.red;
+  Color _scoreColor(int score, AppThemeTokens tokens) {
+    if (score >= 80) return tokens.stateSuccess;
+    if (score >= 50) return tokens.stateWarning;
+    return tokens.stateDanger;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scoreColor = _scoreColor(health.overallScore);
+    final tokens = AppThemeTokens.of(context);
+    final scoreColor = _scoreColor(health.overallScore, tokens);
 
     return Card(
       child: Padding(
@@ -151,7 +153,7 @@ class _BreakdownRow extends StatelessWidget {
         SizedBox(
           width: 36,
           child: Text(
-            '${score.toStringAsFixed(0)}',
+            score.toStringAsFixed(0),
             style: theme.textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -168,16 +170,16 @@ class _CategoryStatusRow extends StatelessWidget {
 
   final CategoryHealth category;
 
-  Color _statusColor(String status) {
+  Color _statusColor(String status, AppThemeTokens tokens) {
     switch (status) {
       case 'OnTrack':
-        return Colors.green;
+        return tokens.stateSuccess;
       case 'AtRisk':
-        return Colors.orange;
+        return tokens.stateWarning;
       case 'OverBudget':
-        return Colors.red;
+        return tokens.stateDanger;
       default:
-        return Colors.grey;
+        return tokens.contentMuted;
     }
   }
 
@@ -197,7 +199,8 @@ class _CategoryStatusRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = _statusColor(category.status);
+    final tokens = AppThemeTokens.of(context);
+    final color = _statusColor(category.status, tokens);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
