@@ -92,8 +92,11 @@ public static class AuthEndpoint
                 return;
             }
 
+            // Fire-and-forget: emit signup_completed activation event via IAnalyticsEventPublisher
+            await EmitAnalyticsEventAsync(httpContext, result.Tokens!.UserId, "signup_completed", householdId: null);
+
             var response = new VerifyCodeResponse(
-                result.Tokens!.UserId,
+                result.Tokens.UserId,
                 result.Tokens.Email,
                 result.Tokens.AccessToken,
                 result.Tokens.AccessTokenExpiresAtUtc,
@@ -260,6 +263,37 @@ public static class AuthEndpoint
     {
         var mediaType = contentType.Split(';')[0].Trim();
         return mediaType.Equals("application/json", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Resolves IAnalyticsEventPublisher from DI at runtime to avoid circular project reference
+    /// (SharedKernel references Auth, so Auth cannot reference SharedKernel).
+    /// Fire-and-forget: failures are silently swallowed.
+    /// </summary>
+    private static async Task EmitAnalyticsEventAsync(
+        HttpContext httpContext, Guid userId, string milestone, Guid? householdId)
+    {
+        try
+        {
+            // Resolve by assembly-qualified type name to avoid compile-time dependency
+            var publisherType = Type.GetType(
+                "MoneyTracker.Modules.SharedKernel.Analytics.IAnalyticsEventPublisher, MoneyTracker.Modules.SharedKernel");
+            if (publisherType is null) return;
+
+            var publisher = httpContext.RequestServices.GetService(publisherType);
+            if (publisher is null) return;
+
+            var publishMethod = publisherType.GetMethod("PublishAsync");
+            if (publishMethod is null) return;
+
+            var task = (Task?)publishMethod.Invoke(publisher,
+                [userId, milestone, householdId, httpContext.RequestAborted]);
+            if (task is not null) await task;
+        }
+        catch
+        {
+            // Analytics emission must not fail the auth flow.
+        }
     }
 }
 

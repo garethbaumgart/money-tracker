@@ -1,8 +1,12 @@
 using MoneyTracker.Modules.Households.Domain;
+using MoneyTracker.Modules.SharedKernel.Analytics;
 
 namespace MoneyTracker.Modules.Households.Application.AcceptHouseholdInvitation;
 
-public sealed class AcceptHouseholdInvitationHandler(IHouseholdRepository repository, TimeProvider timeProvider)
+public sealed class AcceptHouseholdInvitationHandler(
+    IHouseholdRepository repository,
+    TimeProvider timeProvider,
+    IAnalyticsEventPublisher analyticsPublisher)
 {
     public async Task<AcceptHouseholdInvitationResult> HandleAsync(
         AcceptHouseholdInvitationCommand command,
@@ -68,6 +72,9 @@ public sealed class AcceptHouseholdInvitationHandler(IHouseholdRepository reposi
                 HouseholdErrors.HouseholdInvitationUsed,
                 "Invitation already used.");
         }
+
+        await analyticsPublisher.PublishAsync(
+            command.AcceptingUserId, "partner_joined", invitation.HouseholdId.Value, cancellationToken);
 
         return AcceptHouseholdInvitationResult.Success();
     }

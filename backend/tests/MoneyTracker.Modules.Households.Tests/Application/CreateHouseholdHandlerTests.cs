@@ -1,5 +1,6 @@
 using MoneyTracker.Modules.Households.Application.CreateHousehold;
 using MoneyTracker.Modules.Households.Domain;
+using MoneyTracker.Modules.SharedKernel.Analytics;
 
 namespace MoneyTracker.Modules.Households.Tests.Application;
 
@@ -13,7 +14,7 @@ public sealed class CreateHouseholdHandlerTests
     {
         var repository = new FakeHouseholdRepository(addSucceeds: true);
         var expectedCreatedAtUtc = DateTimeOffset.Parse("2026-02-03T04:05:06Z");
-        var handler = new CreateHouseholdHandler(repository, new FakeTimeProvider(expectedCreatedAtUtc));
+        var handler = new CreateHouseholdHandler(repository, new FakeTimeProvider(expectedCreatedAtUtc), new NoopAnalyticsEventPublisher());
 
         var result = await handler.HandleAsync(new CreateHouseholdCommand("Primary Home", OwnerUserId), CancellationToken.None);
 
@@ -33,7 +34,7 @@ public sealed class CreateHouseholdHandlerTests
     public async Task HandleAsync_ReturnsConflict_WhenNameAlreadyExistsCaseInsensitive()
     {
         var repository = new FakeHouseholdRepository(addSucceeds: true, existingName: " Shared ");
-        var handler = new CreateHouseholdHandler(repository, TimeProvider.System);
+        var handler = new CreateHouseholdHandler(repository, TimeProvider.System, new NoopAnalyticsEventPublisher());
 
         var result = await handler.HandleAsync(new CreateHouseholdCommand("sHaReD", OwnerUserId), CancellationToken.None);
 
@@ -47,7 +48,7 @@ public sealed class CreateHouseholdHandlerTests
     public async Task HandleAsync_ReturnsValidationError_WhenNameInvalid()
     {
         var repository = new FakeHouseholdRepository(addSucceeds: true);
-        var handler = new CreateHouseholdHandler(repository, TimeProvider.System);
+        var handler = new CreateHouseholdHandler(repository, TimeProvider.System, new NoopAnalyticsEventPublisher());
 
         var result = await handler.HandleAsync(new CreateHouseholdCommand("   ", OwnerUserId), CancellationToken.None);
 

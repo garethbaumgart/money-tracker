@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using MoneyTracker.Modules.BankConnections.Domain;
+using MoneyTracker.Modules.SharedKernel.Analytics;
 using MoneyTracker.Modules.SharedKernel.Households;
 
 namespace MoneyTracker.Modules.BankConnections.Application.CreateLinkSession;
@@ -10,6 +11,7 @@ public sealed class CreateLinkSessionHandler(
     IBankProviderAdapter providerAdapter,
     IHouseholdAccessService householdAccessService,
     ILinkEventRepository linkEventRepository,
+    IAnalyticsEventPublisher analyticsPublisher,
     TimeProvider timeProvider,
     ILogger<CreateLinkSessionHandler> logger)
 {
@@ -105,6 +107,9 @@ public sealed class CreateLinkSessionHandler(
             stopwatch.ElapsedMilliseconds,
             errorCategory: null,
             cancellationToken);
+
+        await analyticsPublisher.PublishAsync(
+            command.RequestingUserId, "bank_link_started", command.HouseholdId, cancellationToken);
 
         return CreateLinkSessionResult.Success(consentResult.ConsentUrl!, connection.Id.Value);
     }

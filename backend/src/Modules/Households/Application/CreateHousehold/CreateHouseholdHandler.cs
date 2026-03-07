@@ -1,8 +1,12 @@
 using MoneyTracker.Modules.Households.Domain;
+using MoneyTracker.Modules.SharedKernel.Analytics;
 
 namespace MoneyTracker.Modules.Households.Application.CreateHousehold;
 
-public sealed class CreateHouseholdHandler(IHouseholdRepository repository, TimeProvider timeProvider)
+public sealed class CreateHouseholdHandler(
+    IHouseholdRepository repository,
+    TimeProvider timeProvider,
+    IAnalyticsEventPublisher analyticsPublisher)
 {
     public async Task<CreateHouseholdResult> HandleAsync(CreateHouseholdCommand command, CancellationToken cancellationToken)
     {
@@ -22,6 +26,9 @@ public sealed class CreateHouseholdHandler(IHouseholdRepository repository, Time
         {
             return CreateHouseholdResult.Conflict();
         }
+
+        await analyticsPublisher.PublishAsync(
+            command.OwnerUserId, "household_created", household.Id.Value, cancellationToken);
 
         return CreateHouseholdResult.Success(household);
     }

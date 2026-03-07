@@ -1,8 +1,12 @@
 using MoneyTracker.Modules.Households.Domain;
+using MoneyTracker.Modules.SharedKernel.Analytics;
 
 namespace MoneyTracker.Modules.Households.Application.InviteHouseholdMember;
 
-public sealed class InviteHouseholdMemberHandler(IHouseholdRepository repository, TimeProvider timeProvider)
+public sealed class InviteHouseholdMemberHandler(
+    IHouseholdRepository repository,
+    TimeProvider timeProvider,
+    IAnalyticsEventPublisher analyticsPublisher)
 {
     public async Task<InviteHouseholdMemberResult> HandleAsync(
         InviteHouseholdMemberCommand command,
@@ -39,6 +43,9 @@ public sealed class InviteHouseholdMemberHandler(IHouseholdRepository repository
         {
             return InviteHouseholdMemberResult.Failure(HouseholdErrors.ValidationError, "Invitation could not be created.");
         }
+
+        await analyticsPublisher.PublishAsync(
+            command.InviterUserId, "partner_invited", command.HouseholdId.Value, cancellationToken);
 
         return InviteHouseholdMemberResult.Success(invitationToken, expiresAtUtc);
     }

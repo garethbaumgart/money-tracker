@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using MoneyTracker.Modules.BankConnections.Application.SyncTransactions;
 using MoneyTracker.Modules.BankConnections.Domain;
+using MoneyTracker.Modules.SharedKernel.Analytics;
 using MoneyTracker.Modules.SharedKernel.Transactions;
 using MoneyTracker.Modules.Transactions.Domain;
 
@@ -38,6 +39,7 @@ public sealed class SyncTransactionsHandlerTests
         var handler = new SyncTransactionsHandler(
             connectionRepo, providerAdapter, transactionRepo,
             new StubSyncEventRepository(),
+            new NoopAnalyticsEventPublisher(),
             new StubTimeProvider(NowUtc),
             NullLogger<SyncTransactionsHandler>.Instance);
 
@@ -70,6 +72,7 @@ public sealed class SyncTransactionsHandlerTests
         var handler = new SyncTransactionsHandler(
             connectionRepo, providerAdapter, transactionRepo,
             new StubSyncEventRepository(),
+            new NoopAnalyticsEventPublisher(),
             new StubTimeProvider(NowUtc),
             NullLogger<SyncTransactionsHandler>.Instance);
 
@@ -101,6 +104,7 @@ public sealed class SyncTransactionsHandlerTests
         var handler = new SyncTransactionsHandler(
             connectionRepo, providerAdapter, transactionRepo,
             new StubSyncEventRepository(),
+            new NoopAnalyticsEventPublisher(),
             new StubTimeProvider(NowUtc),
             NullLogger<SyncTransactionsHandler>.Instance);
 
@@ -130,6 +134,7 @@ public sealed class SyncTransactionsHandlerTests
         var handler = new SyncTransactionsHandler(
             connectionRepo, providerAdapter, transactionRepo,
             new StubSyncEventRepository(),
+            new NoopAnalyticsEventPublisher(),
             new StubTimeProvider(NowUtc),
             NullLogger<SyncTransactionsHandler>.Instance);
 
