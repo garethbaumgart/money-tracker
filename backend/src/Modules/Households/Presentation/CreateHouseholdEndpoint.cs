@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -11,6 +10,7 @@ using MoneyTracker.Modules.Households.Application.GetHouseholdMembers;
 using MoneyTracker.Modules.Households.Application.InviteHouseholdMember;
 using MoneyTracker.Modules.Households.Domain;
 using MoneyTracker.Modules.SharedKernel.Households;
+using MoneyTracker.Modules.SharedKernel.Presentation;
 
 namespace MoneyTracker.Modules.Households.Presentation;
 
@@ -79,7 +79,8 @@ public static class CreateHouseholdEndpoint
             return;
         }
 
-        var (isValidRequest, request, parseProblem) = await ReadJsonRequestAsync<CreateHouseholdRequest>(httpContext);
+        var (isValidRequest, request, parseProblem) =
+            await EndpointHelpers.ReadJsonRequestAsync<CreateHouseholdRequest>(httpContext, HouseholdErrors.ValidationError);
         if (!isValidRequest || request is null)
         {
             if (parseProblem is not null)
@@ -144,7 +145,8 @@ public static class CreateHouseholdEndpoint
             return;
         }
 
-        var (isValidRequest, request, parseProblem) = await ReadJsonRequestAsync<InviteHouseholdMemberRequest>(httpContext);
+        var (isValidRequest, request, parseProblem) =
+            await EndpointHelpers.ReadJsonRequestAsync<InviteHouseholdMemberRequest>(httpContext, HouseholdErrors.ValidationError);
         if (!isValidRequest || request is null)
         {
             if (parseProblem is not null)
@@ -288,70 +290,6 @@ public static class CreateHouseholdEndpoint
         var response = new GetHouseholdMembersResponse(
             result.Members!.Select(member => new HouseholdMemberResponse(member.UserId, member.Role)).ToArray());
         await TypedResults.Ok(response).ExecuteAsync(httpContext);
-    }
-
-    private static async Task<(bool IsValid, TRequest? Request, IResult? Error)> ReadJsonRequestAsync<TRequest>(HttpContext httpContext)
-        where TRequest : class
-    {
-        var contentType = httpContext.Request.ContentType;
-        if (string.IsNullOrWhiteSpace(contentType) || !IsJsonContentType(contentType))
-        {
-            return (false, default, HouseholdEndpointHelpers.BuildProblemResult(
-                StatusCodes.Status400BadRequest,
-                "Validation failed.",
-                "The request payload is required to be JSON.",
-                HouseholdErrors.ValidationError,
-                httpContext.Request.Path));
-        }
-
-        try
-        {
-            var request = await httpContext.Request.ReadFromJsonAsync<TRequest>(cancellationToken: httpContext.RequestAborted);
-            if (request is null)
-            {
-                return (false, default, HouseholdEndpointHelpers.BuildProblemResult(
-                    StatusCodes.Status400BadRequest,
-                    "Validation failed.",
-                    "The request payload is invalid.",
-                    HouseholdErrors.ValidationError,
-                    httpContext.Request.Path));
-            }
-
-            return (true, request, null);
-        }
-        catch (JsonException)
-        {
-            return (false, default, HouseholdEndpointHelpers.BuildProblemResult(
-                StatusCodes.Status400BadRequest,
-                "Validation failed.",
-                "The request payload is invalid.",
-                HouseholdErrors.ValidationError,
-                httpContext.Request.Path));
-        }
-        catch (NotSupportedException)
-        {
-            return (false, default, HouseholdEndpointHelpers.BuildProblemResult(
-                StatusCodes.Status400BadRequest,
-                "Validation failed.",
-                "The request payload is invalid.",
-                HouseholdErrors.ValidationError,
-                httpContext.Request.Path));
-        }
-        catch (BadHttpRequestException)
-        {
-            return (false, default, HouseholdEndpointHelpers.BuildProblemResult(
-                StatusCodes.Status400BadRequest,
-                "Validation failed.",
-                "The request payload is invalid.",
-                HouseholdErrors.ValidationError,
-                httpContext.Request.Path));
-        }
-    }
-
-    private static bool IsJsonContentType(string contentType)
-    {
-        var mediaType = contentType.Split(';')[0].Trim();
-        return mediaType.Equals("application/json", StringComparison.OrdinalIgnoreCase);
     }
 }
 
