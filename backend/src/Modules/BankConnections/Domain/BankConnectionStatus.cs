@@ -5,5 +5,6 @@ public enum BankConnectionStatus
     Pending,
     Active,
     Failed,
-    Revoked
+    Revoked,
+    Expired
 }

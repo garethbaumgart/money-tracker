@@ -38,6 +38,16 @@ public sealed class SyncTransactionsHandler(
 
         foreach (var connection in connections)
         {
+            if (!connection.IsConsentValid())
+            {
+                logger.LogInformation(
+                    "Skipping sync for connection={ConnectionId} household={HouseholdId}: consent status is {ConsentStatus}",
+                    connection.Id.Value,
+                    connection.HouseholdId,
+                    connection.ConsentStatus);
+                continue;
+            }
+
             try
             {
                 var (synced, skipped) = await SyncConnectionAsync(connection, cancellationToken);
