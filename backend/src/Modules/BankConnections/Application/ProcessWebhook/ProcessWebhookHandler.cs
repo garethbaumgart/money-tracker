@@ -52,9 +52,8 @@ public sealed class ProcessWebhookHandler(
             return;
         }
 
-        var connections = await connectionRepository.GetAllConnectionsAsync(cancellationToken);
-        var connection = connections.FirstOrDefault(c =>
-            string.Equals(c.ExternalConnectionId, externalConnectionId, StringComparison.Ordinal));
+        var connection = await connectionRepository.GetByExternalConnectionIdAsync(
+            externalConnectionId, cancellationToken);
 
         if (connection is null)
         {

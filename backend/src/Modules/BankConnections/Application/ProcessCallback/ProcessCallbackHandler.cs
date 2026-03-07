@@ -59,7 +59,7 @@ public sealed class ProcessCallbackHandler(
             if (connection.Status is BankConnectionStatus.Expired or BankConnectionStatus.Revoked)
             {
                 // Re-consent flow: reactivate from Expired/Revoked
-                var consentExpiry = nowUtc.AddDays(90); // Default 90-day consent
+                var consentExpiry = nowUtc.Add(ConsentPolicy.DefaultConsentDuration);
                 connection.ReactivateAfterReConsent(
                     connectionResult.ConnectionId!,
                     connectionResult.InstitutionName,
@@ -74,7 +74,7 @@ public sealed class ProcessCallbackHandler(
                     connectionResult.InstitutionName,
                     nowUtc);
                 // Set initial consent expiry
-                connection.UpdateConsentExpiry(nowUtc.AddDays(90), nowUtc);
+                connection.UpdateConsentExpiry(nowUtc.Add(ConsentPolicy.DefaultConsentDuration), nowUtc);
             }
         }
         catch (BankConnectionDomainException exception)

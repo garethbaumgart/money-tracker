@@ -85,6 +85,25 @@ public sealed class InMemoryBankConnectionRepository : IBankConnectionRepository
         }
     }
 
+    public Task<BankConnection?> GetByExternalConnectionIdAsync(
+        string externalConnectionId,
+        CancellationToken cancellationToken)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return Task.FromCanceled<BankConnection?>(cancellationToken);
+        }
+
+        lock (_sync)
+        {
+            var connection = _connectionsByHousehold.Values
+                .SelectMany(list => list)
+                .FirstOrDefault(c =>
+                    string.Equals(c.ExternalConnectionId, externalConnectionId, StringComparison.Ordinal));
+            return Task.FromResult(connection);
+        }
+    }
+
     public Task<IReadOnlyCollection<BankConnection>> GetByHouseholdAsync(
         Guid householdId,
         CancellationToken cancellationToken)

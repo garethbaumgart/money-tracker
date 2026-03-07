@@ -160,6 +160,13 @@ public sealed class BankConnection
 
     public void MarkConsentRevoked(DateTimeOffset nowUtc)
     {
+        if (ConsentStatus == ConsentStatus.Revoked)
+        {
+            throw new BankConnectionDomainException(
+                BankConnectionErrors.ConsentInvalidStateTransition,
+                "Consent is already revoked.");
+        }
+
         ConsentStatus = ConsentStatus.Revoked;
         if (Status == BankConnectionStatus.Active)
         {
@@ -170,12 +177,7 @@ public sealed class BankConnection
 
     public void ReactivateAfterReConsent(string externalConnectionId, string? institutionName, DateTimeOffset consentExpiresAtUtc, DateTimeOffset nowUtc)
     {
-        if (Status is not (BankConnectionStatus.Expired or BankConnectionStatus.Revoked))
-        {
-            throw new BankConnectionDomainException(
-                BankConnectionErrors.ReConsentNotNeeded,
-                "Connection is still active and does not require re-consent.");
-        }
+        EnsureTransitionAllowed(BankConnectionStatus.Active);
 
         if (string.IsNullOrWhiteSpace(externalConnectionId))
         {
@@ -219,6 +221,8 @@ public sealed class BankConnection
             (BankConnectionStatus.Pending, BankConnectionStatus.Failed) => true,
             (BankConnectionStatus.Active, BankConnectionStatus.Revoked) => true,
             (BankConnectionStatus.Active, BankConnectionStatus.Expired) => true,
+            (BankConnectionStatus.Expired, BankConnectionStatus.Active) => true,
+            (BankConnectionStatus.Revoked, BankConnectionStatus.Active) => true,
             _ => false
         };
 

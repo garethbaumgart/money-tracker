@@ -3,6 +3,8 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
+using Microsoft.Extensions.DependencyInjection;
+using MoneyTracker.Modules.BankConnections.Domain;
 
 namespace MoneyTracker.Api.Tests.Component;
 
@@ -52,35 +54,25 @@ public sealed class ConsentLifecycleEndpointTests : IClassFixture<MoneyTrackerAp
         Assert.NotNull(callbackPayload);
         Assert.Equal("Active", callbackPayload["status"]?.GetValue<string>());
 
-        // Simulate consent revocation via webhook to make the connection revoked
-        var webhookBody = $$$"""{"eventType":"consent.revoked","connectionId":"{{{callbackPayload["id"]?.GetValue<string>()}}}"}""";
+        // Drive the connection into Expired state via the repository
+        var repo = _factory.Services.GetRequiredService<IBankConnectionRepository>();
+        var connection = await repo.GetByIdAsync(
+            new BankConnectionId(Guid.Parse(connectionId)),
+            CancellationToken.None);
+        Assert.NotNull(connection);
+        connection.MarkConsentExpired(DateTimeOffset.UtcNow);
+        await repo.UpdateAsync(connection, CancellationToken.None);
 
-        // We need to look up the actual externalConnectionId from the connection.
-        // However, the webhook references external IDs. For the in-memory adapter the
-        // externalConnectionId is assigned dynamically. Since we can't easily know it from
-        // outside, let's approach differently: directly revoke via a second webhook approach.
-        // Instead, let's use the connections listing to find the connection and check status.
-
-        // Approach: Use the GET /bank/connections endpoint to find the connection, then use
-        // a webhook to revoke it. But since we don't have the external connection ID easily,
-        // let's test re-consent by using a revocation through the state machine more directly.
-
-        // Alternative: We can simulate expiry by calling the consent check. But that requires
-        // the connection to have a past consent expiry, which our initial callback set to +90 days.
-
-        // The simplest approach for the component test: verify that a re-consent for an Active
-        // connection returns 400, then this verifies the endpoint routing works.
-        // For the full expired->re-consent test, see integration tests.
-
-        // Test: re-consent for Active connection returns 400
-        using var reConsentActiveResponse = await client.PostAsync(
+        // Test: re-consent for Expired connection returns 200 with consent URL
+        using var reConsentResponse = await client.PostAsync(
             $"/bank/connections/{connectionId}/re-consent",
             null);
-        Assert.Equal(HttpStatusCode.BadRequest, reConsentActiveResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, reConsentResponse.StatusCode);
 
-        var problemPayload = JsonNode.Parse(await reConsentActiveResponse.Content.ReadAsStringAsync())?.AsObject();
-        Assert.NotNull(problemPayload);
-        Assert.Equal("bank_re_consent_not_needed", problemPayload["code"]?.GetValue<string>());
+        var reConsentPayload = JsonNode.Parse(await reConsentResponse.Content.ReadAsStringAsync())?.AsObject();
+        Assert.NotNull(reConsentPayload);
+        Assert.NotNull(reConsentPayload["consentUrl"]?.GetValue<string>());
+        Assert.False(string.IsNullOrWhiteSpace(reConsentPayload["consentUrl"]?.GetValue<string>()));
     }
 
     [Fact]

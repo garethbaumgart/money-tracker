@@ -6,6 +6,7 @@ public interface IBankConnectionRepository
     Task UpdateAsync(BankConnection connection, CancellationToken cancellationToken);
     Task<BankConnection?> GetByIdAsync(BankConnectionId id, CancellationToken cancellationToken);
     Task<BankConnection?> GetByConsentSessionIdAsync(string consentSessionId, CancellationToken cancellationToken);
+    Task<BankConnection?> GetByExternalConnectionIdAsync(string externalConnectionId, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<BankConnection>> GetByHouseholdAsync(
         Guid householdId,
         CancellationToken cancellationToken);

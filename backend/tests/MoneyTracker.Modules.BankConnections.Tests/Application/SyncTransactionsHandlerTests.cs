@@ -230,6 +230,18 @@ internal sealed class StubBankConnectionRepository : IBankConnectionRepository
         }
     }
 
+    public Task<BankConnection?> GetByExternalConnectionIdAsync(string externalConnectionId, CancellationToken cancellationToken)
+    {
+        lock (_sync)
+        {
+            var connection = _connectionsByHousehold.Values
+                .SelectMany(l => l)
+                .FirstOrDefault(c =>
+                    string.Equals(c.ExternalConnectionId, externalConnectionId, StringComparison.Ordinal));
+            return Task.FromResult(connection);
+        }
+    }
+
     public Task<IReadOnlyCollection<BankConnection>> GetByHouseholdAsync(Guid householdId, CancellationToken cancellationToken)
     {
         lock (_sync)
