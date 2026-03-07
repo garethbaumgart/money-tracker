@@ -18,7 +18,7 @@ void main() {
 
     expect(find.byType(NavigationRail), findsOneWidget);
     expect(find.byType(NavigationBar), findsNothing);
-    expect(find.text('Priority checklist'), findsOneWidget);
+    expect(find.text('Shared dashboard'), findsOneWidget);
   });
 
   testWidgets('applies dark theme semantic tokens and component themes', (

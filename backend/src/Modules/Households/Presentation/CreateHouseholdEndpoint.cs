@@ -9,6 +9,7 @@ using MoneyTracker.Modules.Auth.Domain;
 using MoneyTracker.Modules.Households.Application.AcceptHouseholdInvitation;
 using MoneyTracker.Modules.Households.Application.CreateHousehold;
 using MoneyTracker.Modules.Households.Application.GetCurrentBudgetSnapshot;
+using MoneyTracker.Modules.Households.Application.GetHouseholdDashboard;
 using MoneyTracker.Modules.Households.Application.GetHouseholdMembers;
 using MoneyTracker.Modules.Households.Application.InviteHouseholdMember;
 using MoneyTracker.Modules.Households.Domain;
@@ -28,6 +29,7 @@ public static class CreateHouseholdEndpoint
         services.AddScoped<AcceptHouseholdInvitationHandler>();
         services.AddScoped<GetHouseholdMembersHandler>();
         services.AddScoped<GetCurrentBudgetSnapshotHandler>();
+        services.AddScoped<GetHouseholdDashboardHandler>();
 
         return services;
     }
@@ -58,6 +60,8 @@ public static class CreateHouseholdEndpoint
             .WithName("GetHouseholdMembers")
             .WithSummary("Get household members.")
             .WithDescription("Returns all members for an existing household.");
+
+        app.MapHouseholdDashboardEndpoints();
 
         return app;
     }
